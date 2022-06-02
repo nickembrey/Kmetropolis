@@ -47,33 +47,33 @@ data class Player(
             ChoiceContext.ACTION -> {
                 if(decision.choice.isNotEmpty() && decision.index != null) {
                     playCard(state, decision)
+                } else {
+                    coins += hand.filter { it.type == CardType.TREASURE}.sumOf { it.addCoins }
+                    state.context = ChoiceContext.BUY
+                    state.status = Pair(this, TurnPhase.BUY)
                 }
-
-                state.status = Pair(this, TurnPhase.BUY)
             }
             ChoiceContext.BUY -> {
-                if(decision.index != null) {
-                    if(decision.index == -1) {
-                        print("Stop!")
-                    }
-                    buyCards(state, decision)
+                if(decision.index == null || buys == 0) {
+                    endTurn(state)
+                } else {
+                    buyCard(state, decision.choice[decision.index] as Card)
                 }
-                discard += inPlay
-                inPlay = mutableListOf()
-                discard += hand
-                hand = mutableListOf()
-                for (i in 1..5) {
-                    drawCard(this, !state.noShuffle)
-                }
-                state.status = Pair(state.otherPlayer, TurnPhase.ACTION)
             }
-            ChoiceContext.CHAPEL -> trashCards(state.currentPlayer, decision)
+            ChoiceContext.CHAPEL -> {
+                trashCards(state.choicePlayer, decision, state.verbose)
+                state.context = ChoiceContext.ACTION
+            }
             ChoiceContext.MILITIA -> {
                 if(decision.index != null) {
-                    discardCards(state.currentPlayer, decision)
+                    discardCards(state.choicePlayer, decision, state.verbose)
                 }
+                state.context = ChoiceContext.ACTION
             }
-            ChoiceContext.WORKSHOP -> decideGainCard(state.currentPlayer, decision)
+            ChoiceContext.WORKSHOP -> {
+                decideGainCard(state.choicePlayer, decision, state.verbose)
+                state.context = ChoiceContext.ACTION
+            }
         }
         return state
     }

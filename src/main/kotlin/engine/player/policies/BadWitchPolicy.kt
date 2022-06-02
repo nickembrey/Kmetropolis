@@ -1,7 +1,8 @@
-package engine.player
+package engine.player.policies
 
 import GameState
 import engine.*
+import engine.player.Player
 
 val badWitchPolicy = fun(
     state: GameState,
@@ -16,33 +17,25 @@ val badWitchPolicy = fun(
             val witchCards = state.currentPlayer.allCards.filter { it == Card.WITCH }.size
             val provinceCards = state.currentPlayer.allCards.filter { it == Card.PROVINCE }.size
 
-            val noBuy = state.board.keys.zip(MutableList(state.board.size) { 0 }).toMap()
-            val provinceBuy = noBuy.toMutableMap().apply { this[Card.PROVINCE] = 1 }
-            val witchBuy = noBuy.toMutableMap().apply { this[Card.WITCH] = 1 }
-            val goldBuy = noBuy.toMutableMap().apply { this[Card.GOLD] = 1 }
-            val duchyBuy = noBuy.toMutableMap().apply { this[Card.DUCHY] = 1 }
-            val estateBuy = noBuy.toMutableMap().apply { this[Card.ESTATE] = 1 }
-            val silverBuy = noBuy.toMutableMap().apply { this[Card.SILVER] = 1 }
-
             val witchLeft = state.board[Card.WITCH]!!
             val duchyLeft = state.board[Card.DUCHY]!!
             val estateLeft = state.board[Card.ESTATE]!!
 
 
             return if(state.currentPlayer.coins >= 8 && goldCards > 0) {
-                Decision(choice, context, choice.indexOf(provinceBuy))
+                Decision(choice, context, choice.indexOf(Card.PROVINCE))
             } else if (state.currentPlayer.coins >= 5 && witchCards == 0 && witchLeft > 0) {
-                Decision(choice, context, choice.indexOf(witchBuy))
+                Decision(choice, context, choice.indexOf(Card.WITCH))
             } else if (state.currentPlayer.coins >= 5 && provinceCards < 4 && duchyLeft > 0) {
-                Decision(choice, context, choice.indexOf(duchyBuy))
+                Decision(choice, context, choice.indexOf(Card.DUCHY))
             } else if (state.currentPlayer.coins >= 5 && provinceCards < 2 && estateLeft > 0) {
-                Decision(choice, context, choice.indexOf(estateBuy))
+                Decision(choice, context, choice.indexOf(Card.ESTATE))
             } else if (state.currentPlayer.coins >= 6) {
-                Decision(choice, context, choice.indexOf(goldBuy))
+                Decision(choice, context, choice.indexOf(Card.GOLD))
             } else if (state.currentPlayer.coins >= 3) {
-                Decision(choice, context, choice.indexOf(silverBuy))
+                Decision(choice, context, choice.indexOf(Card.SILVER))
             } else {
-                Decision(choice, context, choice.indexOf(noBuy))
+                Decision(choice, context, null)
             }
         }
         ChoiceContext.MILITIA -> {

@@ -16,7 +16,13 @@ enum class ChoiceContext {
 
     fun getChoice(state: GameState, player: Player): Choice {
         return when(this) {
-            ACTION -> player.hand.filter { it.type == CardType.ACTION }
+            ACTION -> {
+                if(player.actions > 0) {
+                    player.hand.filter { it.type == CardType.ACTION }
+                } else {
+                    listOf()
+                }
+            }
             BUY -> getBuyChoice(state, player)
             MILITIA -> {
                 if(player.hand.size > 3) {
@@ -35,37 +41,5 @@ enum class ChoiceContext {
 }
 
 fun getBuyChoice(state: GameState, player: Player): Choice {
-    val orders = mutableSetOf<Map<Card, Int>>()
-
-    val initialMenu = state.board.toMutableMap()
-    val initialOrder = state.board.keys.zip(MutableList(state.board.size) { 0 })
-        .toMap().toMutableMap()
-
-    fun pick(
-        menu: MutableMap<Card, Int>,
-        order: MutableMap<Card, Int>,
-        coins: Int,
-        buys: Int
-    ) {
-        orders.add(order.toMutableMap())
-        if (buys > 0) {
-            val available = menu.filter { it.value > 0 && coins >= it.key.cost }.keys
-            for (card in available) {
-                pick(
-                    menu.apply { set(card, getValue(card) - 1) },
-                    order.apply { set(card, getValue(card) + 1) },
-                    coins - card.cost,
-                    buys - 1
-                )
-                menu.apply { set(card, getValue(card) + 1) }
-                order.apply { set(card, getValue(card) - 1) }
-            }
-        }
-
-    }
-
-    pick(initialMenu, initialOrder, player.coins, player.buys)
-
-    return orders.toList()
-
+    return state.board.filter { it.value > 0 && player.coins >= it.key.cost }.keys.toList()
 }

@@ -11,10 +11,10 @@ class GameState(
         Card.LABORATORY to 10,
         Card.SMITHY to 10,
         Card.MONEYLENDER to 10,
-//        Card.MILITIA to 10,
-//        Card.CHAPEL to 10,
+        Card.MILITIA to 10,
+        Card.CHAPEL to 10,
         Card.VILLAGE to 10,
-//        Card.WORKSHOP to 10,
+        Card.WORKSHOP to 10,
 
         Card.GOLD to 30,
         Card.SILVER to 40,
@@ -28,10 +28,11 @@ class GameState(
     ),
     var turns: Int = 0,
     var status: Pair<Player, TurnPhase> = Pair(playerOne, TurnPhase.ACTION),
+    var context: ChoiceContext = ChoiceContext.ACTION,
     val noShuffle: Boolean = false,
+    val verbose: Boolean = false,
     val logger: DominionLogger = DominionLogger()
 ) {
-
 
     var concede = false
 
@@ -47,6 +48,13 @@ class GameState(
         playerOne
     }
 
+    val choicePlayer
+        get() = if(context == ChoiceContext.MILITIA) {
+        otherPlayer
+    } else {
+        currentPlayer
+    }
+
     val currentPhase: TurnPhase
         get() = status.second
 
@@ -60,44 +68,8 @@ class GameState(
     }
 
     fun next() {
-        when(currentPhase) {
-            TurnPhase.ACTION -> {
-                turns += 1
-                currentPlayer.buys = 1
-                currentPlayer.coins = 0
-                currentPlayer.actions = 1
-                val decision = currentPlayer.getDecision(this, ChoiceContext.ACTION)
-                currentPlayer.makeDecision(this, ChoiceContext.ACTION, decision)
-            }
-            TurnPhase.BUY -> {
-                currentPlayer.coins += currentPlayer.hand.filter { it.type == CardType.TREASURE}.sumOf { it.addCoins }
-                val decision = currentPlayer.getDecision(this, ChoiceContext.BUY)
-                currentPlayer.makeDecision(this, ChoiceContext.BUY, decision)
-            }
-        }
-    }
-
-    fun nextContext(): ChoiceContext {
-        when(currentPhase) {
-            TurnPhase.ACTION -> {
-                turns += 1
-                currentPlayer.buys = 1
-                currentPlayer.coins = 0
-                currentPlayer.actions = 1
-                return if (currentPlayer.hand.none { it.type == CardType.ACTION }) {
-                    // skip if there are no actions to do
-                    currentPlayer.coins += currentPlayer.hand.filter { it.type == CardType.TREASURE}.sumOf { it.addCoins }
-                    ChoiceContext.BUY
-                } else {
-                    ChoiceContext.ACTION
-                }
-
-            }
-            TurnPhase.BUY -> {
-                currentPlayer.coins += currentPlayer.hand.filter { it.type == CardType.TREASURE}.sumOf { it.addCoins }
-                return ChoiceContext.BUY
-            }
-        }
+        val decision = choicePlayer.getDecision(this, context)
+        choicePlayer.makeDecision(this, context, decision)
     }
 
 }

@@ -1,4 +1,6 @@
 import engine.player.*
+import engine.player.policies.MCTSPolicy
+import engine.player.policies.badWitchPolicy
 
 fun main(args: Array<String>) {
 
@@ -11,12 +13,13 @@ fun main(args: Array<String>) {
     var totalPlayouts = 0
     var totalDecisions = 0
 
-    val totalGames = 20
+    val totalGames = 10
+    val games: MutableList<GameState> = mutableListOf()
 
     for(i in 1..totalGames) {
         val playerOne = Player(playerOneName, badWitchPolicy)
         val playerTwo = Player(playerTwoName, MCTSPolicy)
-        val gameState = GameState(playerOne, playerTwo)
+        val gameState = GameState(playerOne, playerTwo, verbose=true)
         gameState.initialize()
         while(!gameState.gameOver) {
             gameState.next()
@@ -28,6 +31,7 @@ fun main(args: Array<String>) {
         }
         totalPlayouts += gameState.logger.playouts
         totalDecisions += gameState.logger.decisions
+        games.add(gameState)
     }
 
     print("\nAverage number of playouts per decision: " + (totalPlayouts / totalDecisions) + "\n")

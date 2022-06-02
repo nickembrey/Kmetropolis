@@ -1,7 +1,9 @@
-package engine.player
+package engine.player.policies
 
 import GameState
 import engine.*
+import engine.player.Player
+import engine.player.randomPolicy
 import kotlin.math.log2
 
 class MCTSTreeNode(val parent: MCTSTreeNode? = null, val decision: Int? = null) {
@@ -47,7 +49,14 @@ val MCTSPolicy = fun(
             currentState.playerTwo.discard.toMutableList()
         )
         val status = Pair(playerTwo, currentState.status.second)
-        return GameState(playerOne, playerTwo, currentState.board.toMutableMap(), currentState.turns, status, noShuffle=true)
+        return GameState(
+            playerOne,
+            playerTwo,
+            currentState.board.toMutableMap(),
+            currentState.turns,
+            status,
+            context = currentState.context,
+            noShuffle=true)
     }
 
     fun rollout(simState: GameState): Int {
@@ -62,7 +71,7 @@ val MCTSPolicy = fun(
         }
     }
 
-    fun forward(node: MCTSTreeNode, simState: GameState, simChoice: Choice, simContext: ChoiceContext) {
+    fun forward(node: MCTSTreeNode, simState: GameState, simChoice: Choice) {
         if(node.children.size > 0) {
             val simDecision = if(node.children.any { it.simulations == 0 }) {
                 node.children.indexOf(node.children.first { it.simulations == 0 })
@@ -72,9 +81,14 @@ val MCTSPolicy = fun(
                 }
                 menu.indexOf(menu.maxOf { it })
             }
-            simState.currentPlayer.makeDecision(simState, simContext, Decision(simChoice, simContext, simDecision))
-            val nextSimContext = simState.nextContext()
-            forward(node.children[simDecision], simState, nextSimContext.getChoice(simState, simState.currentPlayer), nextSimContext)
+            simState.choicePlayer.makeDecision(simState, simState.context, Decision(simChoice, simState.context, simDecision))
+            var nextChoice = simState.context.getChoice(simState, simState.choicePlayer)
+            while(nextChoice.isEmpty()) {
+                simState.choicePlayer.makeDecision(simState, simState.context, Decision(nextChoice, simState.context, null))
+                nextChoice = simState.context.getChoice(simState, simState.choicePlayer)
+            }
+
+            forward(node.children[simDecision], simState, simState.context.getChoice(simState, simState.choicePlayer))
         } else {
             node.simulations = 1
             node.wins = rollout(simState)
@@ -96,7 +110,7 @@ val MCTSPolicy = fun(
     val end = System.currentTimeMillis() + seconds * 1000
     while (System.currentTimeMillis() < end) {
         count += 1
-        forward(root, getNewState(state), choice, context)
+        forward(root, getNewState(state), choice)
     }
     println(count)
 
