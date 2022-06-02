@@ -28,7 +28,8 @@ class GameState(
     ),
     var turns: Int = 0,
     var status: Pair<Player, TurnPhase> = Pair(playerOne, TurnPhase.ACTION),
-    val noShuffle: Boolean = false
+    val noShuffle: Boolean = false,
+    val logger: DominionLogger = DominionLogger()
 ) {
 
 

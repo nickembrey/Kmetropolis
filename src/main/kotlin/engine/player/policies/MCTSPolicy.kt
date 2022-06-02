@@ -15,9 +15,14 @@ class MCTSTreeNode(val parent: MCTSTreeNode? = null, val decision: Int? = null) 
     }
 }
 
-val MCTSPolicy = fun(state: GameState, player: Player, context: ChoiceContext, choice: Choice): Decision {
+val MCTSPolicy = fun(
+    state: GameState,
+    player: Player,
+    context: ChoiceContext,
+    choice: Choice
+): Decision {
 
-    val numPlayouts = 10000
+    val seconds = 1
     val cParameter = 1.4
     val root = MCTSTreeNode()
     for(possibleDecision in choice.indices) {
@@ -27,7 +32,7 @@ val MCTSPolicy = fun(state: GameState, player: Player, context: ChoiceContext, c
     fun getNewState(currentState: GameState): GameState {
         val playerOne = Player(
             "Opponent",
-            badWitchPolicy,
+            randomPolicy,
             currentState.playerOne.deck.toMutableList(),
             currentState.playerOne.hand.toMutableList(),
             currentState.playerOne.inPlay.toMutableList(),
@@ -35,7 +40,7 @@ val MCTSPolicy = fun(state: GameState, player: Player, context: ChoiceContext, c
         )
         val playerTwo = Player(
             "Self",
-            badWitchPolicy,
+            randomPolicy,
             currentState.playerTwo.deck.toMutableList(),
             currentState.playerTwo.hand.toMutableList(),
             currentState.playerTwo.inPlay.toMutableList(),
@@ -87,9 +92,16 @@ val MCTSPolicy = fun(state: GameState, player: Player, context: ChoiceContext, c
         }
     }
 
-    for(i in 1..numPlayouts) {
+    var count = 0
+    val end = System.currentTimeMillis() + seconds * 1000
+    while (System.currentTimeMillis() < end) {
+        count += 1
         forward(root, getNewState(state), choice, context)
     }
+    println(count)
+
+    state.logger.playouts += count
+    state.logger.decisions += 1
 
     val simulations: List<Int> = root.children.map { it.simulations }
     val maxSim = simulations.maxOf { it }

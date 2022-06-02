@@ -1,12 +1,14 @@
 package engine.player
 
 import GameState
-import engine.Card
-import engine.Choice
-import engine.ChoiceContext
-import engine.Decision
+import engine.*
 
-val badWitchPolicy = fun(state: GameState, player: Player, context: ChoiceContext, choice: Choice): Decision {
+val badWitchPolicy = fun(
+    state: GameState,
+    player: Player,
+    context: ChoiceContext,
+    choice: Choice
+): Decision {
     return when(context) {
         ChoiceContext.ACTION -> Decision(choice, context, 0)
         ChoiceContext.BUY -> {

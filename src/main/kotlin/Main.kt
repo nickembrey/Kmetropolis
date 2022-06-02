@@ -8,7 +8,12 @@ fun main(args: Array<String>) {
     val playerOneName = "Bad Witch"
     val playerTwoName = "MCTS Player"
 
-    for(i in 1..100) {
+    var totalPlayouts = 0
+    var totalDecisions = 0
+
+    val totalGames = 20
+
+    for(i in 1..totalGames) {
         val playerOne = Player(playerOneName, badWitchPolicy)
         val playerTwo = Player(playerTwoName, MCTSPolicy)
         val gameState = GameState(playerOne, playerTwo)
@@ -21,8 +26,14 @@ fun main(args: Array<String>) {
         } else if(gameState.playerTwo.vp > gameState.playerOne.vp) {
             playerTwoWins += 1
         }
+        totalPlayouts += gameState.logger.playouts
+        totalDecisions += gameState.logger.decisions
     }
+
+    print("\nAverage number of playouts per decision: " + (totalPlayouts / totalDecisions) + "\n")
 
     print("\n$playerOneName: $playerOneWins\n")
     print("\n$playerTwoName: $playerTwoWins\n\n")
+    val ties = totalGames - playerOneWins - playerTwoWins
+    print("\nTies: $ties\n\n")
 }
