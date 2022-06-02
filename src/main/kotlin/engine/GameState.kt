@@ -27,26 +27,24 @@ class GameState(
         Card.CURSE to 10,
     ),
     var turns: Int = 0,
-    var status: Pair<Player, TurnPhase> = Pair(playerOne, TurnPhase.ACTION),
     var context: ChoiceContext = ChoiceContext.ACTION,
     val noShuffle: Boolean = false,
     val verbose: Boolean = false,
     val logger: DominionLogger = DominionLogger()
 ) {
 
+    var currentPlayer: Player = playerOne
+    val otherPlayer: Player
+        get() = if(currentPlayer == playerOne) {
+            playerTwo
+        } else {
+            playerOne
+        }
+
     var concede = false
 
     val gameOver
         get() = board.filter { it.value == 0}.size >= 3 || board[Card.PROVINCE] == 0 || turns > 100 || concede
-
-    val currentPlayer
-        get() = status.first
-    val otherPlayer
-        get() = if (currentPlayer == playerOne) {
-        playerTwo
-    } else {
-        playerOne
-    }
 
     val choicePlayer
         get() = if(context == ChoiceContext.MILITIA) {
@@ -54,9 +52,6 @@ class GameState(
     } else {
         currentPlayer
     }
-
-    val currentPhase: TurnPhase
-        get() = status.second
 
     fun initialize() {
         playerOne.deck.shuffle()

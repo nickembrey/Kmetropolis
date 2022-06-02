@@ -46,11 +46,16 @@ data class Player(
         when (context) {
             ChoiceContext.ACTION -> {
                 if(decision.choice.isNotEmpty() && decision.index != null) {
-                    playCard(state, decision)
+                    try {
+                        playCard(state, decision)
+                    } catch(e: Exception) {
+                        print("Stop!")
+                    }
+
                 } else {
+                    // This is standing in for the treasure phase
                     coins += hand.filter { it.type == CardType.TREASURE}.sumOf { it.addCoins }
                     state.context = ChoiceContext.BUY
-                    state.status = Pair(this, TurnPhase.BUY)
                 }
             }
             ChoiceContext.BUY -> {

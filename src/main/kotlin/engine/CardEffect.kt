@@ -19,7 +19,7 @@ enum class CardEffect(val activate: (GameState) -> GameState) {
         }
     }),
     ChapelEffect( fun (state: GameState): GameState = state.apply {
-        state.context = engine.ChoiceContext.CHAPEL
+        state.context = ChoiceContext.CHAPEL
     }),
     WorkshopEffect( fun (state: GameState): GameState = state.apply {
         state.context = engine.ChoiceContext.WORKSHOP

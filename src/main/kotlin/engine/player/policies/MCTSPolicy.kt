@@ -48,15 +48,13 @@ val MCTSPolicy = fun(
             currentState.playerTwo.inPlay.toMutableList(),
             currentState.playerTwo.discard.toMutableList()
         )
-        val status = Pair(playerTwo, currentState.status.second)
         return GameState(
             playerOne,
             playerTwo,
             currentState.board.toMutableMap(),
             currentState.turns,
-            status,
-            context = currentState.context,
-            noShuffle=true)
+            currentState.context,
+            noShuffle=true).apply { currentPlayer = playerTwo }
     }
 
     fun rollout(simState: GameState): Int {
@@ -77,7 +75,8 @@ val MCTSPolicy = fun(
                 node.children.indexOf(node.children.first { it.simulations == 0 })
             } else {
                 val menu: List<Double> = node.children.map {
-                    (it.wins.toDouble() / it.simulations.toDouble()) + ( cParameter * kotlin.math.sqrt(log2(node.simulations.toDouble()) / it.simulations))
+                    (it.wins.toDouble() / it.simulations) +
+                            (cParameter * kotlin.math.sqrt(log2(node.simulations.toDouble()) / it.simulations))
                 }
                 menu.indexOf(menu.maxOf { it })
             }

@@ -68,7 +68,7 @@ fun endTurn(state: GameState) {
     currentPlayer.coins = 0
     currentPlayer.actions = 1
     state.turns += 1
-    state.status = Pair(state.otherPlayer, TurnPhase.ACTION)
+    state.currentPlayer = state.otherPlayer
     state.context = ChoiceContext.ACTION
 }
 
