@@ -1,6 +1,6 @@
-import engine.player.*
-import engine.player.policies.MCTSPolicy
-import engine.player.policies.badWitchPolicy
+import engine.Player
+import policies.MCTSPolicy
+import policies.badWitchPolicy
 
 fun main(args: Array<String>) {
 

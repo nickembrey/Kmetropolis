@@ -1,8 +1,8 @@
-package engine.player.policies
+package policies
 
 import GameState
 import engine.*
-import engine.player.Player
+import engine.Player
 import engine.player.randomPolicy
 import kotlin.math.log2
 

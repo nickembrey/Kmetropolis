@@ -1,10 +1,7 @@
 package engine.player
 
 import GameState
-import engine.Card
-import engine.Choice
-import engine.ChoiceContext
-import engine.Decision
+import engine.*
 
 val singleWitchPolicy = fun(state: GameState, player: Player, context: ChoiceContext, choice: Choice): Decision {
     return when(context) {

@@ -1,7 +1,6 @@
-package engine.player
+package engine
 
 import GameState
-import engine.*
 
 data class Player(
     val name: String,
