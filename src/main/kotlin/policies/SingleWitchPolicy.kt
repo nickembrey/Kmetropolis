@@ -1,4 +1,4 @@
-package engine.player
+package policies
 
 import GameState
 import engine.*

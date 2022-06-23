@@ -3,19 +3,8 @@ package policies
 import GameState
 import engine.*
 import engine.Player
-import engine.player.randomPolicy
+import mcts.MCTSTreeNode
 import kotlin.math.log2
-
-class MCTSTreeNode(val parent: MCTSTreeNode? = null, val decision: Int? = null) {
-    var wins: Int = 0
-    var simulations: Int = 0
-
-    var children: MutableList<MCTSTreeNode> = mutableListOf()
-
-    fun addChild(decision: Int) {
-        children.add(MCTSTreeNode(this, decision))
-    }
-}
 
 val MCTSPolicy = fun(
     state: GameState,
