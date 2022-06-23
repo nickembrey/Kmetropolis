@@ -33,25 +33,20 @@ data class Player(
     val vp
         get() = allCards.sumOf { it.vp }
 
-    fun getDecision(state: GameState, context: ChoiceContext): Decision {
-        val choice = context.getChoice(state, this)
+    fun getDecision(state: GameState): Decision {
+        val choice = state.context.getChoice(state, this)
         return if(choice.isNotEmpty()) {
-            policy(state, this, context, choice)
+            policy(state, this, state.context, choice)
         } else {
-            Decision(choice, context, null)
+            Decision(choice, state.context, null)
         }
     }
 
-    fun makeDecision(state: GameState, context: ChoiceContext, decision: Decision): GameState {
-        when (context) {
+    fun makeDecision(state: GameState, decision: Decision): GameState {
+        when (state.context) {
             ChoiceContext.ACTION -> {
                 if(decision.choice.isNotEmpty() && decision.index != null) {
-                    try {
-                        playCard(state, decision)
-                    } catch(e: Exception) {
-                        print("Stop!")
-                    }
-
+                    playCard(state, decision)
                 } else {
                     // This is standing in for the treasure phase
                     coins += hand.filter { it.type == CardType.TREASURE}.sumOf { it.addCoins }

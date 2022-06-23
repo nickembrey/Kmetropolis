@@ -10,7 +10,7 @@ enum class CardEffect(val activate: (GameState) -> GameState) {
         }
     }),
     MilitiaEffect( fun (state: GameState): GameState = state.apply {
-        state.context = engine.ChoiceContext.MILITIA
+        state.context = ChoiceContext.MILITIA
     }),
     MoneylenderEffect( fun (state: GameState): GameState = state.apply {
         if(currentPlayer.hand.contains(Card.COPPER)) {
@@ -22,6 +22,6 @@ enum class CardEffect(val activate: (GameState) -> GameState) {
         state.context = ChoiceContext.CHAPEL
     }),
     WorkshopEffect( fun (state: GameState): GameState = state.apply {
-        state.context = engine.ChoiceContext.WORKSHOP
+        state.context = ChoiceContext.WORKSHOP
     })
 }

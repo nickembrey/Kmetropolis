@@ -80,10 +80,10 @@ val MCTSPolicy = fun(
                 }
                 menu.indexOf(menu.maxOf { it })
             }
-            simState.choicePlayer.makeDecision(simState, simState.context, Decision(simChoice, simState.context, simDecision))
+            simState.choicePlayer.makeDecision(simState, Decision(simChoice, simState.context, simDecision))
             var nextChoice = simState.context.getChoice(simState, simState.choicePlayer)
             while(nextChoice.isEmpty()) {
-                simState.choicePlayer.makeDecision(simState, simState.context, Decision(nextChoice, simState.context, null))
+                simState.choicePlayer.makeDecision(simState, Decision(nextChoice, simState.context, null))
                 nextChoice = simState.context.getChoice(simState, simState.choicePlayer)
             }
 

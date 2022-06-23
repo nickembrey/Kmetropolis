@@ -26,7 +26,7 @@ val simpleSimulatorPolicy = fun(state: GameState, player: Player, context: Choic
             )
             val simState = GameState(playerOne, playerTwo, state.board.toMutableMap(), state.turns)
             // NOTE we are assuming player two
-            playerTwo.makeDecision(simState, context, Decision(choice, context, possibleDecision))
+            playerTwo.makeDecision(simState, Decision(choice, context, possibleDecision))
             while(!simState.gameOver) {
                 simState.next()
             }

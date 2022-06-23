@@ -63,8 +63,8 @@ class GameState(
     }
 
     fun next() {
-        val decision = choicePlayer.getDecision(this, context)
-        choicePlayer.makeDecision(this, context, decision)
+        val decision = choicePlayer.getDecision(this)
+        choicePlayer.makeDecision(this, decision)
     }
 
 }
