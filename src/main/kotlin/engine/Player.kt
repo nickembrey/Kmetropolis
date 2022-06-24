@@ -2,6 +2,7 @@ package engine
 
 data class Player(
     val name: String,
+    val playerNumber: PlayerNumber,
     val policy: (GameState, Player, ChoiceContext, Choice) -> Decision,
     var deck: MutableList<Card> = mutableListOf(
         Card.COPPER,

@@ -9,6 +9,7 @@ val simpleSimulatorPolicy = fun(state: GameState, player: Player, context: Choic
         for(possibleDecision in choice.indices) {
             val playerOne = Player(
                 "Random 1",
+                PlayerNumber.PlayerOne,
                 randomPolicy,
                 state.playerOne.deck.toMutableList(),
                 state.playerOne.hand.toMutableList(),
@@ -17,6 +18,7 @@ val simpleSimulatorPolicy = fun(state: GameState, player: Player, context: Choic
             )
             val playerTwo = Player(
                 "Random 2",
+                PlayerNumber.PlayerTwo,
                 randomPolicy,
                 state.playerTwo.deck.toMutableList(),
                 state.playerTwo.hand.toMutableList(),

@@ -22,6 +22,7 @@ val MCTSPolicy = fun(
     fun getNewState(currentState: GameState): GameState {
         val playerOne = Player(
             "Opponent",
+            PlayerNumber.PlayerOne,
             randomPolicy,
             currentState.playerOne.deck.toMutableList(),
             currentState.playerOne.hand.toMutableList(),
@@ -30,6 +31,7 @@ val MCTSPolicy = fun(
         )
         val playerTwo = Player(
             "Self",
+            PlayerNumber.PlayerTwo,
             randomPolicy,
             currentState.playerTwo.deck.toMutableList(),
             currentState.playerTwo.hand.toMutableList(),
