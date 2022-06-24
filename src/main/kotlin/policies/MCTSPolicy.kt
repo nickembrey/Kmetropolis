@@ -3,6 +3,7 @@ package policies
 import engine.*
 import engine.Player
 import mcts.MCTSTreeNode
+import policies.rollout.randomPolicy
 import kotlin.math.log2
 
 val MCTSPolicy = fun(

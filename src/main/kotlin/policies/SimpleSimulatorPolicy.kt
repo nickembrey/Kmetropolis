@@ -1,6 +1,7 @@
 package policies
 
 import engine.*
+import policies.rollout.randomPolicy
 
 val simpleSimulatorPolicy = fun(state: GameState, player: Player, context: ChoiceContext, choice: Choice): Decision {
     val scores = (choice.indices).zip(MutableList(choice.size) { 0 })
