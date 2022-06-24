@@ -7,6 +7,7 @@ import engine.PlayerNumber
 class MCTSTreeNode(val parent: MCTSTreeNode? = null, val decision: Int? = null, val player: PlayerNumber? = null) {
     // TODO: maybe we should get rid of one of these or do something clever to unify them
     var wins: Int = 0
+    var score: Double = 0.0
     var simulations: Int = 0
 
     var children: MutableList<MCTSTreeNode> = mutableListOf()

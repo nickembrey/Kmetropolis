@@ -1,25 +1,30 @@
 import engine.GameState
 import engine.Player
+import engine.PlayerNumber
 import policies.MCTSPolicy
 import policies.badWitchPolicy
+import policies.jansen_tollisen.UCTorigPolicy
+
+// TODO: directory for all policies so imports aren't constantly changing
 
 fun main(args: Array<String>) {
 
     var playerOneWins = 0
     var playerTwoWins = 0
 
+    // TODO: names should always be just the policy name.
     val playerOneName = "Bad Witch"
     val playerTwoName = "MCTS Player"
 
     var totalPlayouts = 0
     var totalDecisions = 0
 
-    val totalGames = 1
+    val totalGames = 10
     val games: MutableList<GameState> = mutableListOf()
 
     for(i in 1..totalGames) {
-        val playerOne = Player(playerOneName, badWitchPolicy)
-        val playerTwo = Player(playerTwoName, MCTSPolicy)
+        val playerOne = Player(playerOneName, PlayerNumber.PlayerOne, badWitchPolicy)
+        val playerTwo = Player(playerTwoName, PlayerNumber.PlayerTwo, UCTorigPolicy)
         val gameState = GameState(playerOne, playerTwo, verbose=true)
         gameState.initialize()
         while(!gameState.gameOver) {

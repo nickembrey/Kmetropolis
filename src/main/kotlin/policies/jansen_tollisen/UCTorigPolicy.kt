@@ -1,25 +1,39 @@
-package policies
+package policies.jansen_tollisen
 
 import engine.*
 import engine.Player
 import mcts.MCTSTreeNode
 import policies.rollout.randomPolicy
-import kotlin.math.log2
+import kotlin.math.ln
 
-val MCTSPolicy = fun(
+val UCTorigPolicy = fun(
     state: GameState,
     player: Player,
     context: ChoiceContext,
     choice: Choice
 ): Decision {
 
-    val seconds = 1
-    val cParameter = 1.4
-    val root = MCTSTreeNode()
-    for(possibleDecision in choice.indices) {
-        root.addChild(possibleDecision)
+    // play action cards first (MPPAF)
+    if(context == ChoiceContext.ACTION && choice.isNotEmpty()) {
+        val actionCard = (choice as List<Card>).firstOrNull { it.addActions > 0 }
+        if (actionCard != null) {
+            return Decision(choice, context, choice.indexOf(actionCard))
+        }
     }
 
+    // TODO: pull out into settings either at Policy or Simulation level or both
+    val playerNumber = PlayerNumber.PlayerTwo
+    val seconds = 1
+    val cParameter = 0.7
+    val root = MCTSTreeNode(player = playerNumber)
+    for(possibleDecision in choice.indices) {
+        root.addChild(possibleDecision, playerNumber)
+    }
+
+
+
+    // Note that toMutableList is used below to create copies of the current state.
+    // TODO: this could be a bottleneck? think about it.
     fun getNewState(currentState: GameState): GameState {
         val playerOne = Player(
             "Opponent",
@@ -48,18 +62,28 @@ val MCTSPolicy = fun(
             noShuffle=true).apply { currentPlayer = playerTwo }
     }
 
-    fun rollout(simState: GameState): Int {
+    fun rollout(simState: GameState): Map<PlayerNumber, Double> {
+
+        // TODO: it shouldn't be the case that the policy is always playerTwo
 
         while(!simState.gameOver) {
             simState.next()
         }
 
-        // TODO: big bug! currently weighing moves that opponents make that are bad more highly!!
-        return if(simState.playerOne.vp > simState.playerTwo.vp) {
-            0
-        } else {
-            1
-        }
+        val playerOneVp = simState.playerOne.vp
+        val playerTwoVp = simState.playerTwo.vp
+
+
+        val playerOneScore = (if(playerOneVp > playerTwoVp) 1.0 else 0.0) +
+                (simState.playerOne.vp - simState.playerTwo.vp).toDouble() / 100.0
+        val playerTwoScore = (if(playerTwoVp > playerOneVp) 1.0 else 0.0) +
+                (simState.playerTwo.vp - simState.playerOne.vp).toDouble() / 100.0
+
+        // TODO: 100 is a magic number
+        return mapOf(
+            PlayerNumber.PlayerOne to playerOneScore,
+            PlayerNumber.PlayerTwo to playerTwoScore
+        )
     }
 
     fun forward(node: MCTSTreeNode, simState: GameState, simChoice: Choice) {
@@ -68,8 +92,8 @@ val MCTSPolicy = fun(
                 node.children.indexOf(node.children.first { it.simulations == 0 })
             } else {
                 val menu: List<Double> = node.children.map {
-                    (it.wins.toDouble() / it.simulations) +
-                            (cParameter * kotlin.math.sqrt(log2(node.simulations.toDouble()) / it.simulations))
+                    (it.score / it.simulations) +
+                            (cParameter * kotlin.math.sqrt(ln(node.simulations.toDouble()) / it.simulations))
                 }
                 menu.indexOf(menu.maxOf { it })
             }
@@ -82,17 +106,20 @@ val MCTSPolicy = fun(
 
             forward(node.children[simDecision], simState, simState.context.getChoice(simState, simState.choicePlayer))
         } else {
+
+            val rolloutResults = rollout(simState)
+
             node.simulations = 1
-            node.wins = rollout(simState)
+            node.score = rolloutResults[node.player!!]!!
             for(index in simChoice.indices) {
-                node.addChild(index)
+                node.addChild(index, simState.currentPlayer.playerNumber)
             }
 
             // backpropagation
             var current = node.parent
             while(current != null) {
+                current.score += rolloutResults[current.player]!!
                 current.simulations += 1
-                current.wins += node.wins
                 current = current.parent
             }
         }
@@ -104,15 +131,15 @@ val MCTSPolicy = fun(
         count += 1
         forward(root, getNewState(state), choice)
     }
-    println(count)
+    println(count) // TODO
 
     state.logger.playouts += count
     state.logger.decisions += 1
 
     val simulations: List<Int> = root.children.map { it.simulations }
     val maxSim = simulations.maxOf { it }
-    if(maxSim == 0) {
+    if(maxSim == 0) { // TODO: needs a comment
         state.concede = true
-    }
+    } // TODO: make sure that players can pick to play no action
     return Decision(choice, context, simulations.indexOf(maxSim) )
 }
