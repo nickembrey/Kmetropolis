@@ -1,6 +1,5 @@
-package policies
+package policies.rollout
 
-import GameState
 import engine.*
 
 val randomPolicy = fun(

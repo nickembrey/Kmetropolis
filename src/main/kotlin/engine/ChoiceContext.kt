@@ -1,6 +1,5 @@
 package engine
 
-import GameState
 import util.combinations
 
 enum class ChoiceContext {

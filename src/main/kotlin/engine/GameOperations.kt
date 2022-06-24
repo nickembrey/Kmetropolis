@@ -1,7 +1,5 @@
 package engine
 
-import GameState
-
 fun playCard(state: GameState, decision: Decision): GameState {
 
     val card = decision.choice[decision.index!!] as Card
@@ -42,7 +40,7 @@ fun shuffle(currentPlayer: Player, trueShuffle: Boolean = true) {
     }
 }
 
-fun buyCards(state: GameState, decision: Decision) {
+fun buyCards(state: GameState, decision: Decision) { // TODO:
     val cards = decision.choice[decision.index!!] as Map<Card, Int> // TODO:
 
     val candidates = cards.filter { it.value > 0 }

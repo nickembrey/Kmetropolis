@@ -1,7 +1,5 @@
 package engine
 
-import GameState
-
 data class Player(
     val name: String,
     val policy: (GameState, Player, ChoiceContext, Choice) -> Decision,

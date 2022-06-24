@@ -1,5 +1,4 @@
-import engine.*
-import engine.Player
+package engine
 
 class GameState(
     val playerOne: Player,

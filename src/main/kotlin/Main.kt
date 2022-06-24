@@ -1,3 +1,4 @@
+import engine.GameState
 import engine.Player
 import policies.MCTSPolicy
 import policies.badWitchPolicy

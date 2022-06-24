@@ -1,6 +1,5 @@
 package policies
 
-import GameState
 import engine.*
 
 val simpleSimulatorPolicy = fun(state: GameState, player: Player, context: ChoiceContext, choice: Choice): Decision {

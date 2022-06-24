@@ -1,6 +1,5 @@
 package policies
 
-import GameState
 import engine.*
 import engine.Player
 import mcts.MCTSTreeNode

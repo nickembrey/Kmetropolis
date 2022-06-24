@@ -1,7 +1,5 @@
 package engine
 
-import GameState
-
 enum class CardEffect(val activate: (GameState) -> GameState) {
     WitchEffect( fun (state: GameState): GameState = state.apply {
         if(state.board[Card.CURSE]!! > 0) {
