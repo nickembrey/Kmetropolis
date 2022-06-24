@@ -23,8 +23,8 @@ fun main(args: Array<String>) {
     val games: MutableList<GameState> = mutableListOf()
 
     for(i in 1..totalGames) {
-        val playerOne = Player(playerOneName, PlayerNumber.PlayerOne, badWitchPolicy)
-        val playerTwo = Player(playerTwoName, PlayerNumber.PlayerTwo, UCTorigPolicy)
+        val playerOne = Player(playerOneName, PlayerNumber.PlayerOne, ::badWitchPolicy)
+        val playerTwo = Player(playerTwoName, PlayerNumber.PlayerTwo, ::UCTorigPolicy)
         val gameState = GameState(playerOne, playerTwo, verbose=true)
         gameState.initialize()
         while(!gameState.gameOver) {

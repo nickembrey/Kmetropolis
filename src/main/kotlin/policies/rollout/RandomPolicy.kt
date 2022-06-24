@@ -2,11 +2,11 @@ package policies.rollout
 
 import engine.*
 
-val randomPolicy = fun(
+fun randomPolicy(
     state: GameState,
     player: Player,
     context: ChoiceContext,
-    choice: Choice
+    choices: CardChoices
 ): Decision {
-    return Decision(choice, context, choice.indices.random())
+    return Decision(choices.choices.indices.random())
 }

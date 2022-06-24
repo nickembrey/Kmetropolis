@@ -62,8 +62,9 @@ class GameState(
     }
 
     fun next() {
-        val decision = choicePlayer.getDecision(this)
-        choicePlayer.makeDecision(this, decision)
+        val choices = context.getCardChoices(this, choicePlayer)
+        val decision = choicePlayer.getDecision(this, choices)
+        choicePlayer.makeDecision(this, choices, decision) // TODO: I don't think we need this function, or it should be named differently
     }
 
 }

@@ -3,15 +3,17 @@ package policies
 import engine.*
 import engine.Player
 
-val badWitchPolicy = fun(
+fun badWitchPolicy(
     state: GameState,
-    player: Player,
+    player: Player, // TODO: does player ever get used by any policy?
     context: ChoiceContext,
-    choice: Choice
+    choices: CardChoices
 ): Decision {
     return when(context) {
-        ChoiceContext.ACTION -> Decision(choice, context, 0)
+        ChoiceContext.ACTION -> Decision(0)
+        ChoiceContext.TREASURE -> Decision(0)
         ChoiceContext.BUY -> {
+            val cardChoices = (choices as SingleCardChoices).choices
             val goldCards: Int = state.currentPlayer.allCards.filter { it == Card.GOLD }.size
             val witchCards = state.currentPlayer.allCards.filter { it == Card.WITCH }.size
             val provinceCards = state.currentPlayer.allCards.filter { it == Card.PROVINCE }.size
@@ -22,23 +24,23 @@ val badWitchPolicy = fun(
 
 
             return if(state.currentPlayer.coins >= 8 && goldCards > 0) {
-                Decision(choice, context, choice.indexOf(Card.PROVINCE))
+                Decision(cardChoices.indexOf(Card.PROVINCE))
             } else if (state.currentPlayer.coins >= 5 && witchCards == 0 && witchLeft > 0) {
-                Decision(choice, context, choice.indexOf(Card.WITCH))
+                Decision(cardChoices.indexOf(Card.WITCH))
             } else if (state.currentPlayer.coins >= 5 && provinceCards < 4 && duchyLeft > 0) {
-                Decision(choice, context, choice.indexOf(Card.DUCHY))
+                Decision(cardChoices.indexOf(Card.DUCHY))
             } else if (state.currentPlayer.coins >= 5 && provinceCards < 2 && estateLeft > 0) {
-                Decision(choice, context, choice.indexOf(Card.ESTATE))
+                Decision(cardChoices.indexOf(Card.ESTATE))
             } else if (state.currentPlayer.coins >= 6) {
-                Decision(choice, context, choice.indexOf(Card.GOLD))
+                Decision(cardChoices.indexOf(Card.GOLD))
             } else if (state.currentPlayer.coins >= 3) {
-                Decision(choice, context, choice.indexOf(Card.SILVER))
+                Decision(cardChoices.indexOf(Card.SILVER))
             } else {
-                Decision(choice, context, null)
+                Decision(cardChoices.indexOf(null))
             }
         }
         ChoiceContext.MILITIA -> {
-            Decision(choice, context, 0)
+            Decision(0)
         }
         ChoiceContext.WORKSHOP -> {
             throw NotImplementedError()

@@ -3,29 +3,27 @@ package policies.rollout.jansen_tollisen
 import engine.*
 import engine.Player
 
-val heuristicGreedyPolicy = fun(
+fun heuristicGreedyPolicy(
     state: GameState,
     player: Player,
     context: ChoiceContext,
-    choice: Choice
+    choices: CardChoices
 ): Decision {
     return when(context) {
         ChoiceContext.ACTION -> { // TODO: unchecked cast
 
-            // order by whether it has actions first, then by cost (MPPAF+)
+            // order by whether it has actions first, then by cost (MPPAF)
             // TODO: quick test
-            val index = if(choice.isNotEmpty()) {
-                val card = (choice as List<Card>).sortedWith(compareBy( { it.addActions }, { it.cost }))[0]
-                choice.indexOf(card)
-            } else {
-                0
-            }
-
-            Decision(choice, context, index)
+            val card = (choices.choices as List<Card>).sortedWith(compareBy( { it.addActions }, { it.cost }))[0] // TODO: unchecked cast
+            Decision(choices.choices.indexOf(card))
+        }
+        ChoiceContext.TREASURE -> {
+            Decision(0)
         }
         ChoiceContext.BUY -> { // TODO: unchecked cast
-            val card = (choice as List<Card>).filter { it != Card.CURSE }.sortedWith(compareBy { it.cost })[0]
-            Decision(choice, context, choice.indexOf(card))
+            // TODO: weird corner case where all coppers and all curses are gone?
+            val card = (choices as List<Card>).filter { it != Card.CURSE }.sortedWith(compareBy { it.cost })[0]
+            Decision(choices.indexOf(card))
         }
         ChoiceContext.MILITIA -> {
             throw NotImplementedError()

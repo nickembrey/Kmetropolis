@@ -3,28 +3,29 @@ package engine
 import util.combinations
 
 enum class ChoiceContext {
-    ACTION, BUY, CHAPEL, MILITIA, WORKSHOP;
+    ACTION, TREASURE, BUY, CHAPEL, MILITIA, WORKSHOP;
 
-    fun getChoice(state: GameState, player: Player): Choice {
+    fun getCardChoices(state: GameState, player: Player): CardChoices {
         return when(this) {
             ACTION -> if(player.actions > 0) {
-                player.hand.filter { it.type == CardType.ACTION }
+                SingleCardChoices(player.hand.filter { it.type == CardType.ACTION })
             } else {
-                listOf()
+                SingleCardChoices()
             }
-            BUY -> state.board.filter { it.value > 0 && player.coins >= it.key.cost }.keys.toList()
+            TREASURE -> SingleCardChoices(player.hand.filter { it.type == CardType.TREASURE })
+            BUY -> SingleCardChoices(state.board.filter { it.value > 0 && player.coins >= it.key.cost }.keys.toList())
             MILITIA -> {
                 if(player.hand.size > 3) {
-                    player.hand.combinations(player.hand.size - 3).toList()
+                    MultipleCardChoices(player.hand.combinations(player.hand.size - 3).toList())
                 } else {
-                    listOf()
+                    MultipleCardChoices()
                 }
             }
-            WORKSHOP -> state.board.filter { it.key.cost < 5 && it.value > 0 }.keys.toList()
-            CHAPEL -> ( player.hand.combinations(4) +
+            WORKSHOP -> SingleCardChoices(state.board.filter { it.key.cost < 5 && it.value > 0 }.keys.toList())
+            CHAPEL -> MultipleCardChoices(( player.hand.combinations(4) +
                     player.hand.combinations(3) +
                     player.hand.combinations(2) +
-                    player.hand.combinations(1)).toList()
+                    player.hand.combinations(1)).toList())
         }
     }
 }

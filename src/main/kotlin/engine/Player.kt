@@ -3,7 +3,7 @@ package engine
 data class Player(
     val name: String,
     val playerNumber: PlayerNumber,
-    val policy: (GameState, Player, ChoiceContext, Choice) -> Decision,
+    val policy: (GameState, Player, ChoiceContext, CardChoices) -> Decision,
     var deck: MutableList<Card> = mutableListOf(
         Card.COPPER,
         Card.COPPER,
@@ -31,45 +31,53 @@ data class Player(
     val vp
         get() = allCards.sumOf { it.vp }
 
-    fun getDecision(state: GameState): Decision {
-        val choice = state.context.getChoice(state, this)
-        return if(choice.isNotEmpty()) {
-            policy(state, this, state.context, choice)
-        } else {
-            Decision(choice, state.context, null)
-        }
+    fun getDecision(state: GameState, choices: CardChoices): Decision {
+        // TODO: these are all from state... seems redundant
+        // TODO: choices should never be empty
+        return policy(state, this, state.context, choices)
     }
 
-    fun makeDecision(state: GameState, decision: Decision): GameState {
+    fun makeDecision(state: GameState, choices: CardChoices, index: Decision): GameState {
         when (state.context) {
             ChoiceContext.ACTION -> {
-                if(decision.choice.isNotEmpty() && decision.index != null) {
-                    playCard(state, decision)
+                val cardChoices = choices as SingleCardChoices // TODO: see if there's a way to untangle this
+                if(cardChoices.choices.isNotEmpty()) {
+                    playActionCard(state, choices, index)
                 } else {
-                    // This is standing in for the treasure phase
-                    coins += hand.filter { it.type == CardType.TREASURE}.sumOf { it.addCoins }
-                    state.context = ChoiceContext.BUY
+                    state.context = ChoiceContext.TREASURE // TODO: this could be handled by an iterator
                 }
             }
-            ChoiceContext.BUY -> {
-                if(decision.index == null || buys == 0) {
-                    endTurn(state)
+            ChoiceContext.TREASURE -> {
+                val cardChoices = choices as SingleCardChoices // TODO: see if there's a way to untangle this
+                if(cardChoices.choices.isNotEmpty()) {
+                    playTreasureCard(state, choices, index)
                 } else {
-                    buyCard(state, decision.choice[decision.index] as Card)
+                    state.context = ChoiceContext.BUY
+                }
+                state.context = ChoiceContext.BUY
+            }
+            ChoiceContext.BUY -> {
+                val cardChoices = choices as SingleCardChoices // TODO: see if there's a way to untangle this
+                if(cardChoices.choices.isNotEmpty() && buys != 0) {
+                    buyCard(state, choices.choices[index.index]!!)   // TODO:
+                } else {
+                    endTurn(state)
                 }
             }
             ChoiceContext.CHAPEL -> {
-                trashCards(state.choicePlayer, decision, state.verbose)
+                val cardChoices = choices as MultipleCardChoices // TODO: see if there's a way to untangle this
+                trashCards(state.choicePlayer, cardChoices, index, state.verbose)
                 state.context = ChoiceContext.ACTION
             }
             ChoiceContext.MILITIA -> {
-                if(decision.index != null) {
-                    discardCards(state.choicePlayer, decision, state.verbose)
-                }
+                // TODO: make sure discardCards can handle getting empty list
+                val cardChoices = choices as MultipleCardChoices // TODO: see if there's a way to untangle this
+                discardCards(state.choicePlayer, cardChoices, index, state.verbose)
                 state.context = ChoiceContext.ACTION
             }
             ChoiceContext.WORKSHOP -> {
-                decideGainCard(state.choicePlayer, decision, state.verbose)
+                val cardChoices = choices as SingleCardChoices // TODO: see if there's a way to untangle this
+                decideGainCard(state.choicePlayer, cardChoices, index, state.verbose)
                 state.context = ChoiceContext.ACTION
             }
         }

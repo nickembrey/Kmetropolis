@@ -6,17 +6,17 @@ import mcts.MCTSTreeNode
 import policies.rollout.randomPolicy
 import kotlin.math.log2
 
-val MCTSPolicy = fun(
+fun MCTSPolicy(
     state: GameState,
     player: Player,
     context: ChoiceContext,
-    choice: Choice
+    choices: CardChoices
 ): Decision {
 
     val seconds = 1
     val cParameter = 1.4
     val root = MCTSTreeNode()
-    for(possibleDecision in choice.indices) {
+    for(possibleDecision in choices.choices.indices) {
         root.addChild(possibleDecision)
     }
 
@@ -24,7 +24,7 @@ val MCTSPolicy = fun(
         val playerOne = Player(
             "Opponent",
             PlayerNumber.PlayerOne,
-            randomPolicy,
+            ::randomPolicy,
             currentState.playerOne.deck.toMutableList(),
             currentState.playerOne.hand.toMutableList(),
             currentState.playerOne.inPlay.toMutableList(),
@@ -33,7 +33,7 @@ val MCTSPolicy = fun(
         val playerTwo = Player(
             "Self",
             PlayerNumber.PlayerTwo,
-            randomPolicy,
+            ::randomPolicy,
             currentState.playerTwo.deck.toMutableList(),
             currentState.playerTwo.hand.toMutableList(),
             currentState.playerTwo.inPlay.toMutableList(),
@@ -62,7 +62,7 @@ val MCTSPolicy = fun(
         }
     }
 
-    fun forward(node: MCTSTreeNode, simState: GameState, simChoice: Choice) {
+    fun forward(node: MCTSTreeNode, simState: GameState, simChoices: CardChoices) {
         if(node.children.size > 0) {
             val simDecision = if(node.children.any { it.simulations == 0 }) {
                 node.children.indexOf(node.children.first { it.simulations == 0 })
@@ -73,18 +73,13 @@ val MCTSPolicy = fun(
                 }
                 menu.indexOf(menu.maxOf { it })
             }
-            simState.choicePlayer.makeDecision(simState, Decision(simChoice, simState.context, simDecision))
-            var nextChoice = simState.context.getChoice(simState, simState.choicePlayer)
-            while(nextChoice.isEmpty()) {
-                simState.choicePlayer.makeDecision(simState, Decision(nextChoice, simState.context, null))
-                nextChoice = simState.context.getChoice(simState, simState.choicePlayer)
-            }
+            simState.choicePlayer.makeDecision(simState, simChoices, Decision(simDecision))
 
-            forward(node.children[simDecision], simState, simState.context.getChoice(simState, simState.choicePlayer))
+            forward(node.children[simDecision], simState, simState.context.getCardChoices(simState, simState.choicePlayer))
         } else {
             node.simulations = 1
             node.wins = rollout(simState)
-            for(index in simChoice.indices) {
+            for(index in simChoices.choices.indices) {
                 node.addChild(index)
             }
 
@@ -102,7 +97,7 @@ val MCTSPolicy = fun(
     val end = System.currentTimeMillis() + seconds * 1000
     while (System.currentTimeMillis() < end) {
         count += 1
-        forward(root, getNewState(state), choice)
+        forward(root, getNewState(state), choices)
     }
     println(count)
 
@@ -114,5 +109,5 @@ val MCTSPolicy = fun(
     if(maxSim == 0) {
         state.concede = true
     }
-    return Decision(choice, context, simulations.indexOf(maxSim) )
+    return Decision(simulations.indexOf(maxSim))
 }

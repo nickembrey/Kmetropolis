@@ -6,18 +6,19 @@ import mcts.MCTSTreeNode
 import policies.rollout.randomPolicy
 import kotlin.math.ln
 
-val UCTorigPolicy = fun(
+fun UCTorigPolicy(
     state: GameState,
     player: Player,
     context: ChoiceContext,
-    choice: Choice
+    choices: CardChoices
 ): Decision {
 
     // play action cards first (MPPAF)
-    if(context == ChoiceContext.ACTION && choice.isNotEmpty()) {
-        val actionCard = (choice as List<Card>).firstOrNull { it.addActions > 0 }
-        if (actionCard != null) {
-            return Decision(choice, context, choice.indexOf(actionCard))
+    if(context == ChoiceContext.ACTION && choices.isNotEmpty()) {
+        val cardChoices = choices as SingleCardChoices // TODO: see if there's a way to untangle this
+        val actionCard = cardChoices.choices.firstOrNull { it!!.addActions > 0 }   // TODO:
+        if (actionCard != null) { // TODO: will it ever be null?
+            return Decision(cardChoices.choices.indexOf(actionCard))
         }
     }
 
@@ -26,7 +27,7 @@ val UCTorigPolicy = fun(
     val seconds = 1
     val cParameter = 0.7
     val root = MCTSTreeNode(player = playerNumber)
-    for(possibleDecision in choice.indices) {
+    for(possibleDecision in choices.choices.indices) {
         root.addChild(possibleDecision, playerNumber)
     }
 
@@ -38,7 +39,7 @@ val UCTorigPolicy = fun(
         val playerOne = Player(
             "Opponent",
             PlayerNumber.PlayerOne,
-            randomPolicy,
+            ::randomPolicy,
             currentState.playerOne.deck.toMutableList(),
             currentState.playerOne.hand.toMutableList(),
             currentState.playerOne.inPlay.toMutableList(),
@@ -47,7 +48,7 @@ val UCTorigPolicy = fun(
         val playerTwo = Player(
             "Self",
             PlayerNumber.PlayerTwo,
-            randomPolicy,
+            ::randomPolicy,
             currentState.playerTwo.deck.toMutableList(),
             currentState.playerTwo.hand.toMutableList(),
             currentState.playerTwo.inPlay.toMutableList(),
@@ -86,32 +87,30 @@ val UCTorigPolicy = fun(
         )
     }
 
-    fun forward(node: MCTSTreeNode, simState: GameState, simChoice: Choice) {
+    fun forward(node: MCTSTreeNode, simState: GameState, simChoices: CardChoices) {
         if(node.children.size > 0) {
             val simDecision = if(node.children.any { it.simulations == 0 }) {
-                node.children.indexOf(node.children.first { it.simulations == 0 })
+                Decision(node.children.indexOf(node.children.first { it.simulations == 0 }))
             } else {
                 val menu: List<Double> = node.children.map {
                     (it.score / it.simulations) +
                             (cParameter * kotlin.math.sqrt(ln(node.simulations.toDouble()) / it.simulations))
                 }
-                menu.indexOf(menu.maxOf { it })
+                Decision(menu.indexOf(menu.maxOf { it }))
             }
-            simState.choicePlayer.makeDecision(simState, Decision(simChoice, simState.context, simDecision))
-            var nextChoice = simState.context.getChoice(simState, simState.choicePlayer)
-            while(nextChoice.isEmpty()) {
-                simState.choicePlayer.makeDecision(simState, Decision(nextChoice, simState.context, null))
-                nextChoice = simState.context.getChoice(simState, simState.choicePlayer)
-            }
+            simState.choicePlayer.makeDecision(simState, simChoices, simDecision)
+            var nextChoices = simState.context.getCardChoices(simState, simState.choicePlayer)
+            // TODO: need to make sure that whenever "makeDecision" or whatever it ends up being named gets called
+            //       that it moves the state to the next non-empty decision so we never get empty choices
 
-            forward(node.children[simDecision], simState, simState.context.getChoice(simState, simState.choicePlayer))
+            forward(node.children[simDecision.index], simState, simState.context.getCardChoices(simState, simState.choicePlayer))
         } else {
 
             val rolloutResults = rollout(simState)
 
             node.simulations = 1
             node.score = rolloutResults[node.player!!]!!
-            for(index in simChoice.indices) {
+            for(index in simChoices.choices.indices) {
                 node.addChild(index, simState.currentPlayer.playerNumber)
             }
 
@@ -129,7 +128,7 @@ val UCTorigPolicy = fun(
     val end = System.currentTimeMillis() + seconds * 1000
     while (System.currentTimeMillis() < end) {
         count += 1
-        forward(root, getNewState(state), choice)
+        forward(root, getNewState(state), choices)
     }
     println(count) // TODO
 
@@ -141,5 +140,5 @@ val UCTorigPolicy = fun(
     if(maxSim == 0) { // TODO: needs a comment
         state.concede = true
     } // TODO: make sure that players can pick to play no action
-    return Decision(choice, context, simulations.indexOf(maxSim) )
+    return Decision(simulations.indexOf(maxSim) )
 }
