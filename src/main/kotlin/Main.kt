@@ -19,7 +19,7 @@ fun main(args: Array<String>) {
     var totalPlayouts = 0
     var totalDecisions = 0
 
-    val totalGames = 10
+    val totalGames = 1000
     val games: MutableList<GameState> = mutableListOf()
 
     for(i in 1..totalGames) {

@@ -30,7 +30,4 @@ enum class Card(
     ESTATE(type = CardType.OTHER, cost = 2, vp = 1),
 
     CURSE(type = CardType.OTHER, cost = 0, vp = -1);
-
-
-
 }
