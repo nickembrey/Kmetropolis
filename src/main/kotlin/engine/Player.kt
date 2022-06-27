@@ -31,9 +31,4 @@ data class Player(
     val vp
         get() = allCards.sumOf { it.vp }
 
-    fun makeDecision(state: GameState, choices: CardChoices, index: DecisionIndex): GameState {
-
-        return state
-    }
-
 }
