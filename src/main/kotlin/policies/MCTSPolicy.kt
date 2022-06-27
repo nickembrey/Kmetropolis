@@ -11,13 +11,23 @@ fun MCTSPolicy(
     player: Player,
     context: ChoiceContext,
     choices: CardChoices
-): Decision {
+): Int {
+
+    if (context == ChoiceContext.TREASURE) {
+        val firstNotNull = choices.choices.filterNotNull().first()
+        return choices.choices.indexOf(firstNotNull)
+    }
 
     val seconds = 1
     val cParameter = 1.4
     val root = MCTSTreeNode()
-    for(possibleDecision in choices.choices.indices) {
-        root.addChild(possibleDecision)
+    for (possibleDecision in choices.choices.indices) {
+        root.addChild(
+            possibleDecision,
+            state.choicePlayer.playerNumber,
+            choices.choices[possibleDecision],
+            state.context
+        )
     }
 
     fun getNewState(currentState: GameState): GameState {
@@ -45,17 +55,32 @@ fun MCTSPolicy(
             currentState.board.toMutableMap(),
             currentState.turns,
             currentState.context,
-            noShuffle=true).apply { currentPlayer = playerTwo }
+            noShuffle = true
+        ).apply { currentPlayer = playerTwo }
     }
 
     fun rollout(simState: GameState): Int {
 
-        while(!simState.gameOver) {
-            simState.next()
+        while (!simState.gameOver) {
+            while (!simState.gameOver) {
+                if (simState.context == ChoiceContext.TREASURE) {
+                    val simChoices = getCardChoices(simState, simState.choicePlayer, context)
+                    val notNull = simChoices.choices.filterNotNull()
+                    val decisionIndex = if (notNull.isNotEmpty()) {
+                        simChoices.choices.indexOf(notNull.first())
+                    } else {
+                        0
+                    }
+
+                    simState.applyDecision(simChoices, decisionIndex)
+                } else {
+                    simState.makeNextDecision(::randomPolicy)
+                }
+            }
         }
 
         // TODO: big bug! currently weighing moves that opponents make that are bad more highly!!
-        return if(simState.playerOne.vp > simState.playerTwo.vp) {
+        return if (simState.playerOne.vp >= simState.playerTwo.vp) {
             0
         } else {
             1
@@ -63,8 +88,8 @@ fun MCTSPolicy(
     }
 
     fun forward(node: MCTSTreeNode, simState: GameState, simChoices: CardChoices) {
-        if(node.children.size > 0) {
-            val simDecision = if(node.children.any { it.simulations == 0 }) {
+        if (node.children.size > 0) { // TODO: this is all awk
+            val simDecisionIndex = if (node.children.any { it.simulations == 0 }) {
                 node.children.indexOf(node.children.first { it.simulations == 0 })
             } else {
                 val menu: List<Double> = node.children.map {
@@ -73,19 +98,19 @@ fun MCTSPolicy(
                 }
                 menu.indexOf(menu.maxOf { it })
             }
-            simState.choicePlayer.makeDecision(simState, simChoices, Decision(simDecision))
+            simState.applyDecision(simChoices, simDecisionIndex)
 
-            forward(node.children[simDecision], simState, simState.context.getCardChoices(simState, simState.choicePlayer))
+            forward(node.children[simDecisionIndex], simState, simState.getNextChoices())
         } else {
+            for (index in simChoices.choices.indices) {
+                node.addChild(index, simState.choicePlayer.playerNumber, simChoices.choices[index], simState.context)
+            }
             node.simulations = 1
             node.wins = rollout(simState)
-            for(index in simChoices.choices.indices) {
-                node.addChild(index)
-            }
 
             // backpropagation
             var current = node.parent
-            while(current != null) {
+            while (current != null) {
                 current.simulations += 1
                 current.wins += node.wins
                 current = current.parent
@@ -99,15 +124,16 @@ fun MCTSPolicy(
         count += 1
         forward(root, getNewState(state), choices)
     }
-    println(count)
+    println("Number of simulations: $count")
+    println("Wins at root: ${root.wins}")
+    if (root.wins == 0) {
+        state.concede = true
+    }
 
     state.logger.playouts += count
     state.logger.decisions += 1
 
     val simulations: List<Int> = root.children.map { it.simulations }
     val maxSim = simulations.maxOf { it }
-    if(maxSim == 0) {
-        state.concede = true
-    }
-    return Decision(simulations.indexOf(maxSim))
+    return simulations.indexOf(maxSim)
 }

@@ -1,5 +1,7 @@
 package engine
 
+import policies.Policy
+
 class GameState(
     val playerOne: Player,
     val playerTwo: Player,
@@ -61,10 +63,81 @@ class GameState(
         }
     }
 
-    fun next() {
-        val choices = context.getCardChoices(this, choicePlayer)
-        val decision = choicePlayer.getDecision(this, choices)
-        choicePlayer.makeDecision(this, choices, decision) // TODO: I don't think we need this function, or it should be named differently
+    fun nextPhase() {
+        when(context) {
+            ChoiceContext.ACTION -> {
+                context = ChoiceContext.TREASURE
+            }
+            ChoiceContext.TREASURE -> {
+                context = ChoiceContext.BUY
+            }
+            ChoiceContext.CHAPEL, ChoiceContext.MILITIA, ChoiceContext.WORKSHOP -> {
+                context = ChoiceContext.ACTION
+            }
+            ChoiceContext.BUY -> {
+                // turn end
+                currentPlayer.discard += currentPlayer.inPlay
+                currentPlayer.inPlay = mutableListOf()
+                currentPlayer.discard += currentPlayer.hand
+                currentPlayer.hand = mutableListOf()
+                for (i in 1..5) {
+                    drawCard(currentPlayer, !noShuffle)
+                }
+                currentPlayer.buys = 1
+                currentPlayer.coins = 0
+                currentPlayer.actions = 1
+                turns += 1
+                currentPlayer = otherPlayer
+                context = ChoiceContext.ACTION
+            }
+        }
+    }
+
+    fun getNextChoices(): CardChoices {
+        var choices = getCardChoices(this, choicePlayer, context)
+        while (choices.choices.size < 2) {
+            if(choices.choices.size == 1) {
+                applyDecision(choices, 0)
+            } else {
+                nextPhase()
+            }
+            choices = getCardChoices(this, choicePlayer, context)
+        }
+        return choices
+    }
+
+    // TODO: rename
+    fun makeNextDecision(policy: Policy) {
+        val choices = getNextChoices()
+        val decisionIndex = policy(this, choicePlayer, context, choices)
+        applyDecision(choices, decisionIndex)
+    }
+
+    // TODO: rename
+    fun applyDecision(choices: CardChoices, decisionIndex: DecisionIndex) {
+
+        val result = choices.choices[decisionIndex]
+        if(result == null) {
+            nextPhase()
+        } else {
+            when (context) {
+                ChoiceContext.ACTION -> playActionCard(this, choices as SingleCardChoices, decisionIndex)
+                ChoiceContext.TREASURE -> playTreasureCard(this, choices as SingleCardChoices, decisionIndex)
+                ChoiceContext.BUY -> buyCard(this, result as Card)
+                ChoiceContext.CHAPEL -> {
+                    trashCards(choicePlayer, choices as MultipleCardChoices, decisionIndex, verbose)
+                    nextPhase()
+                }
+                ChoiceContext.MILITIA -> {
+                    discardCards(choicePlayer, choices as MultipleCardChoices, decisionIndex, verbose)
+                    nextPhase()
+                }
+                ChoiceContext.WORKSHOP -> {
+                    decideGainCard(choicePlayer, choices as SingleCardChoices, decisionIndex, verbose)
+                    nextPhase()
+                }
+            }
+        }
     }
 
 }

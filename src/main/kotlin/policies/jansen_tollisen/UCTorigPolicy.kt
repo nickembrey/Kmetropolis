@@ -11,15 +11,19 @@ fun UCTorigPolicy(
     player: Player,
     context: ChoiceContext,
     choices: CardChoices
-): Decision {
+): DecisionIndex {
 
     // play action cards first (MPPAF)
-    if(context == ChoiceContext.ACTION && choices.isNotEmpty()) {
+    if(context == ChoiceContext.ACTION) {
         val cardChoices = choices as SingleCardChoices // TODO: see if there's a way to untangle this
-        val actionCard = cardChoices.choices.firstOrNull { it!!.addActions > 0 }   // TODO:
+        val actionCard = cardChoices.choices.filterNotNull().firstOrNull { it.addActions > 0 }   // TODO:
         if (actionCard != null) { // TODO: will it ever be null?
-            return Decision(cardChoices.choices.indexOf(actionCard))
+            return cardChoices.choices.indexOf(actionCard)
         }
+    }
+
+    if(context == ChoiceContext.TREASURE) {
+        return 0 // TODO: this is wrong -- see MCTSPolicy
     }
 
     // TODO: pull out into settings either at Policy or Simulation level or both
@@ -28,11 +32,11 @@ fun UCTorigPolicy(
     val cParameter = 0.7
     val root = MCTSTreeNode(player = playerNumber)
     for(possibleDecision in choices.choices.indices) {
-        root.addChild(possibleDecision, playerNumber)
+        root.addChild(possibleDecision, playerNumber, choice = choices.choices[possibleDecision])
     }
 
 
-
+    // TODO: remove subfunctions from here and in MCTS policy
     // Note that toMutableList is used below to create copies of the current state.
     // TODO: this could be a bottleneck? think about it.
     fun getNewState(currentState: GameState): GameState {
@@ -68,7 +72,7 @@ fun UCTorigPolicy(
         // TODO: it shouldn't be the case that the policy is always playerTwo
 
         while(!simState.gameOver) {
-            simState.next()
+            simState.makeNextDecision(::randomPolicy) // TODO: is this the right policy?
         }
 
         val playerOneVp = simState.playerOne.vp
@@ -88,22 +92,21 @@ fun UCTorigPolicy(
     }
 
     fun forward(node: MCTSTreeNode, simState: GameState, simChoices: CardChoices) {
+
         if(node.children.size > 0) {
-            val simDecision = if(node.children.any { it.simulations == 0 }) {
-                Decision(node.children.indexOf(node.children.first { it.simulations == 0 }))
+            val simDecisionIndex = if(node.children.any { it.simulations == 0 }) {
+                node.children.indexOf(node.children.first { it.simulations == 0 })
             } else {
                 val menu: List<Double> = node.children.map {
                     (it.score / it.simulations) +
                             (cParameter * kotlin.math.sqrt(ln(node.simulations.toDouble()) / it.simulations))
                 }
-                Decision(menu.indexOf(menu.maxOf { it }))
+                menu.indexOf(menu.maxOf { it })
             }
-            simState.choicePlayer.makeDecision(simState, simChoices, simDecision)
-            var nextChoices = simState.context.getCardChoices(simState, simState.choicePlayer)
-            // TODO: need to make sure that whenever "makeDecision" or whatever it ends up being named gets called
-            //       that it moves the state to the next non-empty decision so we never get empty choices
 
-            forward(node.children[simDecision.index], simState, simState.context.getCardChoices(simState, simState.choicePlayer))
+            simState.applyDecision(simChoices, simDecisionIndex)
+
+            forward(node.children[simDecisionIndex], simState, simState.getNextChoices())
         } else {
 
             val rolloutResults = rollout(simState)
@@ -111,7 +114,7 @@ fun UCTorigPolicy(
             node.simulations = 1
             node.score = rolloutResults[node.player!!]!!
             for(index in simChoices.choices.indices) {
-                node.addChild(index, simState.currentPlayer.playerNumber)
+                node.addChild(index, simState.currentPlayer.playerNumber, choice = simChoices.choices[index])
             }
 
             // backpropagation
@@ -140,5 +143,5 @@ fun UCTorigPolicy(
     if(maxSim == 0) { // TODO: needs a comment
         state.concede = true
     } // TODO: make sure that players can pick to play no action
-    return Decision(simulations.indexOf(maxSim) )
+    return simulations.indexOf(maxSim)
 }
