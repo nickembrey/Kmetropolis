@@ -5,28 +5,7 @@ import policies.Policy
 class GameState(
     val playerOne: Player,
     val playerTwo: Player,
-    val board: MutableMap<Card, Int> = mutableMapOf(
-        Card.FESTIVAL to 10,
-        Card.WITCH to 10,
-        Card.MARKET to 10,
-        Card.LABORATORY to 10,
-        Card.SMITHY to 10,
-        Card.MONEYLENDER to 10,
-        Card.MILITIA to 10,
-        Card.CHAPEL to 10,
-        Card.VILLAGE to 10,
-        Card.WORKSHOP to 10,
-
-        Card.GOLD to 30,
-        Card.SILVER to 40,
-        Card.COPPER to 46,
-
-        Card.PROVINCE to 8,
-        Card.DUCHY to 8,
-        Card.ESTATE to 8,
-
-        Card.CURSE to 10,
-    ),
+    val board: Board = defaultBoard,
     var turns: Int = 0,
     var context: ChoiceContext = ChoiceContext.ACTION,
     val noShuffle: Boolean = false,
@@ -96,14 +75,14 @@ class GameState(
     }
 
     fun getNextChoices(): CardChoices {
-        var choices = getCardChoices(this, choicePlayer, context)
+        var choices = getCardChoices(choicePlayer, board, context)
         while (choices.size < 2) {
             if(choices.size == 1) {
                 applyDecision(choices, 0)
             } else {
                 nextPhase()
             }
-            choices = getCardChoices(this, choicePlayer, context)
+            choices = getCardChoices(choicePlayer, board, context)
         }
         return choices
     }

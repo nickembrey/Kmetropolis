@@ -64,7 +64,7 @@ fun MCTSPolicy(
         while (!simState.gameOver) {
             while (!simState.gameOver) {
                 if (simState.context == ChoiceContext.TREASURE) {
-                    val simChoices = getCardChoices(simState, simState.choicePlayer, context)
+                    val simChoices = getCardChoices(simState.choicePlayer, simState.board, context)
                     val notNull = simChoices.filterNotNull()
                     val decisionIndex = if (notNull.isNotEmpty()) {
                         simChoices.indexOf(notNull.first())
