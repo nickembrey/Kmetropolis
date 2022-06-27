@@ -24,11 +24,11 @@ fun main(args: Array<String>) {
 
     for(i in 1..totalGames) {
         val playerOne = Player(playerOneName, PlayerNumber.PlayerOne, ::badWitchPolicy)
-        val playerTwo = Player(playerTwoName, PlayerNumber.PlayerTwo, ::UCTorigPolicy)
+        val playerTwo = Player(playerTwoName, PlayerNumber.PlayerTwo, ::MCTSPolicy)
         val gameState = GameState(playerOne, playerTwo, verbose=true)
         gameState.initialize()
         while(!gameState.gameOver) {
-            gameState.next()
+            gameState.makeNextDecision(gameState.choicePlayer.policy)
         }
         if(gameState.playerOne.vp > gameState.playerTwo.vp) {
             playerOneWins += 1

@@ -7,6 +7,6 @@ fun randomPolicy(
     player: Player,
     context: ChoiceContext,
     choices: CardChoices
-): Decision {
-    return Decision(choices.choices.indices.random())
+): DecisionIndex {
+    return choices.choices.indices.random()
 }

@@ -8,10 +8,10 @@ fun badWitchPolicy(
     player: Player, // TODO: does player ever get used by any policy?
     context: ChoiceContext,
     choices: CardChoices
-): Decision {
+): DecisionIndex {
     return when(context) {
-        ChoiceContext.ACTION -> Decision(0)
-        ChoiceContext.TREASURE -> Decision(0)
+        ChoiceContext.ACTION -> 0
+        ChoiceContext.TREASURE -> 0
         ChoiceContext.BUY -> {
             val cardChoices = (choices as SingleCardChoices).choices
             val goldCards: Int = state.currentPlayer.allCards.filter { it == Card.GOLD }.size
@@ -24,29 +24,23 @@ fun badWitchPolicy(
 
 
             return if(state.currentPlayer.coins >= 8 && goldCards > 0) {
-                Decision(cardChoices.indexOf(Card.PROVINCE))
+                cardChoices.indexOf(Card.PROVINCE)
             } else if (state.currentPlayer.coins >= 5 && witchCards == 0 && witchLeft > 0) {
-                Decision(cardChoices.indexOf(Card.WITCH))
+                cardChoices.indexOf(Card.WITCH)
             } else if (state.currentPlayer.coins >= 5 && provinceCards < 4 && duchyLeft > 0) {
-                Decision(cardChoices.indexOf(Card.DUCHY))
+                cardChoices.indexOf(Card.DUCHY)
             } else if (state.currentPlayer.coins >= 5 && provinceCards < 2 && estateLeft > 0) {
-                Decision(cardChoices.indexOf(Card.ESTATE))
+                cardChoices.indexOf(Card.ESTATE)
             } else if (state.currentPlayer.coins >= 6) {
-                Decision(cardChoices.indexOf(Card.GOLD))
+                cardChoices.indexOf(Card.GOLD)
             } else if (state.currentPlayer.coins >= 3) {
-                Decision(cardChoices.indexOf(Card.SILVER))
+                cardChoices.indexOf(Card.SILVER)
             } else {
-                Decision(cardChoices.indexOf(null))
+                cardChoices.indexOf(null)
             }
         }
-        ChoiceContext.MILITIA -> {
-            Decision(0)
-        }
-        ChoiceContext.WORKSHOP -> {
-            throw NotImplementedError()
-        }
-        ChoiceContext.CHAPEL -> {
-            throw NotImplementedError()
-        }
+        ChoiceContext.MILITIA -> 0
+        ChoiceContext.WORKSHOP -> throw NotImplementedError()
+        ChoiceContext.CHAPEL -> throw NotImplementedError()
     }
 }

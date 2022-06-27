@@ -9,7 +9,7 @@ fun epsilonHeuristicGreedyPolicy(
     player: Player,
     context: ChoiceContext,
     choices: CardChoices
-): Decision {
+): DecisionIndex {
 
     val epsilon = 15
 
