@@ -54,6 +54,8 @@ class GameState(
         currentPlayer
     }
 
+    var choiceCounter: Int = 0
+
     fun initialize() {
         playerOne.deck.shuffle()
         playerTwo.deck.shuffle()
@@ -95,8 +97,8 @@ class GameState(
 
     fun getNextChoices(): CardChoices {
         var choices = getCardChoices(this, choicePlayer, context)
-        while (choices.choices.size < 2) {
-            if(choices.choices.size == 1) {
+        while (choices.size < 2) {
+            if(choices.size == 1) {
                 applyDecision(choices, 0)
             } else {
                 nextPhase()
@@ -114,26 +116,32 @@ class GameState(
     }
 
     // TODO: rename
-    fun applyDecision(choices: CardChoices, decisionIndex: DecisionIndex) {
+    fun applyDecision(cardChoices: CardChoices, decisionIndex: DecisionIndex) {
 
-        val result = choices.choices[decisionIndex]
+        val result = cardChoices[decisionIndex]
         if(result == null) {
             nextPhase()
         } else {
             when (context) {
-                ChoiceContext.ACTION -> playActionCard(this, choices as SingleCardChoices, decisionIndex)
-                ChoiceContext.TREASURE -> playTreasureCard(this, choices as SingleCardChoices, decisionIndex)
-                ChoiceContext.BUY -> buyCard(this, result as Card)
+                ChoiceContext.ACTION -> playActionCard(this, cardChoices, decisionIndex)
+                ChoiceContext.TREASURE -> playTreasureCard(this, cardChoices, decisionIndex)
+                ChoiceContext.BUY -> buyCard(this, result)
                 ChoiceContext.CHAPEL -> {
-                    trashCards(choicePlayer, choices as MultipleCardChoices, decisionIndex, verbose)
-                    nextPhase()
+                    trashCard(choicePlayer, result, verbose)
+                    choiceCounter -= 1
+                    if(choiceCounter == 0) {
+                        nextPhase()
+                    }
                 }
                 ChoiceContext.MILITIA -> {
-                    discardCards(choicePlayer, choices as MultipleCardChoices, decisionIndex, verbose)
-                    nextPhase()
+                    discardCard(choicePlayer, result, verbose)
+                    choiceCounter -= 1
+                    if(choiceCounter == 0) {
+                        nextPhase()
+                    }
                 }
                 ChoiceContext.WORKSHOP -> {
-                    decideGainCard(choicePlayer, choices as SingleCardChoices, decisionIndex, verbose)
+                    gainCard(choicePlayer, result, verbose)
                     nextPhase()
                 }
             }

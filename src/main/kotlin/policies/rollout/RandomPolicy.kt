@@ -8,5 +8,5 @@ fun randomPolicy(
     context: ChoiceContext,
     choices: CardChoices
 ): DecisionIndex {
-    return choices.choices.indices.random()
+    return choices.indices.random()
 }

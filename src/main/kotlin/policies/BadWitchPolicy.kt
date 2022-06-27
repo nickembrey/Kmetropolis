@@ -7,13 +7,12 @@ fun badWitchPolicy(
     state: GameState,
     player: Player, // TODO: does player ever get used by any policy?
     context: ChoiceContext,
-    choices: CardChoices
+    cardChoices: CardChoices
 ): DecisionIndex {
     return when(context) {
         ChoiceContext.ACTION -> 0
         ChoiceContext.TREASURE -> 0
         ChoiceContext.BUY -> {
-            val cardChoices = (choices as SingleCardChoices).choices
             val goldCards: Int = state.currentPlayer.allCards.filter { it == Card.GOLD }.size
             val witchCards = state.currentPlayer.allCards.filter { it == Card.WITCH }.size
             val provinceCards = state.currentPlayer.allCards.filter { it == Card.PROVINCE }.size

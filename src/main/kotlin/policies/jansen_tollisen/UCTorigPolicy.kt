@@ -15,10 +15,9 @@ fun UCTorigPolicy(
 
     // play action cards first (MPPAF)
     if(context == ChoiceContext.ACTION) {
-        val cardChoices = choices as SingleCardChoices // TODO: see if there's a way to untangle this
-        val actionCard = cardChoices.choices.filterNotNull().firstOrNull { it.addActions > 0 }   // TODO:
+        val actionCard = choices.filterNotNull().firstOrNull { it.addActions > 0 }   // TODO:
         if (actionCard != null) { // TODO: will it ever be null?
-            return cardChoices.choices.indexOf(actionCard)
+            return choices.indexOf(actionCard)
         }
     }
 
@@ -31,8 +30,8 @@ fun UCTorigPolicy(
     val seconds = 1
     val cParameter = 0.7
     val root = MCTSTreeNode(player = playerNumber)
-    for(possibleDecision in choices.choices.indices) {
-        root.addChild(possibleDecision, playerNumber, choice = choices.choices[possibleDecision])
+    for(possibleDecision in choices.indices) {
+        root.addChild(possibleDecision, playerNumber, choice = choices[possibleDecision])
     }
 
 
@@ -113,8 +112,8 @@ fun UCTorigPolicy(
 
             node.simulations = 1
             node.score = rolloutResults[node.player!!]!!
-            for(index in simChoices.choices.indices) {
-                node.addChild(index, simState.currentPlayer.playerNumber, choice = simChoices.choices[index])
+            for(index in simChoices.indices) {
+                node.addChild(index, simState.currentPlayer.playerNumber, choice = simChoices[index])
             }
 
             // backpropagation

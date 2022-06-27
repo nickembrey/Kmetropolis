@@ -13,8 +13,8 @@ fun main(args: Array<String>) {
     var playerTwoWins = 0
 
     // TODO: names should always be just the policy name.
-    val playerOneName = "Bad Witch"
-    val playerTwoName = "MCTS Player"
+    val playerOneName = "Bad Witch 1"
+    val playerTwoName = "Bad Witch 2"
 
     var totalPlayouts = 0
     var totalDecisions = 0
@@ -24,7 +24,7 @@ fun main(args: Array<String>) {
 
     for(i in 1..totalGames) {
         val playerOne = Player(playerOneName, PlayerNumber.PlayerOne, ::badWitchPolicy)
-        val playerTwo = Player(playerTwoName, PlayerNumber.PlayerTwo, ::MCTSPolicy)
+        val playerTwo = Player(playerTwoName, PlayerNumber.PlayerTwo, ::badWitchPolicy)
         val gameState = GameState(playerOne, playerTwo, verbose=true)
         gameState.initialize()
         while(!gameState.gameOver) {
@@ -40,7 +40,12 @@ fun main(args: Array<String>) {
         games.add(gameState)
     }
 
-    print("\nAverage number of playouts per decision: " + (totalPlayouts / totalDecisions) + "\n")
+    if(totalPlayouts > 0) {
+        print("\nAverage number of playouts per decision: " + (totalPlayouts / totalDecisions) + "\n")
+    } else {
+        print("\nNo playouts")
+    }
+
 
     print("\n$playerOneName: $playerOneWins\n")
     print("\n$playerTwoName: $playerTwoWins\n\n")

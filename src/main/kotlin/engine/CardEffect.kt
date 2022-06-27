@@ -8,6 +8,7 @@ enum class CardEffect(val activate: (GameState) -> GameState) {
         }
     }),
     MilitiaEffect( fun (state: GameState): GameState = state.apply {
+        state.choiceCounter = state.choicePlayer.hand.size - 3
         state.context = ChoiceContext.MILITIA
     }),
     MoneylenderEffect( fun (state: GameState): GameState = state.apply {
@@ -17,6 +18,7 @@ enum class CardEffect(val activate: (GameState) -> GameState) {
         }
     }),
     ChapelEffect( fun (state: GameState): GameState = state.apply {
+        state.choiceCounter = 4
         state.context = ChoiceContext.CHAPEL
     }),
     WorkshopEffect( fun (state: GameState): GameState = state.apply {

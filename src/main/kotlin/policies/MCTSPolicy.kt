@@ -14,18 +14,18 @@ fun MCTSPolicy(
 ): Int {
 
     if (context == ChoiceContext.TREASURE) {
-        val firstNotNull = choices.choices.filterNotNull().first()
-        return choices.choices.indexOf(firstNotNull)
+        val firstNotNull = choices.filterNotNull().first()
+        return choices.indexOf(firstNotNull)
     }
 
     val seconds = 1
     val cParameter = 1.4
     val root = MCTSTreeNode()
-    for (possibleDecision in choices.choices.indices) {
+    for (possibleDecision in choices.indices) {
         root.addChild(
             possibleDecision,
             state.choicePlayer.playerNumber,
-            choices.choices[possibleDecision],
+            choices[possibleDecision],
             state.context
         )
     }
@@ -65,9 +65,9 @@ fun MCTSPolicy(
             while (!simState.gameOver) {
                 if (simState.context == ChoiceContext.TREASURE) {
                     val simChoices = getCardChoices(simState, simState.choicePlayer, context)
-                    val notNull = simChoices.choices.filterNotNull()
+                    val notNull = simChoices.filterNotNull()
                     val decisionIndex = if (notNull.isNotEmpty()) {
-                        simChoices.choices.indexOf(notNull.first())
+                        simChoices.indexOf(notNull.first())
                     } else {
                         0
                     }
@@ -102,8 +102,8 @@ fun MCTSPolicy(
 
             forward(node.children[simDecisionIndex], simState, simState.getNextChoices())
         } else {
-            for (index in simChoices.choices.indices) {
-                node.addChild(index, simState.choicePlayer.playerNumber, simChoices.choices[index], simState.context)
+            for (index in simChoices.indices) {
+                node.addChild(index, simState.choicePlayer.playerNumber, simChoices[index], simState.context)
             }
             node.simulations = 1
             node.wins = rollout(simState)

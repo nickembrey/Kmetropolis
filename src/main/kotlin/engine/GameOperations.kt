@@ -1,9 +1,9 @@
 package engine
 
 // TODO: this isn't the right place to merge the cardChoices and the decision
-fun playActionCard(state: GameState, cardChoices: SingleCardChoices, decisionIndex: DecisionIndex): GameState {
+fun playActionCard(state: GameState, cardChoices: CardChoices, decisionIndex: DecisionIndex): GameState {
 
-    val card = cardChoices.choices[decisionIndex]
+    val card = cardChoices[decisionIndex]
 
     if(state.verbose) {
         println("${state.currentPlayer.name} plays ${card!!.name}")   // TODO:
@@ -24,8 +24,8 @@ fun playActionCard(state: GameState, cardChoices: SingleCardChoices, decisionInd
 }
 
 // TODO: eh, just unify with playActionCard again
-fun playTreasureCard(state: GameState, cardChoices: SingleCardChoices, decisionIndex: DecisionIndex): GameState {
-    val card = cardChoices.choices[decisionIndex]
+fun playTreasureCard(state: GameState, cardChoices: CardChoices, decisionIndex: DecisionIndex): GameState {
+    val card = cardChoices[decisionIndex]
 
     if(state.verbose) {
         println("${state.currentPlayer.name} plays ${card!!.name}")   // TODO:
@@ -69,12 +69,6 @@ fun buyCard(state: GameState, card: Card, verbose: Boolean = false) {
     gainCard(state.currentPlayer, card, verbose)
 }
 
-fun decideGainCard(currentPlayer: Player, choices: SingleCardChoices, decisionIndex: DecisionIndex, verbose: Boolean = false) {
-    val card = choices.choices[decisionIndex]
-
-    gainCard(currentPlayer, card!!, verbose)   // TODO:
-}
-
 fun gainCard(currentPlayer: Player, card: Card, verbose: Boolean = false) {
     if(verbose) {
         println("${currentPlayer.name} gains ${card.name}")
@@ -82,26 +76,11 @@ fun gainCard(currentPlayer: Player, card: Card, verbose: Boolean = false) {
     currentPlayer.discard.add(card)
 }
 
-fun trashCards(currentPlayer: Player, choices: MultipleCardChoices, decisionIndex: DecisionIndex, verbose: Boolean = false) {
-// TODO: there should be an empty choice whenever this method is reached
-    val cards = choices.choices[decisionIndex]
-    for(card in cards) {
-        trashCard(currentPlayer, card, verbose = verbose)   // TODO:
-    }
-}
-
 fun trashCard(currentPlayer: Player, card: Card, verbose: Boolean = false) {
     if(verbose) {
         println("${currentPlayer.name} trashes ${card.name}")
     }
     currentPlayer.hand.remove(card)
-}
-
-fun discardCards(currentPlayer: Player, choices: MultipleCardChoices, decisionIndex: DecisionIndex, verbose: Boolean = false) {
-    val cards = choices.choices[decisionIndex]
-    for(card in cards) {
-        discardCard(currentPlayer, card, verbose)   // TODO:
-    }
 }
 
 fun discardCard(currentPlayer: Player, card: Card, verbose: Boolean = false) {

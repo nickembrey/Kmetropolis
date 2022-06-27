@@ -14,8 +14,8 @@ fun heuristicGreedyPolicy(
 
             // order by whether it has actions first, then by cost (MPPAF)
             // TODO: quick test
-            val card = (choices.choices as List<Card>).sortedWith(compareBy( { it.addActions }, { it.cost }))[0] // TODO: unchecked cast
-            choices.choices.indexOf(card)
+            val card = (choices as List<Card>).sortedWith(compareBy( { it.addActions }, { it.cost }))[0] // TODO: unchecked cast
+            choices.indexOf(card)
         }
         ChoiceContext.TREASURE -> 0 // TODO: this is wrong, see MCTS policy
         ChoiceContext.BUY -> { // TODO: unchecked cast
