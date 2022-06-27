@@ -18,7 +18,7 @@ fun playActionCard(state: GameState, cardChoices: CardChoices, decisionIndex: De
         drawCard(state.currentPlayer, !state.noShuffle)
     }
     for(effect in card.effectList) {
-        effect.activate(state)
+        effect(state)
     }
     return state
 }
@@ -36,7 +36,7 @@ fun playTreasureCard(state: GameState, cardChoices: CardChoices, decisionIndex: 
     state.currentPlayer.actions -= 1
     state.currentPlayer.coins += card.addCoins
     for(effect in card.effectList) {
-        effect.activate(state)
+        effect(state)
     }
     return state
 }
