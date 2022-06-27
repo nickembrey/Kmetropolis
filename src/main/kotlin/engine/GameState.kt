@@ -75,14 +75,14 @@ class GameState(
     }
 
     fun getNextChoices(): CardChoices {
-        var choices = getCardChoices(choicePlayer, board, context)
+        var choices = context.getCardChoices(choicePlayer, board)
         while (choices.size < 2) {
             if(choices.size == 1) {
                 applyDecision(choices, 0)
             } else {
                 nextPhase()
             }
-            choices = getCardChoices(choicePlayer, board, context)
+            choices = context.getCardChoices(choicePlayer, board)
         }
         return choices
     }
