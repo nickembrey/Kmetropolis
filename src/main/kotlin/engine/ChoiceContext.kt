@@ -1,5 +1,7 @@
 package engine
 
+typealias CardChoices = List<Card?>
+
 enum class ChoiceContext {
     ACTION, TREASURE, BUY, CHAPEL, MILITIA, WORKSHOP;
 
