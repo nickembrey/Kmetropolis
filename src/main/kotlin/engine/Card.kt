@@ -31,4 +31,6 @@ enum class Card(
 
     CURSE(type = CardType.OTHER, cost = 0, vp = -1);
 
+
+
 }

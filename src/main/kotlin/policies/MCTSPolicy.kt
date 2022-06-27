@@ -72,7 +72,9 @@ fun MCTSPolicy(
                         0
                     }
 
-                    simState.applyDecision(simChoices, decisionIndex)
+                    val card = simChoices[decisionIndex]!!
+
+                    simState.choicePlayer.makeCardDecision(card, simState)
                 } else {
                     simState.makeNextDecision(::randomPolicy)
                 }
@@ -98,7 +100,10 @@ fun MCTSPolicy(
                 }
                 menu.indexOf(menu.maxOf { it })
             }
-            simState.applyDecision(simChoices, simDecisionIndex)
+
+            val card = simChoices[simDecisionIndex]!!
+
+            simState.choicePlayer.makeCardDecision(card, simState)
 
             forward(node.children[simDecisionIndex], simState, simState.getNextChoices())
         } else {

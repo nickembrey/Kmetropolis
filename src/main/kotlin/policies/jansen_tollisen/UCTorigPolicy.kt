@@ -103,7 +103,9 @@ fun UCTorigPolicy(
                 menu.indexOf(menu.maxOf { it })
             }
 
-            simState.applyDecision(simChoices, simDecisionIndex)
+            val card = simChoices[simDecisionIndex]!!
+
+            simState.choicePlayer.makeCardDecision(card, simState)
 
             forward(node.children[simDecisionIndex], simState, simState.getNextChoices())
         } else {

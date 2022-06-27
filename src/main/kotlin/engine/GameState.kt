@@ -8,7 +8,7 @@ class GameState(
     val board: Board = defaultBoard,
     var turns: Int = 0,
     var context: ChoiceContext = ChoiceContext.ACTION,
-    val noShuffle: Boolean = false,
+    val noShuffle: Boolean = false, // TODO: confusing name
     val verbose: Boolean = false,
     val logger: DominionLogger = DominionLogger()
 ) {
@@ -38,10 +38,8 @@ class GameState(
     fun initialize() {
         playerOne.deck.shuffle()
         playerTwo.deck.shuffle()
-        for(i in 1..5) {
-            drawCard(playerOne, !noShuffle)
-            drawCard(playerTwo, !noShuffle)
-        }
+        playerOne.drawCards(5, !noShuffle)
+        playerTwo.drawCards(5, !noShuffle)
     }
 
     fun nextPhase() {
@@ -56,17 +54,7 @@ class GameState(
                 context = ChoiceContext.ACTION
             }
             ChoiceContext.BUY -> {
-                // turn end
-                currentPlayer.discard += currentPlayer.inPlay
-                currentPlayer.inPlay = mutableListOf()
-                currentPlayer.discard += currentPlayer.hand
-                currentPlayer.hand = mutableListOf()
-                for (i in 1..5) {
-                    drawCard(currentPlayer, !noShuffle)
-                }
-                currentPlayer.buys = 1
-                currentPlayer.coins = 0
-                currentPlayer.actions = 1
+                currentPlayer.endTurn(noShuffle)
                 turns += 1
                 currentPlayer = otherPlayer
                 context = ChoiceContext.ACTION
@@ -75,55 +63,32 @@ class GameState(
     }
 
     fun getNextChoices(): CardChoices {
-        var choices = context.getCardChoices(choicePlayer, board)
-        while (choices.size < 2) {
-            if(choices.size == 1) {
-                applyDecision(choices, 0)
+        var cardChoices = context.getCardChoices(choicePlayer, board)
+        while (cardChoices.size < 2) {
+            if(cardChoices.size == 1) {
+                val card = cardChoices[0]
+                if(card == null) {
+                    nextPhase()
+                } else {
+                    choicePlayer.makeCardDecision(card, this, verbose)
+                }
             } else {
                 nextPhase()
             }
-            choices = context.getCardChoices(choicePlayer, board)
+            cardChoices = context.getCardChoices(choicePlayer, board)
         }
-        return choices
+        return cardChoices
     }
 
     // TODO: rename
     fun makeNextDecision(policy: Policy) {
-        val choices = getNextChoices()
-        val decisionIndex = policy(this, choicePlayer, context, choices)
-        applyDecision(choices, decisionIndex)
-    }
-
-    // TODO: rename
-    fun applyDecision(cardChoices: CardChoices, decisionIndex: DecisionIndex) {
-
-        val result = cardChoices[decisionIndex]
-        if(result == null) {
+        val cardChoices = getNextChoices()
+        val decisionIndex = policy(this, choicePlayer, context, cardChoices)
+        val card = cardChoices[decisionIndex]
+        if(card == null) {
             nextPhase()
         } else {
-            when (context) {
-                ChoiceContext.ACTION -> playActionCard(this, cardChoices, decisionIndex)
-                ChoiceContext.TREASURE -> playTreasureCard(this, cardChoices, decisionIndex)
-                ChoiceContext.BUY -> buyCard(this, result)
-                ChoiceContext.CHAPEL -> {
-                    trashCard(choicePlayer, result, verbose)
-                    choiceCounter -= 1
-                    if(choiceCounter == 0) {
-                        nextPhase()
-                    }
-                }
-                ChoiceContext.MILITIA -> {
-                    discardCard(choicePlayer, result, verbose)
-                    choiceCounter -= 1
-                    if(choiceCounter == 0) {
-                        nextPhase()
-                    }
-                }
-                ChoiceContext.WORKSHOP -> {
-                    gainCard(choicePlayer, result, verbose)
-                    nextPhase()
-                }
-            }
+            choicePlayer.makeCardDecision(card, this, verbose)
         }
     }
 
