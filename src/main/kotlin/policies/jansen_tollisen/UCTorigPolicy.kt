@@ -136,8 +136,10 @@ fun UCTorigPolicy(
     }
     println(count) // TODO
 
-    state.logger.playouts += count
-    state.logger.decisions += 1
+    if(state.logger != null) {
+        state.logger.addPlayout()
+        state.logger.addDecision()
+    }
 
     val simulations: List<Int> = root.children.map { it.simulations }
     val maxSim = simulations.maxOf { it }

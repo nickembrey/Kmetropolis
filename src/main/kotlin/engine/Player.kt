@@ -1,7 +1,7 @@
 package engine
 
 data class Player(
-    val name: String,
+    val name: String, // TODO: names should always be just the policy name + numeric tag or hash
     val playerNumber: PlayerNumber,
     val policy: (GameState, Player, ChoiceContext, CardChoices) -> DecisionIndex,
     var deck: MutableList<Card> = mutableListOf(
@@ -31,11 +31,9 @@ data class Player(
     val vp
         get() = allCards.sumOf { it.vp }
 
-    fun playCard(card: Card, state: GameState, verbose: Boolean = false) {
+    fun playCard(card: Card, state: GameState, logger: DominionLogger? = null) {
 
-        if(verbose) {
-            println("$name plays ${card.name}")
-        }
+        logger?.log("$name plays ${card.name}")
 
         hand.remove(card)
         inPlay.add(card)
@@ -54,34 +52,26 @@ data class Player(
         drawCards(card.addCards, !state.noShuffle)
     }
 
-    fun buyCard(card: Card, board: Board, verbose: Boolean = false) {
-        if(verbose) {
-            println("$name buys ${card.name}")
-        }
+    fun buyCard(card: Card, board: Board, logger: DominionLogger? = null) {
+        logger?.log("$name buys ${card.name}")
         coins -= card.cost
         buys -= 1
         board[card] = board[card]!! - 1
-        gainCard(card, verbose)
+        gainCard(card, logger)
     }
 
-    fun gainCard(card: Card, verbose: Boolean = false) {
-        if(verbose) {
-            println("$name gains ${card.name}")
-        }
+    fun gainCard(card: Card, logger: DominionLogger? = null) {
+        logger?.log("$name gains ${card.name}")
         discard.add(card)
     }
 
-    fun trashCard(card: Card, verbose: Boolean = false) {
-        if(verbose) {
-            println("$name trashes ${card.name}")
-        }
+    fun trashCard(card: Card, logger: DominionLogger? = null) {
+        logger?.log("$name trashes ${card.name}")
         hand.remove(card)
     }
 
-    fun discardCard(card: Card, verbose: Boolean = false) {
-        if(verbose) {
-            println("$name discards ${card.name}")
-        }
+    fun discardCard(card: Card, logger: DominionLogger? = null) {
+        logger?.log("$name discards ${card.name}")
         hand.remove(card)
         discard.add(card)
     }
@@ -111,26 +101,26 @@ data class Player(
         }
     }
 
-    fun makeCardDecision(card: Card, state: GameState, verbose: Boolean = false) {
+    fun makeCardDecision(card: Card, state: GameState, logger: DominionLogger? = null) {
         when (state.context) {
-            ChoiceContext.ACTION, ChoiceContext.TREASURE -> playCard(card, state, verbose)
-            ChoiceContext.BUY -> buyCard(card, state.board, verbose)
+            ChoiceContext.ACTION, ChoiceContext.TREASURE -> playCard(card, state, logger)
+            ChoiceContext.BUY -> buyCard(card, state.board, logger)
             ChoiceContext.CHAPEL -> {
-                trashCard(card, verbose)
+                trashCard(card, logger)
                 state.choiceCounter -= 1 // TODO: try to move this up
                 if(state.choiceCounter == 0) {
                     state.nextPhase()
                 }
             }
             ChoiceContext.MILITIA -> {
-                discardCard(card, verbose)
+                discardCard(card, logger)
                 state.choiceCounter -= 1  // TODO: try to move this up
                 if(state.choiceCounter == 0) {
                     state.nextPhase()
                 }
             }
             ChoiceContext.WORKSHOP -> {
-                gainCard(card, verbose)
+                gainCard(card, logger)
                 state.nextPhase()
             }
         }

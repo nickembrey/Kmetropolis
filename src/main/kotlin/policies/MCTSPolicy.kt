@@ -129,14 +129,16 @@ fun MCTSPolicy(
         count += 1
         forward(root, getNewState(state), choices)
     }
-    println("Number of simulations: $count")
-    println("Wins at root: ${root.wins}")
+    println("Number of simulations: $count") // TODO
+    println("Wins at root: ${root.wins}") // TODO
     if (root.wins == 0) {
         state.concede = true
     }
 
-    state.logger.playouts += count
-    state.logger.decisions += 1
+    if(state.logger != null) {
+        state.logger.addPlayout()
+        state.logger.addDecision()
+    }
 
     val simulations: List<Int> = root.children.map { it.simulations }
     val maxSim = simulations.maxOf { it }

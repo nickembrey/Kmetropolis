@@ -16,7 +16,7 @@ fun militiaEffect(state: GameState): GameState = state.apply {
 
 fun moneylenderEffect(state: GameState): GameState = state.apply {
         if(currentPlayer.hand.contains(Card.COPPER)) {
-            currentPlayer.trashCard(Card.COPPER, verbose = state.verbose)
+            currentPlayer.trashCard(Card.COPPER, logger = state.logger)
             currentPlayer.coins += 3
         }
     }

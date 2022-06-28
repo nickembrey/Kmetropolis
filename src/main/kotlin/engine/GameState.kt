@@ -9,9 +9,12 @@ class GameState(
     var turns: Int = 0,
     var context: ChoiceContext = ChoiceContext.ACTION,
     val noShuffle: Boolean = false, // TODO: confusing name
-    val verbose: Boolean = false,
-    val logger: DominionLogger = DominionLogger()
+
+    val logger: DominionLogger? = null
 ) {
+
+    val verbose: Boolean
+        get() = logger != null
 
     var currentPlayer: Player = playerOne
     val otherPlayer: Player
@@ -70,7 +73,7 @@ class GameState(
                 if(card == null) {
                     nextPhase()
                 } else {
-                    choicePlayer.makeCardDecision(card, this, verbose)
+                    choicePlayer.makeCardDecision(card, this, logger)
                 }
             } else {
                 nextPhase()
@@ -88,7 +91,7 @@ class GameState(
         if(card == null) {
             nextPhase()
         } else {
-            choicePlayer.makeCardDecision(card, this, verbose)
+            choicePlayer.makeCardDecision(card, this, logger)
         }
     }
 
