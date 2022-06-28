@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 
 import org.junit.jupiter.api.Assertions.*
 
-internal class GameStateTest {
+internal class CardEffectTest {
 
     @BeforeEach
     fun setUp() {
@@ -17,22 +17,22 @@ internal class GameStateTest {
     }
 
     @Test
-    fun initialize() {
+    fun witchEffect() {
     }
 
     @Test
-    fun nextPhase() {
+    fun militiaEffect() {
     }
 
     @Test
-    fun getNextChoices() {
+    fun moneylenderEffect() {
     }
 
     @Test
-    fun makeNextDecision() {
+    fun chapelEffect() {
     }
 
     @Test
-    fun applyDecision() {
+    fun workshopEffect() {
     }
 }
