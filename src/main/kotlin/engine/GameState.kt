@@ -9,7 +9,7 @@ class GameState(
     val board: Board = defaultBoard,
     var turns: Int = 0,
     var context: ChoiceContext = ChoiceContext.ACTION,
-    val noShuffle: Boolean = false, // TODO: confusing name
+    val trueShuffle: Boolean = true, // TODO: confusing name
 
     val logger: DominionLogger? = null
 ) {
@@ -42,8 +42,8 @@ class GameState(
     fun initialize() {
         playerOne.deck.shuffle()
         playerTwo.deck.shuffle()
-        playerOne.drawCards(5, !noShuffle)
-        playerTwo.drawCards(5, !noShuffle)
+        playerOne.drawCards(5, trueShuffle)
+        playerTwo.drawCards(5, trueShuffle)
     }
 
     fun nextPhase() {
@@ -58,7 +58,7 @@ class GameState(
                 context = ChoiceContext.ACTION
             }
             ChoiceContext.BUY -> {
-                currentPlayer.endTurn(noShuffle)
+                currentPlayer.endTurn(trueShuffle)
                 turns += 1
                 currentPlayer = otherPlayer
                 context = ChoiceContext.ACTION

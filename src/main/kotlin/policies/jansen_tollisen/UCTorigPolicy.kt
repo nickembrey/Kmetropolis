@@ -65,7 +65,7 @@ fun UCTorigPolicy(
             currentState.board.toMutableMap(),
             currentState.turns,
             currentState.context,
-            noShuffle=true).apply { currentPlayer = playerTwo }
+            trueShuffle = false).apply { currentPlayer = playerTwo }
     }
 
     fun rollout(simState: GameState): Map<PlayerNumber, Double> {

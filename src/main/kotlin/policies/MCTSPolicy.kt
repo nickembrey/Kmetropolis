@@ -57,7 +57,7 @@ fun MCTSPolicy(
             currentState.board.toMutableMap(),
             currentState.turns,
             currentState.context,
-            noShuffle = true
+            trueShuffle = false
         ).apply { currentPlayer = playerTwo }
     }
 

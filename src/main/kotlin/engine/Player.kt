@@ -49,7 +49,7 @@ data class Player(
             effect(state)
         }
 
-        drawCards(card.addCards, !state.noShuffle)
+        drawCards(card.addCards, state.trueShuffle)
     }
 
     fun buyCard(card: Card, board: Board, logger: DominionLogger? = null) {
@@ -126,12 +126,12 @@ data class Player(
         }
     }
 
-    fun endTurn(noShuffle: Boolean) {
+    fun endTurn(trueShuffle: Boolean) {
         discard += inPlay
         inPlay.clear()
         discard += hand
         hand.clear()
-        drawCards(5, !noShuffle)
+        drawCards(5, trueShuffle)
         buys = 1
         coins = 0
         actions = 1
