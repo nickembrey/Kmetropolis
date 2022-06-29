@@ -1,21 +1,15 @@
 package engine
 
-import engine.simulation.getNextCardChoices
-import policies.Policy
-
 class GameState(
     val playerOne: Player,
     val playerTwo: Player,
     val board: Board = defaultBoard,
     var turns: Int = 0,
     var context: ChoiceContext = ChoiceContext.ACTION,
-    val trueShuffle: Boolean = true, // TODO: confusing name
+    val trueShuffle: Boolean = true,
 
     val logger: DominionLogger? = null
 ) {
-
-    val verbose: Boolean
-        get() = logger != null
 
     var currentPlayer: Player = playerOne
     val otherPlayer: Player
