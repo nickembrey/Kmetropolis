@@ -56,12 +56,13 @@ data class Player(
         logger?.log("$name buys ${card.name}")
         coins -= card.cost
         buys -= 1
-        board[card] = board[card]!! - 1
-        gainCard(card, logger)
+        gainCard(card, board, logger)
     }
 
-    fun gainCard(card: Card, logger: DominionLogger? = null) {
+    // TODO: use for witch
+    fun gainCard(card: Card, board: Board, logger: DominionLogger? = null) {
         logger?.log("$name gains ${card.name}")
+        board[card] = board[card]!! - 1
         discard.add(card)
     }
 
@@ -121,7 +122,7 @@ data class Player(
                 }
             }
             ChoiceContext.WORKSHOP -> {
-                gainCard(card, logger)
+                gainCard(card, state.board, logger)
                 state.nextPhase()
             }
         }
