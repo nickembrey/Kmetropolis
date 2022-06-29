@@ -26,7 +26,14 @@ enum class ChoiceContext {
                     listOf(null)
                 }
             }
-            MILITIA, CHAPEL -> player.hand
+            CHAPEL -> player.hand + listOf(null)
+            MILITIA -> {
+                if(player.hand.size > 3) {
+                    player.hand
+                } else {
+                    listOf(null)
+                }
+            }
             WORKSHOP -> board.filter { it.key.cost < 5 && it.value > 0 }.keys.toList()
         }
     }

@@ -114,13 +114,7 @@ data class Player(
                     state.nextPhase()
                 }
             }
-            ChoiceContext.MILITIA -> {
-                discardCard(card, logger)
-                state.choiceCounter -= 1  // TODO: try to move this up
-                if(state.choiceCounter == 0) {
-                    state.nextPhase()
-                }
-            }
+            ChoiceContext.MILITIA -> discardCard(card, logger)
             ChoiceContext.WORKSHOP -> {
                 gainCard(card, state.board, logger)
                 state.nextPhase()

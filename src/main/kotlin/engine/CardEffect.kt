@@ -10,8 +10,7 @@ fun witchEffect(state: GameState): GameState = state.apply {
     }
 
 fun militiaEffect(state: GameState): GameState = state.apply {
-    state.context = ChoiceContext.MILITIA
-    state.choiceCounter = state.choicePlayer.hand.size - 3
+    context = ChoiceContext.MILITIA
 }
 
 fun moneylenderEffect(state: GameState): GameState = state.apply {
