@@ -2,6 +2,7 @@ import engine.DominionLogger
 import engine.GameState
 import engine.Player
 import engine.PlayerNumber
+import engine.simulation.makeNextCardDecision
 import policies.badWitchPolicy
 import java.io.File
 
@@ -25,7 +26,7 @@ fun main(args: Array<String>) {
         val gameState = GameState(playerOne, playerTwo, logger = logger)
         gameState.initialize()
         while(!gameState.gameOver) {
-            gameState.makeNextDecision(gameState.choicePlayer.policy)
+            gameState.makeNextCardDecision(gameState.choicePlayer.defaultPolicy)
         }
 
         logger.recordGame(gameState)

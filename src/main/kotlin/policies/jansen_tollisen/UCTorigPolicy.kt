@@ -2,6 +2,8 @@ package policies.jansen_tollisen
 
 import engine.*
 import engine.Player
+import engine.simulation.getNextCardChoices
+import engine.simulation.makeNextCardDecision
 import mcts.MCTSTreeNode
 import policies.rollout.randomPolicy
 import kotlin.math.ln
@@ -71,7 +73,7 @@ fun UCTorigPolicy(
         // TODO: it shouldn't be the case that the policy is always playerTwo
 
         while(!simState.gameOver) {
-            simState.makeNextDecision(::randomPolicy) // TODO: is this the right policy?
+            simState.makeNextCardDecision(::randomPolicy) // TODO: is this the right policy?
         }
 
         val playerOneVp = simState.playerOne.vp
@@ -107,7 +109,7 @@ fun UCTorigPolicy(
 
             simState.choicePlayer.makeCardDecision(card, simState)
 
-            forward(node.children[simDecisionIndex], simState, simState.getNextChoices())
+            forward(node.children[simDecisionIndex], simState, simState.getNextCardChoices())
         } else {
 
             val rolloutResults = rollout(simState)

@@ -1,5 +1,6 @@
 package engine
 
+import engine.simulation.getNextCardChoices
 import policies.Policy
 
 class GameState(
@@ -62,36 +63,6 @@ class GameState(
                 currentPlayer = otherPlayer
                 context = ChoiceContext.ACTION
             }
-        }
-    }
-
-    fun getNextChoices(): CardChoices {
-        var cardChoices = context.getCardChoices(choicePlayer, board)
-        while (cardChoices.size < 2) {
-            if(cardChoices.size == 1) {
-                val card = cardChoices[0]
-                if(card == null) {
-                    nextPhase()
-                } else {
-                    choicePlayer.makeCardDecision(card, this, logger)
-                }
-            } else {
-                nextPhase()
-            }
-            cardChoices = context.getCardChoices(choicePlayer, board)
-        }
-        return cardChoices
-    }
-
-    // TODO: rename
-    fun makeNextDecision(policy: Policy) {
-        val cardChoices = getNextChoices()
-        val decisionIndex = policy(this, choicePlayer, context, cardChoices)
-        val card = cardChoices[decisionIndex]
-        if(card == null) {
-            nextPhase()
-        } else {
-            choicePlayer.makeCardDecision(card, this, logger)
         }
     }
 

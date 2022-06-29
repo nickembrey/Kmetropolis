@@ -2,6 +2,8 @@ package policies
 
 import engine.*
 import engine.Player
+import engine.simulation.getNextCardChoices
+import engine.simulation.makeNextCardDecision
 import mcts.MCTSTreeNode
 import policies.rollout.randomPolicy
 import kotlin.math.log2
@@ -76,7 +78,7 @@ fun MCTSPolicy(
 
                     simState.choicePlayer.makeCardDecision(card, simState)
                 } else {
-                    simState.makeNextDecision(::randomPolicy)
+                    simState.makeNextCardDecision(::randomPolicy)
                 }
             }
         }
@@ -105,7 +107,7 @@ fun MCTSPolicy(
 
             simState.choicePlayer.makeCardDecision(card, simState)
 
-            forward(node.children[simDecisionIndex], simState, simState.getNextChoices())
+            forward(node.children[simDecisionIndex], simState, simState.getNextCardChoices())
         } else {
             for (index in simChoices.indices) {
                 node.addChild(index, simState.choicePlayer.playerNumber, simChoices[index], simState.context)
