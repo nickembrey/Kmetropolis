@@ -3,8 +3,8 @@ package engine
 typealias CardEffect = (GameState) -> GameState
 
 fun witchEffect(state: GameState): GameState = state.apply {
-        if(state.board[Card.CURSE]!! > 0) {
-            state.board[Card.CURSE] = state.board[Card.CURSE]!! - 1
+        if(board[Card.CURSE]!! > 0) {
+            board[Card.CURSE] = board[Card.CURSE]!! - 1
             otherPlayer.discard += Card.CURSE
         }
     }
@@ -16,16 +16,16 @@ fun militiaEffect(state: GameState): GameState = state.apply {
 
 fun moneylenderEffect(state: GameState): GameState = state.apply {
         if(currentPlayer.hand.contains(Card.COPPER)) {
-            currentPlayer.trashCard(Card.COPPER, logger = state.logger)
+            currentPlayer.trashCard(Card.COPPER, logger = logger)
             currentPlayer.coins += 3
         }
     }
 
 fun chapelEffect(state: GameState): GameState = state.apply {
-    state.choiceCounter = 4
-    state.context = ChoiceContext.CHAPEL
+    context = ChoiceContext.CHAPEL
+    choiceCounter = 4
 }
 
 fun workshopEffect(state: GameState): GameState = state.apply {
-    state.context = ChoiceContext.WORKSHOP
+    context = ChoiceContext.WORKSHOP
 }

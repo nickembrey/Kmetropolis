@@ -1,5 +1,8 @@
 package engine
 
+// TODO: consider including a choice token here, and then those tokens can be used to make choices
+//       -- this would allow a "NoChoice" token rather than null in the lists
+
 enum class Card(
     val type: CardType,
     val cost: Int,

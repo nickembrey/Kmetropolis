@@ -1,5 +1,8 @@
 package engine
 
+// TODO: consider making CardChoices a Set, and then just choosing a choice token from it rather than an index to a Card
+//       -- see note in Card.kt
+
 typealias CardChoices = List<Card?>
 
 enum class ChoiceContext {
