@@ -21,7 +21,7 @@ data class Player(
     var discard: MutableList<Card> = mutableListOf()
     ) {
 
-    var actions = 0
+    var actions = 1
     var buys = 1
     var coins = 0
 
@@ -101,6 +101,7 @@ data class Player(
         }
     }
 
+    // TODO: validate that card is in hand / play?
     fun makeCardDecision(card: Card, state: GameState, logger: DominionLogger? = null) {
         when (state.context) {
             ChoiceContext.ACTION, ChoiceContext.TREASURE -> playCard(card, state, logger)
@@ -132,9 +133,10 @@ data class Player(
         discard += hand
         hand.clear()
         drawCards(5, trueShuffle)
+        actions = 1
         buys = 1
         coins = 0
-        actions = 1
+
     }
 
 }
