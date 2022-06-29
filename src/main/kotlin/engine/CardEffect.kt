@@ -10,9 +10,9 @@ fun witchEffect(state: GameState): GameState = state.apply {
     }
 
 fun militiaEffect(state: GameState): GameState = state.apply {
-        state.choiceCounter = state.choicePlayer.hand.size - 3
-        state.context = ChoiceContext.MILITIA
-    }
+    state.context = ChoiceContext.MILITIA
+    state.choiceCounter = state.choicePlayer.hand.size - 3
+}
 
 fun moneylenderEffect(state: GameState): GameState = state.apply {
         if(currentPlayer.hand.contains(Card.COPPER)) {
@@ -22,10 +22,10 @@ fun moneylenderEffect(state: GameState): GameState = state.apply {
     }
 
 fun chapelEffect(state: GameState): GameState = state.apply {
-        state.choiceCounter = 4
-        state.context = ChoiceContext.CHAPEL
-    }
+    state.choiceCounter = 4
+    state.context = ChoiceContext.CHAPEL
+}
 
 fun workshopEffect(state: GameState): GameState = state.apply {
-        state.context = ChoiceContext.WORKSHOP
-    }
+    state.context = ChoiceContext.WORKSHOP
+}
