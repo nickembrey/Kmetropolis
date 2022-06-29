@@ -5,7 +5,7 @@ import engine.GameState
 import policies.Policy
 
 fun GameState.getNextCardChoices(): CardChoices = context.getCardChoices(choicePlayer, board).let {
-    return if(it.size > 2) {
+    return if(it.size > 1) {
         it
     } else if(it.isEmpty() || it[0] == null) {
         nextPhase()
