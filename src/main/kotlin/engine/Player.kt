@@ -3,7 +3,7 @@ package engine
 data class Player(
     val name: String, // TODO: names should always be just the policy name + numeric tag or hash
     val playerNumber: PlayerNumber,
-    val policy: (GameState, Player, ChoiceContext, CardChoices) -> DecisionIndex,
+    val defaultPolicy: (GameState, Player, ChoiceContext, CardChoices) -> DecisionIndex,
     var deck: MutableList<Card> = mutableListOf(
         Card.COPPER,
         Card.COPPER,
