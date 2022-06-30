@@ -21,7 +21,7 @@ data class Player(
     var hand: MutableList<Card> = mutableListOf(),
     var inPlay: MutableList<Card> = mutableListOf(),
     var discard: MutableList<Card> = mutableListOf()
-    ) {
+) {
 
     var actions = 1
     var buys = 1
@@ -33,13 +33,21 @@ data class Player(
     val vp
         get() = allCards.sumOf { it.vp }
 
+    // TODO: one way we could make this more functional is by adding the notion of an Effect type,
+    //       which playing a card would return and could be passed up to the state to be processed
     fun playCard(card: Card, state: GameState, logger: DominionLogger? = null) {
 
         logger?.log("$name plays ${card.name}")
 
-        hand.remove(card)
+        hand.remove(card).also { removed ->
+            if (!removed) {
+                throw IllegalStateException("Can't play a card that wasn't in hand!")
+            }
+        }
+
         inPlay.add(card)
-        if(card.type == CardType.ACTION) {
+
+        if (card.type == CardType.ACTION) {
             actions -= 1
         }
 
@@ -47,7 +55,7 @@ data class Player(
         actions += card.addActions
         coins += card.addCoins
 
-        for(effect in card.effectList) {
+        for (effect in card.effectList) {
             effect(state)
         }
 
@@ -69,30 +77,43 @@ data class Player(
     }
 
     fun trashCard(card: Card, logger: DominionLogger? = null) {
-        logger?.log("$name trashes ${card.name}")
-        hand.remove(card)
-    }
-
-    fun discardCard(card: Card, logger: DominionLogger? = null) {
-        logger?.log("$name discards ${card.name}")
-        hand.remove(card)
-        discard.add(card)
-    }
-
-    fun drawCards(number: Int, trueShuffle: Boolean = true) {
-        if(number > 0) {
-            drawCard(trueShuffle)
-            drawCards(number - 1, trueShuffle)
+        hand.remove(card).also { removed ->
+            if (!removed) {
+                throw IllegalStateException("Can't trash a card that wasn't in hand!")
+            }
         }
+
+        logger?.log("$name trashes ${card.name}")
+
+    }
+
+    // TODO: one moveCard method that handles all this, with different destinations as enum
+    fun discardCard(card: Card, logger: DominionLogger? = null) {
+        hand.remove(card).also { removed ->
+            if (!removed) {
+                throw IllegalStateException("Can't discard a card that wasn't in hand!")
+            }
+        }
+
+        discard.add(card)
+
+        logger?.log("$name discards ${card.name}")
     }
 
     fun drawCard(trueShuffle: Boolean = true) {
-        if(deck.size == 0) {
+        if (deck.size == 0) {
             shuffle(trueShuffle)
         }
-        if(deck.size > 0) {
+        if (deck.size > 0) {
             hand.add(deck[0])
             deck.removeAt(0) //  TODO: may need to test this
+        }
+    }
+
+    fun drawCards(number: Int, trueShuffle: Boolean = true) {
+        if (number > 0) {
+            drawCard(trueShuffle)
+            drawCards(number - 1, trueShuffle)
         }
     }
 
