@@ -2,9 +2,10 @@ package policies.rollout.jansen_tollisen
 
 import engine.*
 import engine.Player
-import policies.rollout.randomPolicy
+import policies.policy.heuristicGreedyPolicy
+import policies.policy.randomPolicy
 
-fun epsilonHeuristicGreedyPolicy(
+fun _epsilonHeuristicGreedyPolicy(
     state: GameState,
     choices: CardChoices
 ): Card? {

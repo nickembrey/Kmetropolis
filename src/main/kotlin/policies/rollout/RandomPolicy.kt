@@ -2,7 +2,7 @@ package policies.rollout
 
 import engine.*
 
-fun randomPolicy(
+fun _randomPolicy(
     state: GameState,
     choices: CardChoices
 ): Card? {

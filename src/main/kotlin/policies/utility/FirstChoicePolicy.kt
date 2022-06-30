@@ -2,7 +2,7 @@ package policies.utility
 
 import engine.*
 
-fun firstChoicePolicy(
+fun _firstChoicePolicy(
     state: GameState,
     choices: CardChoices
 ): Card? {

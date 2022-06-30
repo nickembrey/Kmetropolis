@@ -2,10 +2,9 @@ import engine.DominionLogger
 import engine.GameState
 import engine.Player
 import engine.PlayerNumber
-import policies.badWitchPolicy
-import java.io.File
+import policies.policy.*
 
-// TODO: directory for all policies so imports aren't constantly changing
+import java.io.File
 
 fun main(args: Array<String>) {
 
@@ -20,8 +19,8 @@ fun main(args: Array<String>) {
     val games: MutableList<GameState> = mutableListOf()
 
     for(i in 1..totalGames) {
-        val playerOne = Player(playerOneName, PlayerNumber.PlayerOne, ::badWitchPolicy)
-        val playerTwo = Player(playerTwoName, PlayerNumber.PlayerTwo, ::badWitchPolicy)
+        val playerOne = Player(playerOneName, PlayerNumber.PlayerOne, badWitchPolicy)
+        val playerTwo = Player(playerTwoName, PlayerNumber.PlayerTwo, badWitchPolicy)
         val gameState = GameState(playerOne, playerTwo, logger = logger)
         gameState.initialize()
         while(!gameState.gameOver) {

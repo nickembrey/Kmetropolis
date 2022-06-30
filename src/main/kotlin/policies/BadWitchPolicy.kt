@@ -3,7 +3,7 @@ package policies
 import engine.*
 import engine.Player
 
-fun badWitchPolicy(
+fun _badWitchPolicy(
     state: GameState,
     cardChoices: CardChoices
 ): Card? {

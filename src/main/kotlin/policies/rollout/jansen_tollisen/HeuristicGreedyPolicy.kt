@@ -3,7 +3,7 @@ package policies.rollout.jansen_tollisen
 import engine.*
 import engine.Player
 
-fun heuristicGreedyPolicy(
+fun _heuristicGreedyPolicy(
     state: GameState,
     choices: CardChoices
 ): Card? {
