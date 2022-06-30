@@ -58,15 +58,6 @@ internal class ChoiceContextTest {
     }
 
     @Test
-    fun getCardChoicesNoBuysTest() {
-        playerOne.buys = 0
-        playerOne.coins = 4
-        val choices = ChoiceContext.BUY.getCardChoices(playerOne, gameState.board)
-        assertEquals(1, choices.size)
-        assertNull(choices[0])
-    }
-
-    @Test
     fun getCardChoicesBuyTest() {
         playerOne.coins = 4
         gameState.board[Card.ESTATE] = 0
@@ -97,14 +88,6 @@ internal class ChoiceContextTest {
     }
 
     @Test
-    fun getCardChoicesNoEffectMilitiaTest() {
-        playerOne.hand = mutableListOf(Card.COPPER, Card.ESTATE, Card.WITCH)
-        val choices = ChoiceContext.MILITIA.getCardChoices(playerOne, gameState.board)
-        assertEquals(1, choices.size)
-        assertNull(choices[0])
-    }
-
-    @Test
     fun getCardChoicesMilitiaTest() {
         playerOne.hand = mutableListOf(Card.COPPER, Card.COPPER, Card.ESTATE, Card.WITCH)
         val choices = ChoiceContext.MILITIA.getCardChoices(playerOne, gameState.board)
@@ -127,7 +110,8 @@ internal class ChoiceContextTest {
         gameState.board[Card.COPPER] = 0
         gameState.board[Card.CURSE] = 0
         val choices = ChoiceContext.WORKSHOP.getCardChoices(playerOne, gameState.board)
-        assertEquals(0, choices.size)
+        assertEquals(1, choices.size)
+        assertEquals(null, choices[0])
     }
     @Test
     fun getCardChoicesWorkshopTest() {
