@@ -125,25 +125,28 @@ data class Player(
         }
     }
 
-    // TODO: validate that card is in hand / play?
-    fun makeCardDecision(card: Card, state: GameState, logger: DominionLogger? = null) {
-        when (state.context) {
-            ChoiceContext.ACTION, ChoiceContext.TREASURE -> playCard(card, state, logger)
-            ChoiceContext.BUY -> buyCard(card, state.board, logger)
-            ChoiceContext.CHAPEL -> {
-                trashCard(card, logger)
-                state.choiceCounter -= 1 // TODO: try to move this up
-                if(state.choiceCounter == 0) {
-                    state.nextPhase()
-                }
+    fun makeCardDecision(card: Card?, state: GameState, logger: DominionLogger? = null) {
+        card?.let { it ->
+            when (state.context) {
+                ChoiceContext.ACTION, ChoiceContext.TREASURE -> playCard(it, state, logger)
+                ChoiceContext.BUY -> buyCard(it, state.board, logger)
+                ChoiceContext.CHAPEL -> trashCard(it, logger)
+                ChoiceContext.MILITIA -> discardCard(it, logger)
+                ChoiceContext.WORKSHOP -> gainCard(it, state.board, logger)
             }
-            ChoiceContext.MILITIA -> discardCard(card, logger)
-            ChoiceContext.WORKSHOP -> {
-                gainCard(card, state.board, logger)
-                state.nextPhase()
-            }
+        }.also {
+            state.nextContext(it == null)
         }
     }
+
+    fun makeNextCardDecision(state: GameState, policy: Policy = defaultPolicy) =
+        state.context.getCardChoices(this, state.board)
+            .let { cardChoices ->
+                policy(state, cardChoices)
+                    .let { card ->
+                        makeCardDecision(card, state, state.logger)
+                    }
+            }
 
     fun endTurn(trueShuffle: Boolean) {
         discard += inPlay

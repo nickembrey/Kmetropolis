@@ -22,7 +22,7 @@ fun moneylenderEffect(state: GameState): GameState = state.apply {
 
 fun chapelEffect(state: GameState): GameState = state.apply {
     context = ChoiceContext.CHAPEL
-    choiceCounter = 4
+    choiceContextCounter = 4
 }
 
 fun workshopEffect(state: GameState): GameState = state.apply {

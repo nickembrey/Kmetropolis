@@ -2,6 +2,7 @@ package engine
 
 import java.io.File
 
+// TODO: it would be cool if we could have a setting to make the logs look like dominion.games logs
 class DominionLogger(logDirectory: File, private val players: Collection<String>) {
 
     private val logFile: File

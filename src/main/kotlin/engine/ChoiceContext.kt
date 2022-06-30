@@ -11,30 +11,12 @@ enum class ChoiceContext {
     fun getCardChoices(player: Player, board: Board): CardChoices {
 
         return when(this) {
-            ACTION -> {
-                if(player.actions > 0) {
-                    player.hand.filter { it.type == CardType.ACTION } + listOf(null)
-                } else {
-                    listOf(null)
-                }
-            }
+            ACTION -> player.hand.filter { it.type == CardType.ACTION } + listOf(null)
             TREASURE -> player.hand.filter { it.type == CardType.TREASURE } + listOf(null)
-            BUY -> {
-                if(player.buys > 0) {
-                    board.filter { it.value > 0 && player.coins >= it.key.cost }.keys.toList() + listOf(null)
-                } else {
-                    listOf(null)
-                }
-            }
+            BUY -> board.filter { it.value > 0 && player.coins >= it.key.cost }.keys.toList() + listOf(null)
             CHAPEL -> player.hand + listOf(null)
-            MILITIA -> {
-                if(player.hand.size > 3) {
-                    player.hand
-                } else {
-                    listOf(null)
-                }
-            }
-            WORKSHOP -> board.filter { it.key.cost < 5 && it.value > 0 }.keys.toList()
+            MILITIA -> player.hand.takeIf { it.isNotEmpty() } ?: listOf(null)
+            WORKSHOP -> board.filter { it.key.cost < 5 && it.value > 0 }.keys.toList().takeIf { it.isNotEmpty() } ?: listOf(null)
         }
     }
 
