@@ -1,9 +1,11 @@
 package engine
 
+import policies.Policy
+
 data class Player(
     val name: String, // TODO: names should always be just the policy name + numeric tag or hash
     val playerNumber: PlayerNumber,
-    val defaultPolicy: (GameState, Player, ChoiceContext, CardChoices) -> DecisionIndex,
+    val defaultPolicy: Policy,
     var deck: MutableList<Card> = mutableListOf(
         Card.COPPER,
         Card.COPPER,

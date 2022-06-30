@@ -4,9 +4,7 @@ import engine.*
 
 fun firstChoicePolicy(
     state: GameState,
-    player: Player,
-    context: ChoiceContext,
     choices: CardChoices
-): DecisionIndex {
-    return 0
+): Card? {
+    return choices[0]
 }

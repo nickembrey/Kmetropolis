@@ -5,13 +5,11 @@ import engine.Player
 
 fun badWitchPolicy(
     state: GameState,
-    player: Player, // TODO: does player ever get used by any policy?
-    context: ChoiceContext,
     cardChoices: CardChoices
-): DecisionIndex {
-    return when(context) {
-        ChoiceContext.ACTION -> 0
-        ChoiceContext.TREASURE -> 0
+): Card? {
+    return when(state.context) {
+        ChoiceContext.ACTION -> cardChoices[0]
+        ChoiceContext.TREASURE -> cardChoices[0]
         ChoiceContext.BUY -> {
             val goldCards: Int = state.currentPlayer.allCards.filter { it == Card.GOLD }.size
             val witchCards = state.currentPlayer.allCards.filter { it == Card.WITCH }.size
@@ -23,22 +21,22 @@ fun badWitchPolicy(
 
 
             return if(state.currentPlayer.coins >= 8 && goldCards > 0) {
-                cardChoices.indexOf(Card.PROVINCE)
+                Card.PROVINCE
             } else if (state.currentPlayer.coins >= 5 && witchCards == 0 && witchLeft > 0) {
-                cardChoices.indexOf(Card.WITCH)
+                Card.WITCH
             } else if (state.currentPlayer.coins >= 5 && provinceCards < 4 && duchyLeft > 0) {
-                cardChoices.indexOf(Card.DUCHY)
+                Card.DUCHY
             } else if (state.currentPlayer.coins >= 5 && provinceCards < 2 && estateLeft > 0) {
-                cardChoices.indexOf(Card.ESTATE)
+                Card.ESTATE
             } else if (state.currentPlayer.coins >= 6) {
-                cardChoices.indexOf(Card.GOLD)
+                Card.GOLD
             } else if (state.currentPlayer.coins >= 3) {
-                cardChoices.indexOf(Card.SILVER)
+                Card.SILVER
             } else {
-                cardChoices.indexOf(null)
+                null
             }
         }
-        ChoiceContext.MILITIA -> 0
+        ChoiceContext.MILITIA -> cardChoices[0]
         ChoiceContext.WORKSHOP -> throw NotImplementedError()
         ChoiceContext.CHAPEL -> throw NotImplementedError()
     }

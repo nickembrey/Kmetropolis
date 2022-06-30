@@ -6,10 +6,8 @@ import policies.rollout.randomPolicy
 
 fun epsilonHeuristicGreedyPolicy(
     state: GameState,
-    player: Player,
-    context: ChoiceContext,
     choices: CardChoices
-): DecisionIndex {
+): Card? {
 
     val epsilon = 15
 
@@ -17,9 +15,9 @@ fun epsilonHeuristicGreedyPolicy(
     val random = (0..100).random()
 
     return if(random > epsilon) {
-        randomPolicy(state, player, context, choices)
+        randomPolicy(state, choices)
     } else {
-        heuristicGreedyPolicy(state, player, context, choices)
+        heuristicGreedyPolicy(state, choices)
     }
 
 }
