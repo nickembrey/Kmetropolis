@@ -162,7 +162,9 @@ data class Player(
         }
     }
 
-    fun endTurn(trueShuffle: Boolean) {
+
+    fun endTurn(trueShuffle: Boolean, logger: DominionLogger? = null) {
+
         discard += inPlay
         inPlay.clear()
         discard += hand
@@ -171,7 +173,7 @@ data class Player(
         actions = 1
         buys = 1
         coins = 0
-
+        logger?.log("\n${this.name} ends their turn\n")
     }
 
 }
