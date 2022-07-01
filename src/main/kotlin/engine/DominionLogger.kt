@@ -3,9 +3,13 @@ package engine
 import java.io.File
 
 // TODO: it would be cool if we could have a setting to make the logs look like dominion.games logs
-class DominionLogger(logDirectory: File, private val players: Collection<String>) {
+class DominionLogger(logDirectory: File, private val players: List<String>) {
+
+    // TODO: timing stats
 
     private val logFile: File
+    private val gameVpRecords: MutableMap<String, Int>
+    private val totalVpRecords: MutableMap<String, Int>
     private val winRecords: MutableMap<String, Int>
 
     init {
@@ -18,6 +22,8 @@ class DominionLogger(logDirectory: File, private val players: Collection<String>
         }
         logFile = candidateFile
 
+        gameVpRecords = players.associateWith { 0 }.toMutableMap()
+        totalVpRecords = players.associateWith { 0 }.toMutableMap()
         winRecords = players.plus("Ties").associateWith { 0 }.toMutableMap()
     }
 
@@ -25,11 +31,12 @@ class DominionLogger(logDirectory: File, private val players: Collection<String>
     private var gameDecisions = 0
     private var gameWinner: String? = null
 
+    private var decisionTime: Double = 0.0
+    private var cParameter: Double = 0.0
 
     private var totalPlayouts = 0
     private var totalDecisions = 0
-    private var totalGames = 0 // TODO: do we need this?
-    private var totalWinner = null // TODO: do we need this?
+    private var totalGames = 0
 
     private var log = StringBuilder()
 
@@ -46,17 +53,14 @@ class DominionLogger(logDirectory: File, private val players: Collection<String>
     private fun logGameSummary() {
         log("\nGame summary\n")
 
-        if(gameWinner != null) {
-            log("The winner was $gameWinner")
-        } else {
-            log("The game was a tie")
+        for(player in players) {
+            log("$player VP: ${gameVpRecords[player]}")
         }
-        log("")
 
         log("Playouts: $gamePlayouts")
         log("Decisions: $gameDecisions")
 
-        if(gamePlayouts > 0) {
+        if(gamePlayouts > 0 && gameDecisions > 0) {
             log("Playouts per decision: ${gamePlayouts / gameDecisions}")
         }
 
@@ -68,15 +72,24 @@ class DominionLogger(logDirectory: File, private val players: Collection<String>
         log("Simulation summary\n")
 
         for(player in players) {
+            log("$player VP: ${totalVpRecords[player]}")
+        }
+
+        log("")
+
+        for(player in players) {
             log("$player wins: ${winRecords[player]}")
         }
-        log("Ties: ${winRecords["Ties"]}\n")
-
-        log("Total games: $totalGames\n")
-
+        log("Ties: ${winRecords["Ties"]}")
+        log("")
+        log("Total games: $totalGames")
+        log("")
+        log("Time allotted per decision: $decisionTime")
+        log("cParameter: $cParameter")
+        log("")
         log("Playouts: $totalPlayouts")
         log("Decisions: $totalDecisions")
-        if(totalPlayouts > 0) {
+        if(totalPlayouts > 0 && totalDecisions > 0) {
             log("Playouts per decision: ${totalPlayouts / totalDecisions}")
         }
     }
@@ -88,13 +101,18 @@ class DominionLogger(logDirectory: File, private val players: Collection<String>
 
     fun addDecision() {
         gameDecisions += 1
-        totalPlayouts += 1
+        totalDecisions += 1
     }
 
     fun recordGame(gameState: GameState, logSummary: Boolean = true) {
 
         val playerOne = gameState.playerOne
         val playerTwo = gameState.playerTwo
+
+        gameVpRecords[playerOne.name] = gameVpRecords[playerOne.name]!! + playerOne.vp
+        gameVpRecords[playerTwo.name] = gameVpRecords[playerTwo.name]!! + playerTwo.vp
+        totalVpRecords[playerOne.name] = totalVpRecords[playerOne.name]!! + playerOne.vp
+        totalVpRecords[playerTwo.name] = totalVpRecords[playerTwo.name]!! + playerTwo.vp
 
         if(playerOne.vp > playerTwo.vp) {
             winRecords[playerOne.name] = winRecords[playerOne.name]!! + 1 // TODO: more elegant way?
@@ -111,9 +129,16 @@ class DominionLogger(logDirectory: File, private val players: Collection<String>
         }
 
         totalGames += 1
+        gameVpRecords[playerOne.name] = 0
+        gameVpRecords[playerTwo.name] = 0
         gameWinner = null
         gamePlayouts = 0
         gameDecisions = 0
+    }
+
+    fun recordSimulationOptions(decisionTime: Double, cParameter: Double) {
+        this.decisionTime = decisionTime
+        this.cParameter = cParameter
     }
 
     fun recordSimulation(logSummary: Boolean = true) {
