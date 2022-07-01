@@ -1,5 +1,7 @@
 package engine
 
+// TODO: consider renaming to Simulation
+
 class GameState(
     val playerOne: Player,
     val playerTwo: Player,
@@ -7,8 +9,8 @@ class GameState(
     var turns: Int = 0,
     var context: ChoiceContext = ChoiceContext.ACTION,
     val trueShuffle: Boolean = true,
-
-    val logger: DominionLogger? = null
+    val logger: DominionLogger? = null,
+    private val maxTurns: Int = 999
 ) {
 
     var currentPlayer: Player = playerOne
@@ -22,7 +24,7 @@ class GameState(
     var concede = false
 
     val gameOver
-        get() = board.filter { it.value == 0}.size >= 3 || board[Card.PROVINCE] == 0 || turns > 100 || concede
+        get() = board.filter { it.value == 0}.size >= 3 || board[Card.PROVINCE] == 0 || turns > maxTurns || concede
 
     val choicePlayer
         get() = if(context == ChoiceContext.MILITIA) {
