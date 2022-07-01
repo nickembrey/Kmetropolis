@@ -31,8 +31,8 @@ class GameState(
         currentPlayer
     }
 
-    // keeps track of how many choices to spend in a given context
-    var choiceContextCounter: Int = 1
+    // keeps track of how many decisions to spend in a given context
+    var contextDecisionCounters: Int = 1
         get() = when(context) {
             ChoiceContext.ACTION -> currentPlayer.actions
             ChoiceContext.TREASURE -> currentPlayer.hand.filter { it.type == CardType.TREASURE }.size
@@ -48,17 +48,19 @@ class GameState(
         playerTwo.drawCards(5, trueShuffle)
     }
 
-    fun nextContext(exitCurrentContext: Boolean = false) {
-        if(choiceContextCounter > 0 && !exitCurrentContext) {
-            choiceContextCounter -= 1
-        } else {
-            choiceContextCounter = 1
+    fun nextContext(exitCurrentContext: Boolean = false) { // TODO: debug
+        if(contextDecisionCounters < 1 || exitCurrentContext) {
+            contextDecisionCounters = 1
             context = when(context) {
                 ChoiceContext.ACTION -> ChoiceContext.TREASURE
                 ChoiceContext.TREASURE -> ChoiceContext.BUY
-                ChoiceContext.CHAPEL, ChoiceContext.MILITIA, ChoiceContext.WORKSHOP -> ChoiceContext.ACTION
+                ChoiceContext.REMODEL_TRASH -> when(exitCurrentContext) {
+                    true -> ChoiceContext.ACTION
+                    false -> ChoiceContext.REMODEL_GAIN
+                }
+                ChoiceContext.CHAPEL, ChoiceContext.MILITIA, ChoiceContext.WORKSHOP, ChoiceContext.REMODEL_GAIN -> ChoiceContext.ACTION
                 ChoiceContext.BUY -> {
-                    currentPlayer.endTurn(trueShuffle)
+                    currentPlayer.endTurn(trueShuffle, logger)
                     turns += 1
                     currentPlayer = otherPlayer
                     ChoiceContext.ACTION

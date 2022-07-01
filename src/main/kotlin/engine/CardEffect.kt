@@ -22,9 +22,15 @@ fun moneylenderEffect(state: GameState): GameState = state.apply {
 
 fun chapelEffect(state: GameState): GameState = state.apply {
     context = ChoiceContext.CHAPEL
-    choiceContextCounter = 4
+    contextDecisionCounters = 4
 }
 
 fun workshopEffect(state: GameState): GameState = state.apply {
     context = ChoiceContext.WORKSHOP
+    contextDecisionCounters = 1
+}
+
+fun remodelEffect(state: GameState): GameState = state.apply {
+    context = ChoiceContext.REMODEL_TRASH
+    contextDecisionCounters = 1
 }

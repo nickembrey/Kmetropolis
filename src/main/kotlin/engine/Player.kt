@@ -1,6 +1,7 @@
 package engine
 
-import policies.Policy
+import policies.policy.Policy
+import java.lang.Math.floor
 
 data class Player(
     val name: String, // TODO: names should always be just the policy name + numeric tag or hash
@@ -27,11 +28,13 @@ data class Player(
     var buys = 1
     var coins = 0
 
+    var remodelCard: Card? = null
+
     val allCards
         get() = deck + hand + discard + inPlay
 
     val vp
-        get() = allCards.sumOf { it.vp }
+        get() = allCards.sumOf { it.vp } + (allCards.count { it == Card.GARDENS } * kotlin.math.floor(allCards.size.toDouble() / 10)).toInt()
 
     // TODO: one way we could make this more functional is by adding the notion of an Effect type,
     //       which playing a card would return and could be passed up to the state to be processed
@@ -126,27 +129,38 @@ data class Player(
     }
 
     fun makeCardDecision(card: Card?, state: GameState, logger: DominionLogger? = null) {
+
+        val context = state.context
+
         card?.let { it ->
-            when (state.context) {
+            when (context) {
                 ChoiceContext.ACTION, ChoiceContext.TREASURE -> playCard(it, state, logger)
                 ChoiceContext.BUY -> buyCard(it, state.board, logger)
                 ChoiceContext.CHAPEL -> trashCard(it, logger)
                 ChoiceContext.MILITIA -> discardCard(it, logger)
                 ChoiceContext.WORKSHOP -> gainCard(it, state.board, logger)
+                ChoiceContext.REMODEL_TRASH -> {
+                    trashCard(it, logger).also { _ -> remodelCard = it }
+                }
+                ChoiceContext.REMODEL_GAIN -> gainCard(it, state.board, logger).also { _ -> remodelCard = null }
             }
-        }.also {
-            state.nextContext(it == null)
+        }
+
+        // TODO: the need for management here probably means the contextDecisionCounter needs to be rethought and nextContext should be scrapped or redesigned
+        if(state.context == context) { // decrement the decision counters unless we changed context
+            state.contextDecisionCounters -= 1
+            state.nextContext(card == null)
         }
     }
 
-    fun makeNextCardDecision(state: GameState, policy: Policy = defaultPolicy) =
-        state.context.getCardChoices(this, state.board)
-            .let { cardChoices ->
-                policy(state, cardChoices)
-                    .let { card ->
-                        makeCardDecision(card, state, state.logger)
-                    }
+    fun makeNextCardDecision(state: GameState, policy: Policy = defaultPolicy) {
+        state.context.getCardChoices(this, state.board).let {
+            when(it.size) {
+                1 -> makeCardDecision(it[0], state, state.logger)
+                else -> makeCardDecision(policy(state, it), state, state.logger)
             }
+        }
+    }
 
     fun endTurn(trueShuffle: Boolean) {
         discard += inPlay
