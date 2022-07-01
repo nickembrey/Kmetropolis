@@ -25,7 +25,15 @@ fun _UCTorigPolicy(
     val playerNumber = PlayerNumber.PlayerTwo
     val seconds = 1
     val cParameter = 0.7
-    val root = MCTSTreeNode(player = playerNumber)
+
+//    state.logger?.recordSimulationOptions(seconds, cParameter) // TODO
+
+    val root = MCTSTreeNode(
+        parent = null,
+        card = null,
+        playerNumber = state.choicePlayer.playerNumber,
+        choiceContext = state.context
+    )
 
     // TODO: remove subfunctions from here and in MCTS policy
     // Note that toMutableList is used below to create copies of the current state.
@@ -101,13 +109,17 @@ fun _UCTorigPolicy(
             forward(node.children[simDecisionIndex], simState, simState.context.getCardChoices(simState.choicePlayer, simState.board))
         } else {
 
-            val rolloutResults = rollout(simState)
-
             node.simulations = 1
-            node.score = rolloutResults[node.player!!]!!
-            for(index in simChoices.indices) {
-                node.addChild(index, simState.currentPlayer.playerNumber, choice = simChoices[index])
+            node.children = simChoices.map {
+                MCTSTreeNode(
+                    parent = node,
+                    playerNumber = simState.choicePlayer.playerNumber,
+                    card = it,
+                    choiceContext = simState.context)
             }
+
+            val rolloutResults = rollout(simState)
+            node.score = rolloutResults[node.playerNumber!!]!!
 
             // backpropagation
             var current = node.parent
