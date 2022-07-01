@@ -1,8 +1,9 @@
 package policies
 
 import engine.*
-import engine.Player
 
+
+// TODO: rename
 fun _badWitchPolicy(
     state: GameState,
     cardChoices: CardChoices
@@ -37,7 +38,6 @@ fun _badWitchPolicy(
             }
         }
         ChoiceContext.MILITIA -> cardChoices[0]
-        ChoiceContext.WORKSHOP -> throw NotImplementedError()
-        ChoiceContext.CHAPEL -> throw NotImplementedError()
+        else -> throw NotImplementedError()
     }
 }
