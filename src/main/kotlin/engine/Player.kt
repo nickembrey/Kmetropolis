@@ -109,7 +109,7 @@ data class Player(
         }
         if (deck.size > 0) {
             hand.add(deck[0])
-            deck.removeAt(0) //  TODO: may need to test this
+            deck.removeAt(0)
         }
     }
 

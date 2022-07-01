@@ -124,9 +124,12 @@ internal class PlayerTest {
 
     @Test
     fun drawCardTest() {
+        playerOne.deck = mutableListOf(Card.SILVER, Card.ESTATE, Card.COPPER, Card.COPPER, Card.COPPER)
         playerOne.drawCard()
         assertEquals(6, playerOne.hand.size)
         assertEquals(4, playerOne.deck.size)
+        assertFalse(playerOne.deck.contains(Card.SILVER))
+        assertEquals(Card.ESTATE, playerOne.deck[0])
     }
 
     @Test
