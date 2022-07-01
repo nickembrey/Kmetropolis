@@ -2,8 +2,8 @@ package engine
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import policies.policy.firstChoicePolicy
 
-import policies.utility.firstChoicePolicy
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
@@ -15,8 +15,8 @@ internal class CardEffectTest {
 
     @BeforeEach
     fun setUp() {
-        playerOne = Player("Player One", PlayerNumber.PlayerOne, ::firstChoicePolicy)
-        playerTwo = Player("Player Two", PlayerNumber.PlayerTwo, ::firstChoicePolicy)
+        playerOne = Player("Player One", PlayerNumber.PlayerOne, firstChoicePolicy)
+        playerTwo = Player("Player Two", PlayerNumber.PlayerTwo, firstChoicePolicy)
         gameState = GameState(playerOne, playerTwo)
         gameState.initialize()
     }
