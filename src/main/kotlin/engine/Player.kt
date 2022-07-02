@@ -153,7 +153,7 @@ data class Player(
         }
     }
 
-    fun makeNextCardDecision(state: GameState, policy: Policy = defaultPolicy) {
+    fun makeNextCardDecision(state: GameState, policy: (GameState, CardChoices) -> Card? = defaultPolicy::policy) {
         state.context.getCardChoices(this, state.board).let {
             when(it.size) {
                 1 -> makeCardDecision(it[0], state, state.logger)
