@@ -5,7 +5,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import org.junit.jupiter.api.Assertions.*
-import policies.policy.firstChoicePolicy
+import policies.utility.firstChoicePolicy
 
 internal class PlayerTest {
 
@@ -15,8 +15,8 @@ internal class PlayerTest {
 
     @BeforeEach
     fun setUp() {
-        playerOne = Player("Player One", PlayerNumber.PlayerOne, firstChoicePolicy)
-        playerTwo = Player("Player Two", PlayerNumber.PlayerTwo, firstChoicePolicy)
+        playerOne = Player(PlayerNumber.PlayerOne, firstChoicePolicy)
+        playerTwo = Player(PlayerNumber.PlayerTwo, firstChoicePolicy)
         gameState = GameState(playerOne, playerTwo)
         gameState.initialize()
     }

@@ -81,17 +81,17 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
         val playerOne = gameState.playerOne
         val playerTwo = gameState.playerTwo
 
-        gameVpRecords[playerOne.name] = gameVpRecords[playerOne.name]!! + playerOne.vp
-        gameVpRecords[playerTwo.name] = gameVpRecords[playerTwo.name]!! + playerTwo.vp
-        totalVpRecords[playerOne.name] = totalVpRecords[playerOne.name]!! + playerOne.vp
-        totalVpRecords[playerTwo.name] = totalVpRecords[playerTwo.name]!! + playerTwo.vp
+        gameVpRecords[playerOne.defaultPolicy.name] = gameVpRecords[playerOne.defaultPolicy.name]!! + playerOne.vp
+        gameVpRecords[playerTwo.defaultPolicy.name] = gameVpRecords[playerTwo.defaultPolicy.name]!! + playerTwo.vp
+        totalVpRecords[playerOne.defaultPolicy.name] = totalVpRecords[playerOne.defaultPolicy.name]!! + playerOne.vp
+        totalVpRecords[playerTwo.defaultPolicy.name] = totalVpRecords[playerTwo.defaultPolicy.name]!! + playerTwo.vp
 
         if(playerOne.vp > playerTwo.vp) {
-            winRecords[playerOne.name] = winRecords[playerOne.name]!! + 1 // TODO: more elegant way?
-            gameWinner = playerOne.name
+            winRecords[playerOne.defaultPolicy.name] = winRecords[playerOne.defaultPolicy.name]!! + 1 // TODO: more elegant way?
+            gameWinner = playerOne.defaultPolicy.name
         } else if(playerTwo.vp > playerOne.vp) {
-            winRecords[playerTwo.name] = winRecords[playerTwo.name]!! + 1 // TODO: more elegant way?
-            gameWinner = playerTwo.name
+            winRecords[playerTwo.defaultPolicy.name] = winRecords[playerTwo.defaultPolicy.name]!! + 1 // TODO: more elegant way?
+            gameWinner = playerTwo.defaultPolicy.name
         } else {
             winRecords["Ties"] = winRecords["Ties"]!! + 1
         }
@@ -101,8 +101,8 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
         }
 
         totalGames += 1
-        gameVpRecords[playerOne.name] = 0
-        gameVpRecords[playerTwo.name] = 0
+        gameVpRecords[playerOne.defaultPolicy.name] = 0
+        gameVpRecords[playerTwo.defaultPolicy.name] = 0
         gameWinner = null
         gamePlayouts = 0
         gameDecisions = 0
@@ -130,6 +130,9 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
 
     private fun logSimulationSummary() {
         log("Simulation summary\n")
+        log("")
+        log("cParameter: $cParameter")
+        log("")
         for(player in players) {
             log("$player VP: ${totalVpRecords[player]}")
         }
@@ -141,14 +144,13 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
         log("")
         log("Total games: $totalGames")
         log("")
-        log("cParameter: $cParameter")
-        log("")
         log("Playouts: $totalPlayouts")
         log("Decisions: $totalDecisions")
         log("")
         if(totalPlayouts > 0 && totalDecisions > 0) {
             log("Playouts per decision: ${totalPlayouts / totalDecisions}")
         }
+        log("Playouts per decision: ${totalPlayouts / totalDecisions}")
         log("")
         log("Average time per playout: ${timer.totalTime.toDouble() / totalPlayouts}")
         log("Average time per decision: ${timer.totalTime.toDouble() / totalDecisions}")

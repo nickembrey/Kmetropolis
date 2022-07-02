@@ -2,26 +2,29 @@ import engine.DominionLogger
 import engine.GameState
 import engine.Player
 import engine.PlayerNumber
-import policies.policy.*
+import kingdoms.jansenTollisenBoard
+import policies.jansen_tollisen.UCTorigPolicy
+import policies.singleWitchPolicy
 
 import java.io.File
 
 fun main(args: Array<String>) {
+    // TODO: tuck all this stuff away in a Simulation class
 
-    // TODO: names should always be just the policy name.
-    val playerOneName = "Bad Witch 1"
-    val playerTwoName = "Bad Witch 2"
+    val policies = listOf(UCTorigPolicy, singleWitchPolicy)
 
     val logger = DominionLogger(
-        File("/Users/nickembrey/dev/KDominion/log"), listOf(playerOneName, playerTwoName))
+        logDirectory = File("/Users/nickembrey/dev/KDominion/log"),
+        players = policies.map { it.name }
+    )
 
-    val totalGames = 10
+    val totalGames = 25
     val games: MutableList<GameState> = mutableListOf()
 
     for(i in 1..totalGames) {
-        val playerOne = Player(playerOneName, PlayerNumber.PlayerOne, badWitchPolicy)
-        val playerTwo = Player(playerTwoName, PlayerNumber.PlayerTwo, badWitchPolicy)
-        val gameState = GameState(playerOne, playerTwo, logger = logger)
+        val playerOne = Player(PlayerNumber.PlayerOne, UCTorigPolicy)
+        val playerTwo = Player(PlayerNumber.PlayerTwo, singleWitchPolicy)
+        val gameState = GameState(playerOne, playerTwo, board = jansenTollisenBoard, logger = logger)
         gameState.initialize()
         while(!gameState.gameOver) {
             gameState.choicePlayer.makeNextCardDecision(gameState)

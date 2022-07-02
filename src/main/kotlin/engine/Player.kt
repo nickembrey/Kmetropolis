@@ -1,10 +1,10 @@
 package engine
 
-import policies.policy.Policy
-import java.lang.Math.floor
+import policies.Policy
+
+// TODO: players should be created and named from within the GameState
 
 data class Player(
-    val name: String, // TODO: names should always be just the policy name + numeric tag or hash
     val playerNumber: PlayerNumber,
     val defaultPolicy: Policy,
     var deck: MutableList<Card> = mutableListOf(
@@ -40,7 +40,7 @@ data class Player(
     //       which playing a card would return and could be passed up to the state to be processed
     fun playCard(card: Card, state: GameState, logger: DominionLogger? = null) {
 
-        logger?.log("$name plays ${card.name}")
+        logger?.log("${defaultPolicy.name} plays ${card.name}")
 
         hand.remove(card).also { removed ->
             if (!removed) {
@@ -66,7 +66,7 @@ data class Player(
     }
 
     fun buyCard(card: Card, board: Board, logger: DominionLogger? = null) {
-        logger?.log("$name buys ${card.name}")
+        logger?.log("${defaultPolicy.name} buys ${card.name}")
         coins -= card.cost
         buys -= 1
         gainCard(card, board, logger)
@@ -74,7 +74,7 @@ data class Player(
 
     // TODO: use for witch
     fun gainCard(card: Card, board: Board, logger: DominionLogger? = null) {
-        logger?.log("$name gains ${card.name}")
+        logger?.log("${defaultPolicy.name} gains ${card.name}")
         board[card] = board[card]!! - 1
         discard.add(card)
     }
@@ -86,7 +86,7 @@ data class Player(
             }
         }
 
-        logger?.log("$name trashes ${card.name}")
+        logger?.log("${defaultPolicy.name} trashes ${card.name}")
 
     }
 
@@ -100,7 +100,7 @@ data class Player(
 
         discard.add(card)
 
-        logger?.log("$name discards ${card.name}")
+        logger?.log("${defaultPolicy.name} discards ${card.name}")
     }
 
     fun drawCard(trueShuffle: Boolean = true) {
@@ -173,7 +173,7 @@ data class Player(
         actions = 1
         buys = 1
         coins = 0
-        logger?.log("\n${this.name} ends their turn\n")
+        logger?.log("\n${defaultPolicy.name} ends their turn\n")
     }
 
 }
