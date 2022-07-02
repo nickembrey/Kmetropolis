@@ -36,7 +36,7 @@ fun _UCBorigPolicy(
     ) }
 
     // TODO: these should be associated with individual players
-    state.logger?.recordSimulationOptions(seconds, cParameter)
+    state.logger?.recordSimulationOptions(cParameter)
 
     // TODO: remove subfunctions from here and in MCTS policy
     // Note that toMutableList is used below to create copies of the current state.
@@ -119,11 +119,11 @@ fun _UCBorigPolicy(
 
     val iterations = 100000
     for (it in 1..iterations) {
-        state.logger?.addPlayout()
+//        state.logger?.addPlayout() // TODO
         forward(getNewState(state), choices, choiceNodes)
     }
 
-    state.logger?.addDecision()
+//    state.logger?.addDecision() // TODO
 
     val simulations: List<Int> = choiceNodes.map { it.simulations }
     val maxSim = simulations.indices.maxByOrNull { simulations[it] }!!

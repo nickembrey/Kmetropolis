@@ -11,6 +11,8 @@ fun _UCTorigPolicy(
     choices: CardChoices
 ): Card? {
 
+    state.logger?.startDecision()
+
     // must play plus actions first (MPPAF)
     if(state.context == ChoiceContext.ACTION) {
         val addActionsCard = choices.filterNotNull().firstOrNull { it.addActions > 0 }   // TODO:
@@ -24,10 +26,9 @@ fun _UCTorigPolicy(
     // TODO: pull out into settings either at Policy or Simulation level or both
 
     // TODO: need a settings class
-    val seconds = 2.0
-    val cParameter = 0.7
 
-//    state.logger?.recordSimulationOptions(seconds, cParameter) // TODO
+    val cParameter = 0.7
+    state.logger?.recordSimulationOptions(cParameter)
 
     val root = MCTSTreeNode(
         parent = null,
@@ -158,16 +159,20 @@ fun _UCTorigPolicy(
     }
 
 
-    val iterations = 100000
+    val iterations = 1000
     val shuffledState = getNewState(state, true)
+
+
+
     for (it in 1..iterations) {
-        state.logger?.addPlayout()
+        state.logger?.startSimulation()
         forward(root, getNewState(shuffledState), choices)
+        state.logger?.endSimulation()
     }
 
-    state.logger?.addDecision()
+
 
     val simulations: List<Int> = root.children.map { it.simulations }
     val index = simulations.indices.maxByOrNull { simulations[it] }!!
-    return choices[index]
+    return choices[index].also { state.logger?.endDecision() }
 }

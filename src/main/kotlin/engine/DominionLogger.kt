@@ -1,11 +1,17 @@
 package engine
 
+import util.SimulationTimer
 import java.io.File
 
 // TODO: it would be cool if we could have a setting to make the logs look like dominion.games logs
+//       1st we would need tokens for actions and have log be a series of tokens
+//       and somehow handle indentation for Dominion.games logs
+//       NOTE: this could also be a first step toward making games that are undo-able
+
+
 class DominionLogger(logDirectory: File, private val players: List<String>) {
 
-    // TODO: timing stats
+    // TODO: timing stats then profile
 
     private val logFile: File
     private val gameVpRecords: MutableMap<String, Int>
@@ -27,12 +33,14 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
         winRecords = players.plus("Ties").associateWith { 0 }.toMutableMap()
     }
 
-    private var gamePlayouts = 0
-    private var gameDecisions = 0
-    private var gameWinner: String? = null
+    private val timer: SimulationTimer = SimulationTimer()
 
     private var decisionTime: Double = 0.0
     private var cParameter: Double = 0.0
+
+    private var gamePlayouts = 0
+    private var gameDecisions = 0
+    private var gameWinner: String? = null
 
     private var totalPlayouts = 0
     private var totalDecisions = 0
@@ -50,58 +58,22 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
         }
     }
 
-    private fun logGameSummary() {
-        log("\nGame summary\n")
-
-        for(player in players) {
-            log("$player VP: ${gameVpRecords[player]}")
-        }
-
-        log("Playouts: $gamePlayouts")
-        log("Decisions: $gameDecisions")
-
-        if(gamePlayouts > 0 && gameDecisions > 0) {
-            log("Playouts per decision: ${gamePlayouts / gameDecisions}")
-        }
-
-        log("")
-
+    fun startDecision() {
+        timer.start()
     }
 
-    private fun logSimulationSummary() {
-        log("Simulation summary\n")
-
-        for(player in players) {
-            log("$player VP: ${totalVpRecords[player]}")
-        }
-
-        log("")
-
-        for(player in players) {
-            log("$player wins: ${winRecords[player]}")
-        }
-        log("Ties: ${winRecords["Ties"]}")
-        log("")
-        log("Total games: $totalGames")
-        log("")
-        log("Time allotted per decision: $decisionTime")
-        log("cParameter: $cParameter")
-        log("")
-        log("Playouts: $totalPlayouts")
-        log("Decisions: $totalDecisions")
-        if(totalPlayouts > 0 && totalDecisions > 0) {
-            log("Playouts per decision: ${totalPlayouts / totalDecisions}")
-        }
-    }
-
-    fun addPlayout() {
-        gamePlayouts += 1
-        totalPlayouts += 1
-    }
-
-    fun addDecision() {
+    fun endDecision() {
+        timer.stop()
         gameDecisions += 1
         totalDecisions += 1
+    }
+
+    fun startSimulation() {
+    }
+
+    fun endSimulation() {
+        gamePlayouts += 1
+        totalPlayouts += 1
     }
 
     fun recordGame(gameState: GameState, logSummary: Boolean = true) {
@@ -136,8 +108,7 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
         gameDecisions = 0
     }
 
-    fun recordSimulationOptions(decisionTime: Double, cParameter: Double) {
-        this.decisionTime = decisionTime
+    fun recordSimulationOptions(cParameter: Double) {
         this.cParameter = cParameter
     }
 
@@ -146,6 +117,41 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
             logSimulationSummary()
         }
         write()
+    }
+
+    private fun logGameSummary() {
+        log("\nGame summary")
+        log("")
+        for(player in players) {
+            log("$player VP: ${gameVpRecords[player]}")
+        }
+
+    }
+
+    private fun logSimulationSummary() {
+        log("Simulation summary\n")
+        for(player in players) {
+            log("$player VP: ${totalVpRecords[player]}")
+        }
+        log("")
+        for(player in players) {
+            log("$player wins: ${winRecords[player]}")
+        }
+        log("Ties: ${winRecords["Ties"]}")
+        log("")
+        log("Total games: $totalGames")
+        log("")
+        log("cParameter: $cParameter")
+        log("")
+        log("Playouts: $totalPlayouts")
+        log("Decisions: $totalDecisions")
+        log("")
+        if(totalPlayouts > 0 && totalDecisions > 0) {
+            log("Playouts per decision: ${totalPlayouts / totalDecisions}")
+        }
+        log("")
+        log("Average time per playout: ${timer.totalTime.toDouble() / totalPlayouts}")
+        log("Average time per decision: ${timer.totalTime.toDouble() / totalDecisions}")
     }
 
 
