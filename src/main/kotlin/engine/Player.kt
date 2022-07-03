@@ -27,153 +27,35 @@ data class Player(
     var actions = 1
     var buys = 1
     var coins = 0
+    var baseVp = 3
 
     var remodelCard: Card? = null
+
+    val handLocation: CardLocation
+        get() = when(playerNumber) {
+            PlayerNumber.PlayerOne -> CardLocation.PLAYER_ONE_HAND
+            PlayerNumber.PlayerTwo -> CardLocation.PLAYER_TWO_HAND
+        }
+
+    val inPlayLocation: CardLocation
+        get() = when(playerNumber) {
+            PlayerNumber.PlayerOne -> CardLocation.PLAYER_ONE_IN_PLAY
+            PlayerNumber.PlayerTwo -> CardLocation.PLAYER_TWO_IN_PLAY
+        }
+
+    val discardLocation: CardLocation
+        get() = when(playerNumber) {
+            PlayerNumber.PlayerOne -> CardLocation.PLAYER_ONE_DISCARD
+            PlayerNumber.PlayerTwo -> CardLocation.PLAYER_TWO_DISCARD
+        }
 
     val allCards
         get() = deck + hand + discard + inPlay
 
-    val vp
-        get() = allCards.sumOf { it.vp } + (allCards.count { it == Card.GARDENS } * kotlin.math.floor(allCards.size.toDouble() / 10)).toInt()
+    val vp // TODO: test
+        get() = baseVp + (allCards.count { it == Card.GARDENS } * kotlin.math.floor(allCards.size.toDouble() / 10)).toInt()
 
     // TODO: one way we could make this more functional is by adding the notion of an Effect type,
     //       which playing a card would return and could be passed up to the state to be processed
-    fun playCard(card: Card, state: GameState, logger: DominionLogger? = null) {
-
-        logger?.log("${defaultPolicy.name} plays ${card.name}")
-
-        hand.remove(card).also { removed ->
-            if (!removed) {
-                throw IllegalStateException("Can't play a card that wasn't in hand!")
-            }
-        }
-
-        inPlay.add(card)
-
-        if (card.type == CardType.ACTION) {
-            actions -= 1
-        }
-
-        buys += card.addBuys
-        actions += card.addActions
-        coins += card.addCoins
-
-        for (effect in card.effectList) {
-            effect(state)
-        }
-
-        drawCards(card.addCards, state.trueShuffle)
-    }
-
-    fun buyCard(card: Card, board: Board, logger: DominionLogger? = null) {
-        logger?.log("${defaultPolicy.name} buys ${card.name}")
-        coins -= card.cost
-        buys -= 1
-        gainCard(card, board, logger)
-    }
-
-    // TODO: use for witch
-    fun gainCard(card: Card, board: Board, logger: DominionLogger? = null) {
-        logger?.log("${defaultPolicy.name} gains ${card.name}")
-        board[card] = board[card]!! - 1
-        discard.add(card)
-    }
-
-    fun trashCard(card: Card, logger: DominionLogger? = null) {
-        hand.remove(card).also { removed ->
-            if (!removed) {
-                throw IllegalStateException("Can't trash a card that wasn't in hand!")
-            }
-        }
-
-        logger?.log("${defaultPolicy.name} trashes ${card.name}")
-
-    }
-
-    // TODO: one moveCard method that handles all this, with different destinations as enum
-    fun discardCard(card: Card, logger: DominionLogger? = null) {
-        hand.remove(card).also { removed ->
-            if (!removed) {
-                throw IllegalStateException("Can't discard a card that wasn't in hand!")
-            }
-        }
-
-        discard.add(card)
-
-        logger?.log("${defaultPolicy.name} discards ${card.name}")
-    }
-
-    fun drawCard(trueShuffle: Boolean = true) {
-        if (deck.size == 0) {
-            shuffle(trueShuffle)
-        }
-        if (deck.size > 0) {
-            hand.add(deck[0])
-            deck.removeAt(0)
-        }
-    }
-
-    fun drawCards(number: Int, trueShuffle: Boolean = true) {
-        if (number > 0) {
-            drawCard(trueShuffle)
-            drawCards(number - 1, trueShuffle)
-        }
-    }
-
-    fun shuffle(trueShuffle: Boolean = true) {
-        deck += discard
-        discard.clear()
-        if(trueShuffle) {
-            deck.shuffle()
-        }
-    }
-
-    fun makeCardDecision(card: Card?, state: GameState, logger: DominionLogger? = null) {
-
-        val context = state.context
-
-        card?.let { it ->
-            when (context) {
-                ChoiceContext.ACTION, ChoiceContext.TREASURE -> playCard(it, state, logger)
-                ChoiceContext.BUY -> buyCard(it, state.board, logger)
-                ChoiceContext.CHAPEL -> trashCard(it, logger)
-                ChoiceContext.MILITIA -> discardCard(it, logger)
-                ChoiceContext.WORKSHOP -> gainCard(it, state.board, logger)
-                ChoiceContext.REMODEL_TRASH -> {
-                    trashCard(it, logger).also { _ -> remodelCard = it }
-                }
-                ChoiceContext.REMODEL_GAIN -> gainCard(it, state.board, logger).also { _ -> remodelCard = null }
-            }
-        }
-
-        // TODO: the need for management here probably means the contextDecisionCounter needs to be rethought and nextContext should be scrapped or redesigned
-        if(state.context == context) { // decrement the decision counters unless we changed context
-            state.contextDecisionCounters -= 1
-            state.nextContext(card == null)
-        }
-    }
-
-    fun makeNextCardDecision(state: GameState, policy: (GameState, CardChoices) -> Card? = defaultPolicy::policy) {
-        state.context.getCardChoices(this, state.board).let {
-            when(it.size) {
-                1 -> makeCardDecision(it[0], state, state.logger)
-                else -> makeCardDecision(policy(state, it), state, state.logger)
-            }
-        }
-    }
-
-
-    fun endTurn(trueShuffle: Boolean, logger: DominionLogger? = null) {
-
-        discard += inPlay
-        inPlay.clear()
-        discard += hand
-        hand.clear()
-        drawCards(5, trueShuffle)
-        actions = 1
-        buys = 1
-        coins = 0
-        logger?.log("\n${defaultPolicy.name} ends their turn\n")
-    }
 
 }

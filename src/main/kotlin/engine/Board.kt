@@ -1,27 +1,16 @@
 package engine
 
-typealias Board = MutableMap<Card, Int>
+// TODO: we could also change it to just use the ordinal instead of the whole card
+typealias Board = HashMap<Card, Int>
 
-val defaultBoard
-    get() = mutableMapOf(
-        Card.FESTIVAL to 10,
-        Card.WITCH to 10,
-        Card.MARKET to 10,
-        Card.LABORATORY to 10,
-        Card.SMITHY to 10,
-        Card.MONEYLENDER to 10,
-        Card.MILITIA to 10,
-        Card.CHAPEL to 10,
-        Card.VILLAGE to 10,
-        Card.WORKSHOP to 10,
+fun Board.removeCard(card: Card): Card? {
+    return if(getValue(card) > 0) {
+        card.also { merge(card, 1, Int::minus) }
+    } else {
+        null
+    }
+}
 
-        Card.GOLD to 30,
-        Card.SILVER to 40,
-        Card.COPPER to 46,
-
-        Card.PROVINCE to 8,
-        Card.DUCHY to 8,
-        Card.ESTATE to 8,
-
-        Card.CURSE to 10,
-    )
+fun Board.addCard(card: Card): Card {
+    return card.also { merge(card, 1, Int::plus) }
+}

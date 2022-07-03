@@ -3,7 +3,7 @@ package kingdoms
 import engine.Board
 import engine.Card
 
-val jansenTollisenBoard: Board
+val defaultBoard: Board
     get() = hashMapOf(
         Card.FESTIVAL to 10,
         Card.WITCH to 10,
@@ -11,10 +11,10 @@ val jansenTollisenBoard: Board
         Card.LABORATORY to 10,
         Card.SMITHY to 10,
         Card.MONEYLENDER to 10,
-        Card.REMODEL to 10,
-        Card.GARDENS to 8,
+        Card.MILITIA to 10,
+        Card.CHAPEL to 10,
         Card.VILLAGE to 10,
-        Card.WOODCUTTER to 10,
+        Card.WORKSHOP to 10,
 
         Card.GOLD to 30,
         Card.SILVER to 40,

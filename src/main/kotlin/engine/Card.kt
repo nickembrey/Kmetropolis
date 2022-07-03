@@ -38,3 +38,11 @@ enum class Card(
 
     CURSE(type = CardType.OTHER, cost = 0, vp = -1);
 }
+
+fun MutableList<Card>.removeCard(card: Card): Card? {
+    return remove(card).takeIf { it }?.let { card }
+}
+
+fun MutableList<Card>.addCard(card: Card): Card {
+    return add(card).let { card }
+}

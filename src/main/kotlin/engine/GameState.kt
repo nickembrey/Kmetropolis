@@ -1,6 +1,7 @@
 package engine
 
-// TODO: consider renaming to Simulation
+import kingdoms.defaultBoard
+import policies.Policy
 
 class GameState(
     val playerOne: Player,
@@ -13,6 +14,8 @@ class GameState(
     private val maxTurns: Int = 999
 ) {
 
+    val trash: MutableList<Card> = mutableListOf()
+
     var currentPlayer: Player = playerOne
     val otherPlayer: Player
         get() = if(currentPlayer == playerOne) {
@@ -23,8 +26,9 @@ class GameState(
 
     var concede = false
 
-    val gameOver
-        get() = board.filter { it.value == 0}.size >= 3 || board[Card.PROVINCE] == 0 || turns > maxTurns || concede
+    var emptySupplyPiles = 0
+    var gameOver = false
+        get() = field || emptySupplyPiles >= 3 || turns > maxTurns || concede
 
     val choicePlayer
         get() = if(context == ChoiceContext.MILITIA) {
@@ -46,8 +50,8 @@ class GameState(
     fun initialize() {
         playerOne.deck.shuffle()
         playerTwo.deck.shuffle()
-        playerOne.drawCards(5, trueShuffle)
-        playerTwo.drawCards(5, trueShuffle)
+        drawCards(5, playerOne, trueShuffle)
+        drawCards(5, playerTwo, trueShuffle)
     }
 
     fun nextContext(exitCurrentContext: Boolean = false) { // TODO: debug
@@ -62,11 +66,180 @@ class GameState(
                 }
                 ChoiceContext.CHAPEL, ChoiceContext.MILITIA, ChoiceContext.WORKSHOP, ChoiceContext.REMODEL_GAIN -> ChoiceContext.ACTION
                 ChoiceContext.BUY -> {
-                    currentPlayer.endTurn(trueShuffle, logger)
+                    endTurn(currentPlayer, trueShuffle, logger)
                     turns += 1
                     currentPlayer = otherPlayer
                     ChoiceContext.ACTION
                 }
+            }
+        }
+    }
+
+    fun removeCard(card: Card, from: CardLocation): Card? {
+        return when(from) {
+            CardLocation.SUPPLY -> {
+                board.removeCard(card).also {
+                    if(board.getValue(card) == 0) {
+                        if(card == Card.PROVINCE) {
+                            gameOver = true
+                        }
+                        emptySupplyPiles += 1
+                    }
+                }
+            }
+            CardLocation.TRASH -> trash.removeCard(card)
+            CardLocation.PLAYER_ONE_IN_PLAY -> playerOne.inPlay.removeCard(card)
+            CardLocation.PLAYER_TWO_IN_PLAY -> playerOne.inPlay.removeCard(card)
+            CardLocation.PLAYER_ONE_HAND -> playerOne.hand.removeCard(card)
+            CardLocation.PLAYER_TWO_HAND -> playerTwo.hand.removeCard(card)
+            CardLocation.PLAYER_ONE_DISCARD -> playerOne.discard.removeCard(card)
+            CardLocation.PLAYER_TWO_DISCARD -> playerTwo.discard.removeCard(card)
+        }
+    }
+
+    fun addCard(card: Card, to: CardLocation): Card {
+        return when(to) {
+            CardLocation.SUPPLY -> board.addCard(card)
+            CardLocation.TRASH -> trash.addCard(card)
+            CardLocation.PLAYER_ONE_IN_PLAY -> playerOne.inPlay.addCard(card)
+            CardLocation.PLAYER_TWO_IN_PLAY -> playerOne.inPlay.addCard(card)
+            CardLocation.PLAYER_ONE_HAND -> playerOne.hand.addCard(card)
+            CardLocation.PLAYER_TWO_HAND -> playerTwo.hand.addCard(card)
+            CardLocation.PLAYER_ONE_DISCARD -> playerOne.discard.addCard(card)
+            CardLocation.PLAYER_TWO_DISCARD -> playerTwo.discard.addCard(card)
+        }
+    }
+
+    fun moveCard(
+        card: Card,
+        from: CardLocation,
+        to: CardLocation,
+        validateMove: Boolean = false
+    ): Card? {
+        return removeCard(card, from)
+            ?.let { addCard(it, to) }
+            .also {
+                if (validateMove && it == null) {
+                    throw NoSuchElementException("Card ${card.name} not found at ${from.name}!")
+                }
+            }
+    }
+
+    fun drawCards(number: Int, player: Player, trueShuffle: Boolean = true) {
+        if (number > 0) {
+            drawCard(player, trueShuffle)
+            drawCards(number - 1, player, trueShuffle)
+        }
+    }
+
+    fun drawCard(player: Player, trueShuffle: Boolean = true) {
+        if (player.deck.size == 0) {
+            shuffle(player, trueShuffle)
+        }
+        player.deck.removeFirstOrNull()?.let {
+            addCard (it, player.handLocation)
+            logger?.log("${player.defaultPolicy.name} draws ${it.name}")
+        }
+
+    }
+
+    fun shuffle(player: Player, trueShuffle: Boolean = true) {
+        player.deck += player.discard
+        player.discard.clear()
+        if(trueShuffle) {
+            player.deck.shuffle()
+        }
+    }
+
+    fun endTurn(player: Player, trueShuffle: Boolean = true, logger: DominionLogger? = null) {
+
+        player.discard += player.inPlay
+        player.inPlay.clear()
+        player.discard += player.hand
+        player.hand.clear()
+        drawCards(5, player, trueShuffle)
+        player.actions = 1
+        player.buys = 1
+        player.coins = 0
+        logger?.log("\n${player.defaultPolicy.name} ends their turn\n")
+    }
+
+    fun contextToGameMove(context: ChoiceContext): GameMove {
+        return when (context) {
+            ChoiceContext.ACTION, ChoiceContext.TREASURE -> GameMove.PLAY
+            ChoiceContext.BUY -> GameMove.BUY
+            ChoiceContext.CHAPEL -> GameMove.TRASH
+            ChoiceContext.MILITIA -> GameMove.DISCARD
+            ChoiceContext.WORKSHOP -> GameMove.GAIN
+            ChoiceContext.REMODEL_TRASH -> GameMove.TRASH
+            ChoiceContext.REMODEL_GAIN -> GameMove.GAIN
+        }
+    }
+
+    fun processGameMove(player: Player, move: GameMove, card: Card) {
+        when (move) {
+            GameMove.BUY -> {
+                player.coins -= card.cost
+                player.buys -= 1
+                moveCard(card, CardLocation.SUPPLY, player.discardLocation, true)
+                player.baseVp += card.vp
+            }
+            GameMove.GAIN -> {
+                moveCard(card, CardLocation.SUPPLY, player.discardLocation, true)
+                player.baseVp += card.vp
+            }
+            GameMove.PLAY -> {
+                moveCard(card, player.handLocation, player.inPlayLocation, true)
+                if (card.type == CardType.ACTION) {
+                    player.actions -= 1
+                }
+
+                // TODO: move to card effects
+                player.buys += card.addBuys
+                player.actions += card.addActions
+                player.coins += card.addCoins
+
+                for (effect in card.effectList) {
+                    effect(this)
+                }
+
+                drawCards(card.addCards, player, trueShuffle)
+            }
+            GameMove.TRASH -> {
+                moveCard(card, player.handLocation, CardLocation.TRASH, true)
+                player.baseVp -= card.vp
+            }
+            GameMove.DISCARD -> moveCard(card, player.handLocation, player.discardLocation, true)
+        }
+        logger?.log("${player.defaultPolicy.name} ${move.verb} ${card.name}")
+    }
+
+    fun makeCardDecision(card: Card?) {
+
+        val previousContext = context
+        val move = contextToGameMove(context)
+        card?.let { it ->
+            processGameMove(choicePlayer, move, it)
+        }
+
+        when(context) {
+            ChoiceContext.REMODEL_TRASH -> choicePlayer.remodelCard = card
+            ChoiceContext.REMODEL_GAIN -> choicePlayer.remodelCard = null
+            else -> {}
+        }
+
+        // TODO: the need for management here probably means the contextDecisionCounter needs to be rethought and nextContext should be scrapped or redesigned
+        if(context == previousContext) { // decrement the decision counters unless we changed context
+            contextDecisionCounters -= 1
+            nextContext(card == null)
+        }
+    }
+
+    fun makeNextCardDecision(policy: Policy = choicePlayer.defaultPolicy) {
+        context.getCardChoices(choicePlayer, board).let {
+            when(it.size) {
+                1 -> makeCardDecision(it[0])
+                else -> makeCardDecision(policy.policy(this, it))
             }
         }
     }

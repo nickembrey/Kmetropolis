@@ -64,7 +64,7 @@ object UCBorigPolicy : Policy {
             return GameState(
                 playerOne,
                 playerTwo,
-                currentState.board.toMutableMap(),
+                HashMap(currentState.board),
                 currentState.turns,
                 currentState.context,
                 trueShuffle = false,
@@ -78,7 +78,7 @@ object UCBorigPolicy : Policy {
         fun rollout(simState: GameState): Double {
 
             while(!simState.gameOver) {
-                simState.choicePlayer.makeNextCardDecision(simState, epsilonHeuristicGreedyPolicy::policy)
+                simState.makeNextCardDecision(epsilonHeuristicGreedyPolicy)
             }
 
             val playerOneVp = simState.playerOne.vp
@@ -110,7 +110,7 @@ object UCBorigPolicy : Policy {
             }
 
             simChoices[index].let {
-                simState.choicePlayer.makeCardDecision(it, simState)
+                simState.makeCardDecision(it)
             }
 
             choiceNodes[index].score += rollout(simState)

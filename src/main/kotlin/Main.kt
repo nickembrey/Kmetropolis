@@ -27,7 +27,7 @@ fun main(args: Array<String>) {
         val gameState = GameState(playerOne, playerTwo, board = jansenTollisenBoard, logger = logger)
         gameState.initialize()
         while(!gameState.gameOver) {
-            gameState.choicePlayer.makeNextCardDecision(gameState)
+            gameState.makeNextCardDecision()
         }
 
         logger.recordGame(gameState)

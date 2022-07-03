@@ -12,7 +12,7 @@ object UCTorigPolicy : Policy {
     override fun policy(
         state: GameState,
         choices: CardChoices
-    ): Card? {
+    ): Card? { // TODO: we can get the choices from the state ourselves
 
         state.logger?.startDecision()
 
@@ -63,7 +63,7 @@ object UCTorigPolicy : Policy {
             return GameState(
                 playerOne,
                 playerTwo,
-                currentState.board.toMutableMap(),
+                HashMap(currentState.board),
                 currentState.turns,
                 currentState.context,
                 trueShuffle = false,
@@ -79,17 +79,16 @@ object UCTorigPolicy : Policy {
         fun rollout(simState: GameState): Map<PlayerNumber, Double> {
 
             while (!simState.gameOver) {
-                simState.choicePlayer.makeNextCardDecision(simState)
+                simState.makeNextCardDecision()
             }
 
             val playerOneVp = simState.playerOne.vp
             val playerTwoVp = simState.playerTwo.vp
 
-
             val playerOneScore = (if (playerOneVp > playerTwoVp) 1.0 else 0.0) +
-                    (simState.playerOne.vp - simState.playerTwo.vp).toDouble() / 100.0
+                    (playerOneVp - playerTwoVp).toDouble() / 100.0
             val playerTwoScore = (if (playerTwoVp > playerOneVp) 1.0 else 0.0) +
-                    (simState.playerTwo.vp - simState.playerOne.vp).toDouble() / 100.0
+                    (playerTwoVp - playerOneVp).toDouble() / 100.0
 
             // TODO: 100 is a magic number
             return mapOf(
@@ -116,21 +115,21 @@ object UCTorigPolicy : Policy {
                     }
 
                 simChoices[index].let {
-                    simState.choicePlayer.makeCardDecision(it, simState)
+                    simState.makeCardDecision(it)
                 }
 
                 // TODO: wrap this up in a method
                 var nextChoices = simState.context.getCardChoices(simState.choicePlayer, simState.board)
                 while (true) {
                     if (nextChoices.size == 1) {
-                        simState.choicePlayer.makeCardDecision(nextChoices[0], simState)
+                        simState.makeCardDecision(nextChoices[0])
                     } else when (simState.context) {
                         ChoiceContext.ACTION -> { // must play plus actions first (MPPAF)
                             nextChoices.filterNotNull().firstOrNull { it.addActions > 0 }?.let {
-                                simState.choicePlayer.makeCardDecision(it, simState)
+                                simState.makeCardDecision(it)
                             } ?: break
                         }
-                        ChoiceContext.TREASURE -> simState.choicePlayer.makeCardDecision(nextChoices[0], simState)
+                        ChoiceContext.TREASURE -> simState.makeCardDecision(nextChoices[0])
                         else -> break
                     }
                     nextChoices = simState.context.getCardChoices(simState.choicePlayer, simState.board)
@@ -173,7 +172,6 @@ object UCTorigPolicy : Policy {
             forward(root, getNewState(shuffledState), choices)
             state.logger?.endSimulation()
         }
-
 
         val simulations: List<Int> = root.children.map { it.simulations }
         val index = simulations.indices.maxByOrNull { simulations[it] }!!
