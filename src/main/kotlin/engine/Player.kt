@@ -7,6 +7,7 @@ import policies.Policy
 data class Player(
     val playerNumber: PlayerNumber,
     val defaultPolicy: Policy,
+    val name: String,
     var deck: MutableList<Card> = mutableListOf(
         Card.COPPER,
         Card.COPPER,

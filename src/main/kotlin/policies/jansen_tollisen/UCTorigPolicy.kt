@@ -4,11 +4,13 @@ import engine.*
 import engine.Player
 import mcts.MCTSTreeNode
 import policies.Policy
+import policies.PolicyName
 import policies.rollout.jansen_tollisen.epsilonHeuristicGreedyPolicy
 import kotlin.math.ln
+import kotlin.math.sqrt
 
 object UCTorigPolicy : Policy {
-    override val name = "UCTorigPolicy"
+    override val name = PolicyName("UCTorigPolicy")
     override fun policy(
         state: GameState,
         choices: CardChoices
@@ -43,38 +45,7 @@ object UCTorigPolicy : Policy {
         // TODO: remove subfunctions from here and in MCTS policy
         // Note that toMutableList is used below to create copies of the current state.
         // TODO: this could be a bottleneck? think about it.
-        fun getNewState(currentState: GameState, shuffle: Boolean = false): GameState {
-            val playerOne = Player(
-                PlayerNumber.PlayerOne,
-                epsilonHeuristicGreedyPolicy,
-                currentState.playerOne.deck.toMutableList().also { if (shuffle) it.shuffle() }, // TODO:
-                currentState.playerOne.hand.toMutableList(),
-                currentState.playerOne.inPlay.toMutableList(),
-                currentState.playerOne.discard.toMutableList()
-            ).apply { remodelCard = currentState.playerOne.remodelCard }
-            val playerTwo = Player(
-                PlayerNumber.PlayerTwo,
-                epsilonHeuristicGreedyPolicy,
-                currentState.playerTwo.deck.toMutableList().also { if (shuffle) it.shuffle() }, // TODO:
-                currentState.playerTwo.hand.toMutableList(),
-                currentState.playerTwo.inPlay.toMutableList(),
-                currentState.playerTwo.discard.toMutableList()
-            ).apply { remodelCard = currentState.playerOne.remodelCard }
-            return GameState(
-                playerOne,
-                playerTwo,
-                HashMap(currentState.board),
-                currentState.turns,
-                currentState.context,
-                trueShuffle = false,
-                maxTurns = 40
-            ).apply {
-                currentPlayer = when (currentState.currentPlayer.playerNumber) {
-                    PlayerNumber.PlayerOne -> playerOne
-                    PlayerNumber.PlayerTwo -> playerTwo
-                }
-            }
-        }
+        // TODO: epsilonHeuristicGreedyPolicy
 
         fun rollout(simState: GameState): Map<PlayerNumber, Double> {
 
@@ -108,7 +79,7 @@ object UCTorigPolicy : Policy {
                     } else {
                         node.children.map {
                             (it.score / it.simulations) +
-                                    (cParameter * kotlin.math.sqrt(ln(node.simulations.toDouble()) / it.simulations))
+                                    (cParameter * sqrt(ln(node.simulations.toDouble()) / it.simulations))
                         }.let { values ->
                             values.indices.maxByOrNull { values[it] }!!
                         }
@@ -162,14 +133,24 @@ object UCTorigPolicy : Policy {
         }
 
 
-        val iterations = 1000
-        val shuffledState = getNewState(state, true)
+        val iterations = 100
 
-
+        val shuffledState = state.copy(
+            newPolicies = Pair(epsilonHeuristicGreedyPolicy, epsilonHeuristicGreedyPolicy),
+            newTrueShuffle = false,
+            newLogger = null,
+            newMaxTurns = 40, // TODO:
+            newPoliciesInOrder = true,
+            obfuscateUnseen = true
+        )
 
         for (it in 1..iterations) {
             state.logger?.startSimulation()
-            forward(root, getNewState(shuffledState), choices)
+            forward(
+                node = root,
+                simState = shuffledState.copy(),
+                simChoices = choices
+            )
             state.logger?.endSimulation()
         }
 

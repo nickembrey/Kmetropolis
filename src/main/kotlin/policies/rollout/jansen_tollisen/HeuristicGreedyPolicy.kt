@@ -2,10 +2,11 @@ package policies.rollout.jansen_tollisen
 
 import engine.*
 import policies.Policy
+import policies.PolicyName
 import policies.rollout.randomPolicy
 
 object heuristicGreedyPolicy : Policy {
-    override val name = "heuristicGreedyPolicy"
+    override val name = PolicyName("heuristicGreedyPolicy")
     override fun policy(
         state: GameState,
         choices: CardChoices

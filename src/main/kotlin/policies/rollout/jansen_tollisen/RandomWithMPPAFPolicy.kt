@@ -2,9 +2,10 @@ package policies.rollout.jansen_tollisen
 
 import engine.*
 import policies.Policy
+import policies.PolicyName
 
 object randomWithMPPAFPolicy : Policy {
-    override val name = "randomWithMPPAFPolicy"
+    override val name = PolicyName("randomWithMPPAFPolicy")
     override fun policy(
         state: GameState,
         choices: CardChoices

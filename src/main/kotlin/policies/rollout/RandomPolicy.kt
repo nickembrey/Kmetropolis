@@ -2,9 +2,10 @@ package policies.rollout
 
 import engine.*
 import policies.Policy
+import policies.PolicyName
 
 object randomPolicy : Policy {
-    override val name = "randomPolicy"
+    override val name = PolicyName("randomPolicy")
     override fun policy(
         state: GameState,
         choices: CardChoices

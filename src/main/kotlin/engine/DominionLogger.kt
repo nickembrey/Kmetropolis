@@ -1,5 +1,6 @@
 package engine
 
+import policies.PolicyName
 import util.SimulationTimer
 import java.io.File
 
@@ -9,14 +10,15 @@ import java.io.File
 //       NOTE: this could also be a first step toward making games that are undo-able
 
 
-class DominionLogger(logDirectory: File, private val players: List<String>) {
+class DominionLogger(logDirectory: File) {
 
     // TODO: timing stats then profile
 
     private val logFile: File
-    private val gameVpRecords: MutableMap<String, Int>
-    private val totalVpRecords: MutableMap<String, Int>
-    private val winRecords: MutableMap<String, Int>
+    private val gameVpRecords: MutableMap<PolicyName, Int> = mutableMapOf()
+    private val totalVpRecords: MutableMap<PolicyName, Int> = mutableMapOf()
+    private val winRecords: MutableMap<PolicyName, Int> = mutableMapOf()
+    private val tieRecords: MutableMap<Pair<PolicyName, PolicyName>, Int> = mutableMapOf()
 
     init {
         val base = "dominion-log"
@@ -27,20 +29,14 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
             candidateFile = File(logDirectory, base + number)
         }
         logFile = candidateFile
-
-        gameVpRecords = players.associateWith { 0 }.toMutableMap()
-        totalVpRecords = players.associateWith { 0 }.toMutableMap()
-        winRecords = players.plus("Ties").associateWith { 0 }.toMutableMap()
     }
 
     private val timer: SimulationTimer = SimulationTimer()
 
-    private var decisionTime: Double = 0.0
     private var cParameter: Double = 0.0
 
     private var gamePlayouts = 0
     private var gameDecisions = 0
-    private var gameWinner: String? = null
 
     private var totalPlayouts = 0
     private var totalDecisions = 0
@@ -56,6 +52,16 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
         logFile.printWriter().use {
             it.print(log)
         }
+    }
+
+    fun startGame(state: GameState) {
+        gameVpRecords[state.policies.first.name] = 0
+        gameVpRecords[state.policies.second.name] = 0
+        totalVpRecords.putIfAbsent(state.policies.first.name, 0)
+        totalVpRecords.putIfAbsent(state.policies.second.name, 0)
+        winRecords.putIfAbsent(state.policies.first.name, 0)
+        winRecords.putIfAbsent(state.policies.second.name, 0)
+        tieRecords.putIfAbsent(Pair(state.policies.first.name, state.policies.second.name), 0)
     }
 
     fun startDecision() {
@@ -76,24 +82,24 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
         totalPlayouts += 1
     }
 
-    fun recordGame(gameState: GameState, logSummary: Boolean = true) {
+    fun recordGame(state: GameState, logSummary: Boolean = true) {
 
-        val playerOne = gameState.playerOne
-        val playerTwo = gameState.playerTwo
+        val playerOne = state.playerOne
+        val playerTwo = state.playerTwo
+        val playerOnePolicyName = state.playerOne.defaultPolicy.name
+        val playerTwoPolicyName = state.playerTwo.defaultPolicy.name
 
-        gameVpRecords[playerOne.defaultPolicy.name] = gameVpRecords[playerOne.defaultPolicy.name]!! + playerOne.vp
-        gameVpRecords[playerTwo.defaultPolicy.name] = gameVpRecords[playerTwo.defaultPolicy.name]!! + playerTwo.vp
-        totalVpRecords[playerOne.defaultPolicy.name] = totalVpRecords[playerOne.defaultPolicy.name]!! + playerOne.vp
-        totalVpRecords[playerTwo.defaultPolicy.name] = totalVpRecords[playerTwo.defaultPolicy.name]!! + playerTwo.vp
+        gameVpRecords.merge(playerOnePolicyName, playerOne.vp, Int::plus)
+        gameVpRecords.merge(playerTwoPolicyName, playerTwo.vp, Int::plus)
+        totalVpRecords.merge(playerOnePolicyName, playerOne.vp, Int::plus)
+        totalVpRecords.merge(playerTwoPolicyName, playerTwo.vp, Int::plus)
 
         if(playerOne.vp > playerTwo.vp) {
-            winRecords[playerOne.defaultPolicy.name] = winRecords[playerOne.defaultPolicy.name]!! + 1 // TODO: more elegant way?
-            gameWinner = playerOne.defaultPolicy.name
+            winRecords.merge(playerOnePolicyName, 1, Int::plus)
         } else if(playerTwo.vp > playerOne.vp) {
-            winRecords[playerTwo.defaultPolicy.name] = winRecords[playerTwo.defaultPolicy.name]!! + 1 // TODO: more elegant way?
-            gameWinner = playerTwo.defaultPolicy.name
+            winRecords.merge(playerTwoPolicyName, 1, Int::plus)
         } else {
-            winRecords["Ties"] = winRecords["Ties"]!! + 1
+            tieRecords.merge(Pair(playerOnePolicyName, playerTwoPolicyName), 1, Int::plus)
         }
 
         if(logSummary) {
@@ -101,9 +107,8 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
         }
 
         totalGames += 1
-        gameVpRecords[playerOne.defaultPolicy.name] = 0
-        gameVpRecords[playerTwo.defaultPolicy.name] = 0
-        gameWinner = null
+        gameVpRecords.remove(playerOne.defaultPolicy.name)
+        gameVpRecords.remove(playerTwo.defaultPolicy.name)
         gamePlayouts = 0
         gameDecisions = 0
     }
@@ -122,10 +127,9 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
     private fun logGameSummary() {
         log("\nGame summary")
         log("")
-        for(player in players) {
-            log("$player VP: ${gameVpRecords[player]}")
+        for((policy, vp) in gameVpRecords) {
+            log("$policy VP: $vp")
         }
-
     }
 
     private fun logSimulationSummary() {
@@ -133,27 +137,31 @@ class DominionLogger(logDirectory: File, private val players: List<String>) {
         log("")
         log("cParameter: $cParameter")
         log("")
-        for(player in players) {
-            log("$player VP: ${totalVpRecords[player]}")
+        for((policy, vp) in totalVpRecords) {
+            log("$policy VP: $vp")
         }
         log("")
-        for(player in players) {
-            log("$player wins: ${winRecords[player]}")
+        for((policy, wins) in winRecords) {
+            log("$policy wins: $wins")
         }
-        log("Ties: ${winRecords["Ties"]}")
+        for((pair, ties) in tieRecords) {
+            log("${pair.first} vs. ${pair.second} ties: $ties")
+        }
         log("")
+        log("Total playouts: $totalPlayouts")
+        log("Total decisions: $totalDecisions")
         log("Total games: $totalGames")
         log("")
-        log("Playouts: $totalPlayouts")
-        log("Decisions: $totalDecisions")
+        if(totalPlayouts > 0 && totalDecisions > 0) {
+            log("Playouts per decision: ${totalPlayouts.toDouble() / totalDecisions}")
+        }
+        log("Decisions per game: ${totalDecisions.toDouble() / totalGames}")
         log("")
         if(totalPlayouts > 0 && totalDecisions > 0) {
-            log("Playouts per decision: ${totalPlayouts / totalDecisions}")
+            log("Average time per playout: ${timer.totalTime.toDouble() / totalPlayouts}")
         }
-        log("Playouts per decision: ${totalPlayouts / totalDecisions}")
-        log("")
-        log("Average time per playout: ${timer.totalTime.toDouble() / totalPlayouts}")
         log("Average time per decision: ${timer.totalTime.toDouble() / totalDecisions}")
+        log("Average time per game: ${timer.totalTime.toDouble() / totalGames}")
     }
 
 

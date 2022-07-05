@@ -2,17 +2,94 @@ package engine
 
 import kingdoms.defaultBoard
 import policies.Policy
+import policies.rollout.jansen_tollisen.epsilonHeuristicGreedyPolicy
 
+// TODO: make some factory methods to make this a little cleaner
 class GameState(
-    val playerOne: Player,
-    val playerTwo: Player,
+    val policies: Pair<Policy, Policy>,
+    private val policiesInOrder: Boolean = false,
     val board: Board = defaultBoard,
     var turns: Int = 0,
     var context: ChoiceContext = ChoiceContext.ACTION,
     val trueShuffle: Boolean = true,
     val logger: DominionLogger? = null,
-    private val maxTurns: Int = 999
+    private val maxTurns: Int = 999,
 ) {
+
+    fun copy(
+        newPolicies: Pair<Policy, Policy> = policies,
+        newTrueShuffle: Boolean = trueShuffle,
+        newLogger: DominionLogger? = logger,
+        newMaxTurns: Int = maxTurns,
+        newPoliciesInOrder: Boolean = policiesInOrder,
+        obfuscateUnseen: Boolean = false
+    ): GameState {
+
+        return GameState(
+            policies = newPolicies,
+            board = HashMap(board),
+            turns = turns,
+            context = context,
+            trueShuffle = newTrueShuffle,
+            logger = newLogger,
+            maxTurns = newMaxTurns,
+            policiesInOrder = newPoliciesInOrder
+        ).also { newState ->
+            newState.currentPlayer = when(currentPlayer.playerNumber) {
+                PlayerNumber.PlayerOne -> newState.playerOne
+                PlayerNumber.PlayerTwo -> newState.playerTwo
+            }
+        }.also { newState ->
+
+            newState.currentPlayer.inPlay = currentPlayer.inPlay.toMutableList()
+            newState.currentPlayer.discard = currentPlayer.discard.toMutableList()
+            newState.currentPlayer.inPlay = currentPlayer.inPlay.toMutableList()
+            newState.currentPlayer.discard = currentPlayer.discard.toMutableList()
+            newState.currentPlayer.hand = currentPlayer.hand.toMutableList()
+            newState.currentPlayer.deck = currentPlayer.deck.toMutableList()
+            newState.currentPlayer.remodelCard = currentPlayer.remodelCard
+
+            newState.otherPlayer.deck = otherPlayer.deck.toMutableList()
+            newState.otherPlayer.hand = otherPlayer.hand.toMutableList()
+            newState.otherPlayer.remodelCard = otherPlayer.remodelCard
+
+            if (obfuscateUnseen) {
+                newState.currentPlayer.deck.shuffle()
+
+                newState.otherPlayer.deck += newState.otherPlayer.hand
+                newState.otherPlayer.hand.clear()
+                newState.otherPlayer.deck.shuffle()
+                newState.drawCards(otherPlayer.hand.size, newState.otherPlayer)
+            }
+        }
+    }
+
+    private val playerPolicies: List<Policy> = policies.toList().let {
+        if(!policiesInOrder) {
+            it.shuffled()
+        } else {
+            it
+        }
+    }
+
+    val playerOne: Player = Player(
+        PlayerNumber.PlayerOne,
+        playerPolicies[0],
+        when(val it = playerPolicies[0].name) {
+            playerPolicies[1].name -> "${it.value} 1"
+            else -> it.value
+        })
+
+    val playerTwo: Player = Player(
+        PlayerNumber.PlayerTwo,
+        playerPolicies[1],
+        when(val it = playerPolicies[0].name) {
+            playerPolicies[1].name -> "${it.value} 2"
+            else -> it.value
+        })
+
+    val players
+        get() = listOf(playerOne, playerTwo)
 
     val trash: MutableList<Card> = mutableListOf()
 
@@ -52,6 +129,7 @@ class GameState(
         playerTwo.deck.shuffle()
         drawCards(5, playerOne, trueShuffle)
         drawCards(5, playerTwo, trueShuffle)
+        logger?.startGame(this)
     }
 
     fun nextContext(exitCurrentContext: Boolean = false) { // TODO: debug
@@ -89,7 +167,7 @@ class GameState(
             }
             CardLocation.TRASH -> trash.removeCard(card)
             CardLocation.PLAYER_ONE_IN_PLAY -> playerOne.inPlay.removeCard(card)
-            CardLocation.PLAYER_TWO_IN_PLAY -> playerOne.inPlay.removeCard(card)
+            CardLocation.PLAYER_TWO_IN_PLAY -> playerTwo.inPlay.removeCard(card)
             CardLocation.PLAYER_ONE_HAND -> playerOne.hand.removeCard(card)
             CardLocation.PLAYER_TWO_HAND -> playerTwo.hand.removeCard(card)
             CardLocation.PLAYER_ONE_DISCARD -> playerOne.discard.removeCard(card)
@@ -102,7 +180,7 @@ class GameState(
             CardLocation.SUPPLY -> board.addCard(card)
             CardLocation.TRASH -> trash.addCard(card)
             CardLocation.PLAYER_ONE_IN_PLAY -> playerOne.inPlay.addCard(card)
-            CardLocation.PLAYER_TWO_IN_PLAY -> playerOne.inPlay.addCard(card)
+            CardLocation.PLAYER_TWO_IN_PLAY -> playerTwo.inPlay.addCard(card)
             CardLocation.PLAYER_ONE_HAND -> playerOne.hand.addCard(card)
             CardLocation.PLAYER_TWO_HAND -> playerTwo.hand.addCard(card)
             CardLocation.PLAYER_ONE_DISCARD -> playerOne.discard.addCard(card)

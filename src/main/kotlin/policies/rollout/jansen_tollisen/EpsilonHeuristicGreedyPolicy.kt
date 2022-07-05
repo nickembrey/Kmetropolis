@@ -2,10 +2,11 @@ package policies.rollout.jansen_tollisen
 
 import engine.*
 import policies.Policy
+import policies.PolicyName
 import policies.rollout.randomPolicy
 
 object epsilonHeuristicGreedyPolicy : Policy {
-    override val name: String = "EpsilonHeuristicGreedyPolicy"
+    override val name: PolicyName = PolicyName("EpsilonHeuristicGreedyPolicy")
     override fun policy(
         state: GameState,
         choices: CardChoices

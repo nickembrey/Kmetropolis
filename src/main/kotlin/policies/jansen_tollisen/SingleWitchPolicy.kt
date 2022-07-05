@@ -1,16 +1,18 @@
-package policies
+package policies.jansen_tollisen
 
 import engine.*
+import policies.Policy
+import policies.PolicyName
 
 object singleWitchPolicy : Policy {
-    override val name = "singleWitchPolicy"
+    override val name = PolicyName("singleWitchPolicy")
     override fun policy(
         state: GameState,
-        cardChoices: CardChoices
+        choices: CardChoices
     ): Card? {
         return when(state.context) {
-            ChoiceContext.ACTION -> cardChoices[0]
-            ChoiceContext.TREASURE -> cardChoices[0]
+            ChoiceContext.ACTION -> choices[0]
+            ChoiceContext.TREASURE -> choices[0]
             ChoiceContext.BUY -> {
                 val goldCards: Int = state.currentPlayer.allCards.filter { it == Card.GOLD }.size
                 val witchCards = state.currentPlayer.allCards.filter { it == Card.WITCH }.size
@@ -37,7 +39,7 @@ object singleWitchPolicy : Policy {
                     null
                 }
             }
-            ChoiceContext.MILITIA -> cardChoices[0]
+            ChoiceContext.MILITIA -> choices[0]
             else -> throw NotImplementedError()
         }
     }
