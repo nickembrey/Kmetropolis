@@ -2,7 +2,6 @@ package engine
 
 import kingdoms.defaultBoard
 import policies.Policy
-import policies.rollout.jansen_tollisen.epsilonHeuristicGreedyPolicy
 
 // TODO: make some factory methods to make this a little cleaner
 class GameState(
@@ -277,8 +276,10 @@ class GameState(
                 player.actions += card.addActions
                 player.coins += card.addCoins
 
-                for (effect in card.effectList) {
-                    effect(this)
+                for (cardEffect in card.cardEffects) {
+                    if(cardEffect.trigger == CardEffectTrigger.PLAY) {
+                        applyEffect(cardEffect.gameEffect)
+                    }
                 }
 
                 drawCards(card.addCards, player, trueShuffle)

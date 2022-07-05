@@ -1,33 +1,81 @@
 package engine
 
-typealias CardEffect = (GameState) -> GameState
-
-fun witchEffect(state: GameState): GameState = state.apply {
-    moveCard(Card.CURSE, CardLocation.SUPPLY, CardLocation.PLAYER_TWO_DISCARD)
+enum class GameEffectType {
+    BASIC, ATTACK;
 }
 
-fun militiaEffect(state: GameState): GameState = state.apply {
-    context = ChoiceContext.MILITIA
+data class GameEffect(
+    val type: GameEffectType = GameEffectType.BASIC,
+    val newContext: ChoiceContext? = null,
+    val newContextDecisions: Int = 0,
+    val effectFn: ( (GameState) -> Unit )? = null
+)
+
+enum class CardEffectTrigger {
+    PLAY, GAME_END;
 }
 
-fun moneylenderEffect(state: GameState): GameState = state.apply {
-        if(currentPlayer.hand.contains(Card.COPPER)) {
-            moveCard(Card.COPPER, currentPlayer.handLocation, CardLocation.TRASH)
-            currentPlayer.coins += 3
-        }
+enum class CardEffect(
+    val trigger: CardEffectTrigger,
+    val gameEffect: (GameState) -> GameEffect) {
+//    CELLAR_EFFECT(CardEffectTrigger.PLAY, {state ->
+//        GameEffect(
+//            newContext = ChoiceContext.CELLAR,
+//            newContextDecisions = state.choicePlayer.hand.size // TODO: make sure the cellar isn't counted
+//        )
+//    }),
+    CHAPEL_EFFECT(CardEffectTrigger.PLAY, {
+        GameEffect(
+            newContext = ChoiceContext.CHAPEL,
+            newContextDecisions = 4
+        )
+    }),
+    WORKSHOP_EFFECT(CardEffectTrigger.PLAY, {
+        GameEffect(
+            newContext = ChoiceContext.WORKSHOP,
+            newContextDecisions = 1
+        )
+    }),
+    MILITIA_EFFECT(CardEffectTrigger.PLAY, {
+        GameEffect(
+            type = GameEffectType.ATTACK,
+            newContext = ChoiceContext.MILITIA
+        )
+    }),
+    MONEYLENDER_EFFECT(CardEffectTrigger.PLAY, {
+        GameEffect(
+            effectFn = { state ->
+                state.apply {
+                    if(currentPlayer.hand.contains(engine.Card.COPPER)) {
+                        moveCard(engine.Card.COPPER, currentPlayer.handLocation, engine.CardLocation.TRASH)
+                        currentPlayer.coins += 3
+                    }
+                }
+            }
+        )
+    }),
+    REMODEL_EFFECT(CardEffectTrigger.PLAY, {
+        GameEffect(
+            newContext = ChoiceContext.REMODEL_TRASH,
+            newContextDecisions = 1
+        )
+    }),
+    WITCH_EFFECT(CardEffectTrigger.PLAY, {
+        GameEffect(
+            effectFn = { state ->
+                state.apply {
+                    moveCard(engine.Card.CURSE, engine.CardLocation.SUPPLY, engine.CardLocation.PLAYER_TWO_DISCARD)
+                }
+            }
+        )
+    }),
+}
+
+fun GameState.applyEffect(cardEffectFn: (GameState) -> GameEffect) {
+    cardEffectFn(this).let { gameEffect ->
+        context = gameEffect.newContext ?: context
+        contextDecisionCounters = gameEffect.newContextDecisions
+        gameEffect.effectFn?.let { it(this) }
     }
 
-fun chapelEffect(state: GameState): GameState = state.apply {
-    context = ChoiceContext.CHAPEL
-    contextDecisionCounters = 4
-}
-
-fun workshopEffect(state: GameState): GameState = state.apply {
-    context = ChoiceContext.WORKSHOP
-    contextDecisionCounters = 1
-}
-
-fun remodelEffect(state: GameState): GameState = state.apply {
-    context = ChoiceContext.REMODEL_TRASH
-    contextDecisionCounters = 1
 }

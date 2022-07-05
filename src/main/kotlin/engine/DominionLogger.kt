@@ -18,7 +18,7 @@ class DominionLogger(logDirectory: File) {
     private val gameVpRecords: MutableMap<PolicyName, Int> = mutableMapOf()
     private val totalVpRecords: MutableMap<PolicyName, Int> = mutableMapOf()
     private val winRecords: MutableMap<PolicyName, Int> = mutableMapOf()
-    private val tieRecords: MutableMap<Pair<PolicyName, PolicyName>, Int> = mutableMapOf()
+    private val tieRecords: MutableMap<Pair<PolicyName, PolicyName>, Int> = mutableMapOf() // TODO: not a pair but a set
 
     init {
         val base = "dominion-log"

@@ -6,7 +6,7 @@ package engine
 typealias CardChoices = List<Card?>
 
 enum class ChoiceContext {
-    ACTION, TREASURE, BUY, CHAPEL, MILITIA, WORKSHOP, REMODEL_TRASH, REMODEL_GAIN;
+    ACTION, TREASURE, BUY, CHAPEL, WORKSHOP, MILITIA, REMODEL_TRASH, REMODEL_GAIN; // TODO: cellar
 
     fun getCardChoices(player: Player, board: Board): CardChoices {
 
@@ -14,7 +14,7 @@ enum class ChoiceContext {
             ACTION -> player.hand.filter { it.type == CardType.ACTION }.distinct().plus(null)
             TREASURE -> player.hand.filter { it.type == CardType.TREASURE }.distinct().plus(null)
             BUY -> board.filter { it.value > 0 && player.coins >= it.key.cost }.keys.toList().plus(null)
-            CHAPEL -> player.hand.distinct().plus(null)
+            CHAPEL -> player.hand.distinct().plus(null) // TODO: cellar
             WORKSHOP -> board.filter { it.key.cost < 5 && it.value > 0 }.keys.toList().ifEmpty { listOf(null) }
             MILITIA, REMODEL_TRASH -> player.hand.distinct().ifEmpty { listOf(null) }
             REMODEL_GAIN -> {
