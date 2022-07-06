@@ -1,7 +1,6 @@
 package policies.jansen_tollisen
 
 import engine.*
-import engine.Player
 import mcts.MCTSTreeNode
 import policies.Policy
 import policies.PolicyName
@@ -63,8 +62,8 @@ object UCTorigPolicy : Policy {
 
             // TODO: 100 is a magic number
             return mapOf(
-                PlayerNumber.PlayerOne to playerOneScore,
-                PlayerNumber.PlayerTwo to playerTwoScore
+                PlayerNumber.PLAYER_ONE to playerOneScore,
+                PlayerNumber.PLAYER_TWO to playerTwoScore
             )
         }
 

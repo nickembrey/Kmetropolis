@@ -35,8 +35,8 @@ class GameState(
             policiesInOrder = newPoliciesInOrder
         ).also { newState ->
             newState.currentPlayer = when(currentPlayer.playerNumber) {
-                PlayerNumber.PlayerOne -> newState.playerOne
-                PlayerNumber.PlayerTwo -> newState.playerTwo
+                PlayerNumber.PLAYER_ONE -> newState.playerOne
+                PlayerNumber.PLAYER_TWO -> newState.playerTwo
             }
         }.also { newState ->
 
@@ -72,7 +72,7 @@ class GameState(
     }
 
     val playerOne: Player = Player(
-        PlayerNumber.PlayerOne,
+        PlayerNumber.PLAYER_ONE,
         playerPolicies[0],
         when(val it = playerPolicies[0].name) {
             playerPolicies[1].name -> "${it.value} 1"
@@ -80,7 +80,7 @@ class GameState(
         })
 
     val playerTwo: Player = Player(
-        PlayerNumber.PlayerTwo,
+        PlayerNumber.PLAYER_TWO,
         playerPolicies[1],
         when(val it = playerPolicies[0].name) {
             playerPolicies[1].name -> "${it.value} 2"
@@ -113,8 +113,8 @@ class GameState(
         currentPlayer
     }
 
-    // keeps track of how many decisions to spend in a given context
-    var contextDecisionCounters: Int = 1
+    // keeps track of how many total decisions can be made in a given context
+    var maxContextDecisions: Int = 1
         get() = when(context) {
             ChoiceContext.ACTION -> currentPlayer.actions
             ChoiceContext.TREASURE -> currentPlayer.hand.filter { it.type == CardType.TREASURE }.size
@@ -122,6 +122,16 @@ class GameState(
             ChoiceContext.MILITIA -> choicePlayer.hand.size - 3
             else -> field
         }
+
+    // keeps track of how many decisions have already been made in a given context
+    var contextDecisionsMade: Int = 0
+        get() = when(context) {
+            // NOTE: ACTION, TREASURE, and BUY don't use this system and instead defer to the player state
+            ChoiceContext.ACTION, ChoiceContext.TREASURE, ChoiceContext.BUY -> 0
+            ChoiceContext.MILITIA -> choicePlayer.hand.size - 3
+            else -> field
+        }
+
 
     fun initialize() {
         playerOne.deck.shuffle()
@@ -132,22 +142,27 @@ class GameState(
     }
 
     fun nextContext(exitCurrentContext: Boolean = false) { // TODO: debug
-        if(contextDecisionCounters < 1 || exitCurrentContext) {
-            contextDecisionCounters = 1
+        if(contextDecisionsMade == maxContextDecisions || exitCurrentContext) {
+            contextDecisionsMade = 0
+            maxContextDecisions = 1 // TODO: see if we can remove this
             context = when(context) {
                 ChoiceContext.ACTION -> ChoiceContext.TREASURE
                 ChoiceContext.TREASURE -> ChoiceContext.BUY
-                ChoiceContext.REMODEL_TRASH -> when(exitCurrentContext) {
-                    true -> ChoiceContext.ACTION
-                    false -> ChoiceContext.REMODEL_GAIN
-                }
-                ChoiceContext.CHAPEL, ChoiceContext.MILITIA, ChoiceContext.WORKSHOP, ChoiceContext.REMODEL_GAIN -> ChoiceContext.ACTION
                 ChoiceContext.BUY -> {
                     endTurn(currentPlayer, trueShuffle, logger)
                     turns += 1
                     currentPlayer = otherPlayer
                     ChoiceContext.ACTION
                 }
+
+                ChoiceContext.CELLAR, ChoiceContext.CHAPEL, ChoiceContext.HARBINGER,
+                ChoiceContext.MILITIA, ChoiceContext.WORKSHOP, ChoiceContext.REMODEL_GAIN -> ChoiceContext.ACTION
+
+                ChoiceContext.REMODEL_TRASH -> when(exitCurrentContext) {
+                    true -> ChoiceContext.ACTION
+                    false -> ChoiceContext.REMODEL_GAIN
+                }
+
             }
         }
     }
@@ -171,6 +186,8 @@ class GameState(
             CardLocation.PLAYER_TWO_HAND -> playerTwo.hand.removeCard(card)
             CardLocation.PLAYER_ONE_DISCARD -> playerOne.discard.removeCard(card)
             CardLocation.PLAYER_TWO_DISCARD -> playerTwo.discard.removeCard(card)
+            CardLocation.PLAYER_ONE_TOPDECK, CardLocation.PLAYER_TWO_TOPDECK -> throw NotImplementedError("Must use drawCard for drawing cards!")
+            // TODO: this seems a little hacky, yeah?
         }
     }
 
@@ -184,6 +201,8 @@ class GameState(
             CardLocation.PLAYER_TWO_HAND -> playerTwo.hand.addCard(card)
             CardLocation.PLAYER_ONE_DISCARD -> playerOne.discard.addCard(card)
             CardLocation.PLAYER_TWO_DISCARD -> playerTwo.discard.addCard(card)
+            CardLocation.PLAYER_ONE_TOPDECK -> playerOne.deck.prependCard(card)
+            CardLocation.PLAYER_TWO_TOPDECK -> playerTwo.deck.prependCard(card)
         }
     }
 
@@ -209,15 +228,16 @@ class GameState(
         }
     }
 
-    fun drawCard(player: Player, trueShuffle: Boolean = true) {
+    // TODO: this can be a gamemove now
+    fun drawCard(player: Player, trueShuffle: Boolean = true): Boolean {
         if (player.deck.size == 0) {
             shuffle(player, trueShuffle)
         }
-        player.deck.removeFirstOrNull()?.let {
+        val card = player.deck.removeFirstOrNull()?.also {
             addCard (it, player.handLocation)
-            logger?.log("${player.defaultPolicy.name} draws ${it.name}")
         }
 
+        return card != null
     }
 
     fun shuffle(player: Player, trueShuffle: Boolean = true) {
@@ -241,31 +261,45 @@ class GameState(
         logger?.log("\n${player.defaultPolicy.name} ends their turn\n")
     }
 
-    fun contextToGameMove(context: ChoiceContext): GameMove {
+    fun contextToGameMoveType(context: ChoiceContext): GameMoveType {
         return when (context) {
-            ChoiceContext.ACTION, ChoiceContext.TREASURE -> GameMove.PLAY
-            ChoiceContext.BUY -> GameMove.BUY
-            ChoiceContext.CHAPEL -> GameMove.TRASH
-            ChoiceContext.MILITIA -> GameMove.DISCARD
-            ChoiceContext.WORKSHOP -> GameMove.GAIN
-            ChoiceContext.REMODEL_TRASH -> GameMove.TRASH
-            ChoiceContext.REMODEL_GAIN -> GameMove.GAIN
+            ChoiceContext.ACTION, ChoiceContext.TREASURE -> GameMoveType.PLAY
+            ChoiceContext.BUY -> GameMoveType.BUY
+            ChoiceContext.CELLAR, ChoiceContext.MILITIA -> GameMoveType.DISCARD
+            ChoiceContext.CHAPEL, ChoiceContext.REMODEL_TRASH -> GameMoveType.TRASH
+            ChoiceContext.HARBINGER -> GameMoveType.TOPDECK
+            ChoiceContext.WORKSHOP, ChoiceContext.REMODEL_GAIN -> GameMoveType.GAIN
         }
     }
 
-    fun processGameMove(player: Player, move: GameMove, card: Card) {
-        when (move) {
-            GameMove.BUY -> {
+    // TODO: ideally, move, add, remove card would only be used in here
+    fun processGameMove(move: GameMove) {
+
+        val player = move.playerTag.getPlayer(this)
+        val card = move.card
+        if(!move.type.requireSuccess) {
+            logger?.log("${player.defaultPolicy.name} ${move.type.verb} ${card.name}")
+        }
+
+        val success = when (move.type) {
+            GameMoveType.BUY -> {
                 player.coins -= card.cost
                 player.buys -= 1
-                moveCard(card, CardLocation.SUPPLY, player.discardLocation, true)
+                moveCard(card, CardLocation.SUPPLY, player.discardLocation, true) // TODO: we shouldn't need to validate moves right?
                 player.baseVp += card.vp
+                true // TODO: these should be more elegant
             }
-            GameMove.GAIN -> {
-                moveCard(card, CardLocation.SUPPLY, player.discardLocation, true)
+            GameMoveType.DISCARD -> {
+                moveCard(card, player.handLocation, player.discardLocation, true)
+                true  // TODO: these should be more elegant
+            }
+            GameMoveType.DRAW -> drawCard(player, trueShuffle)
+            GameMoveType.GAIN -> {
+                val gained = moveCard(card, CardLocation.SUPPLY, player.discardLocation) != null
                 player.baseVp += card.vp
+                gained // TODO: these should be more elegant
             }
-            GameMove.PLAY -> {
+            GameMoveType.PLAY -> { // TODO: separate function for organization?
                 moveCard(card, player.handLocation, player.inPlayLocation, true)
                 if (card.type == CardType.ACTION) {
                     player.actions -= 1
@@ -276,45 +310,81 @@ class GameState(
                 player.actions += card.addActions
                 player.coins += card.addCoins
 
+                // TODO: clean this up with some mapping?
                 for (cardEffect in card.cardEffects) {
+
                     if(cardEffect.trigger == CardEffectTrigger.PLAY) {
-                        applyEffect(cardEffect.gameEffect)
+                        if(cardEffect.type == CardEffectType.ATTACK) {
+                            // TODO: maybe this can be simplified?
+                            // TODO: test
+                            val attackTriggeredEffects = otherPlayer.hand
+                                .flatMap { it.cardEffects }
+                                .filter { it.trigger == CardEffectTrigger.ATTACK }
+                                .map { it.cardEffectFn(this) }
+                            if(!attackTriggeredEffects.any { it.attackResponse == AttackResponse.BLOCK }) {
+                                applyEffect(cardEffect.cardEffectFn)
+                            }
+                        } else {
+                            applyEffect(cardEffect.cardEffectFn)
+                        }
                     }
                 }
 
                 drawCards(card.addCards, player, trueShuffle)
+                true // TODO: these should be more elegant
             }
-            GameMove.TRASH -> {
+            GameMoveType.TOPDECK -> { // TODO: will probably need more details
+                when(currentPlayer.playerNumber) {
+                    PlayerNumber.PLAYER_ONE -> moveCard(card, CardLocation.PLAYER_ONE_DISCARD, CardLocation.PLAYER_ONE_TOPDECK)
+                    PlayerNumber.PLAYER_TWO -> moveCard(card, CardLocation.PLAYER_TWO_DISCARD, CardLocation.PLAYER_TWO_TOPDECK)
+                }
+                true // TODO: these should be more elegant
+            }
+            GameMoveType.TRASH -> {
+                if(context == ChoiceContext.REMODEL_TRASH) {
+                    choicePlayer.remodelCard = card
+                }
                 moveCard(card, player.handLocation, CardLocation.TRASH, true)
                 player.baseVp -= card.vp
+                true // TODO: these should be more elegant
             }
-            GameMove.DISCARD -> moveCard(card, player.handLocation, player.discardLocation, true)
         }
-        logger?.log("${player.defaultPolicy.name} ${move.verb} ${card.name}")
+        if(success && move.type.requireSuccess) {
+            logger?.log("${player.defaultPolicy.name} ${move.type.verb} ${card.name}")
+        }
     }
 
     fun makeCardDecision(card: Card?) {
 
         val previousContext = context
-        val move = contextToGameMove(context)
+
         card?.let { it ->
-            processGameMove(choicePlayer, move, it)
-        }
+            processGameMove(
+                GameMove(
+                    choicePlayer.playerNumber,
+                    contextToGameMoveType(context),
+                    it)
+            ) }
 
         when(context) {
-            ChoiceContext.REMODEL_TRASH -> choicePlayer.remodelCard = card
             ChoiceContext.REMODEL_GAIN -> choicePlayer.remodelCard = null
+            ChoiceContext.CELLAR -> {
+                if(contextDecisionsMade == maxContextDecisions) {
+                    drawCards(contextDecisionsMade, currentPlayer)
+                }
+            }
             else -> {}
         }
 
         // TODO: the need for management here probably means the contextDecisionCounter needs to be rethought and nextContext should be scrapped or redesigned
         if(context == previousContext) { // decrement the decision counters unless we changed context
-            contextDecisionCounters -= 1
+            contextDecisionsMade += 1
             nextContext(card == null)
         }
     }
 
     fun makeNextCardDecision(policy: Policy = choicePlayer.defaultPolicy) {
+
         context.getCardChoices(choicePlayer, board).let {
             when(it.size) {
                 1 -> makeCardDecision(it[0])

@@ -1,18 +1,13 @@
 package engine
 
-enum class PlayerNumber(val value: String) {
-    PlayerOne("Player One"),
-    PlayerTwo("Player Two");
+enum class PlayerNumber(val value: String): PlayerTag {
+    PLAYER_ONE("Player 1"),
+    PLAYER_TWO("Player 2");
 
     // TODO: I think there are places where this would be useful but is not being used
-    fun getPlayer(state: GameState): Player = when(this) {
-        PlayerOne -> state.playerOne
-        PlayerTwo -> state.playerTwo
-    }
-
-    fun getOpponent(state: GameState): Player = when(this) {
-        PlayerOne -> state.playerTwo
-        PlayerTwo -> state.playerOne
+    override fun getPlayer(state: GameState): Player = when(this) {
+        PLAYER_ONE -> state.playerOne
+        PLAYER_TWO -> state.playerTwo
     }
 
 }

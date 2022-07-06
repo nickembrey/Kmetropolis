@@ -1,81 +1,86 @@
 package engine
 
-enum class GameEffectType {
+enum class CardEffectType {
     BASIC, ATTACK;
 }
 
-data class GameEffect(
-    val type: GameEffectType = GameEffectType.BASIC,
-    val newContext: ChoiceContext? = null,
-    val newContextDecisions: Int = 0,
-    val effectFn: ( (GameState) -> Unit )? = null
-)
-
 enum class CardEffectTrigger {
-    PLAY, GAME_END;
+    PLAY, ATTACK, GAME_END;
 }
 
 enum class CardEffect(
-    val trigger: CardEffectTrigger,
-    val gameEffect: (GameState) -> GameEffect) {
-//    CELLAR_EFFECT(CardEffectTrigger.PLAY, {state ->
-//        GameEffect(
-//            newContext = ChoiceContext.CELLAR,
-//            newContextDecisions = state.choicePlayer.hand.size // TODO: make sure the cellar isn't counted
-//        )
-//    }),
-    CHAPEL_EFFECT(CardEffectTrigger.PLAY, {
+    val type: CardEffectType = CardEffectType.BASIC,
+    val trigger: CardEffectTrigger = CardEffectTrigger.PLAY,
+    val cardEffectFn: (GameState) -> GameEffect) {
+    CELLAR_EFFECT(cardEffectFn = { state ->
+        GameEffect(
+            newContext = ChoiceContext.CELLAR,
+            newMaxContextDecisions = state.choicePlayer.hand.size // TODO: make sure the cellar isn't counted
+        )
+    }),
+    CHAPEL_EFFECT(cardEffectFn = {
         GameEffect(
             newContext = ChoiceContext.CHAPEL,
-            newContextDecisions = 4
+            newMaxContextDecisions = 4
         )
     }),
-    WORKSHOP_EFFECT(CardEffectTrigger.PLAY, {
+    MOAT_EFFECT(
+        trigger = CardEffectTrigger.ATTACK,
+        cardEffectFn = {
+            GameEffect(
+                attackResponse = AttackResponse.BLOCK
+            )
+        }),
+    HARBINGER_EFFECT(cardEffectFn = {
+            GameEffect(
+                newContext = ChoiceContext.HARBINGER,
+                newMaxContextDecisions = 1
+            )
+        }),
+    WORKSHOP_EFFECT(cardEffectFn = {
         GameEffect(
             newContext = ChoiceContext.WORKSHOP,
-            newContextDecisions = 1
+            newMaxContextDecisions = 1
         )
     }),
-    MILITIA_EFFECT(CardEffectTrigger.PLAY, {
+    MILITIA_EFFECT(cardEffectFn = { state ->
         GameEffect(
-            type = GameEffectType.ATTACK,
-            newContext = ChoiceContext.MILITIA
+            newContext = ChoiceContext.MILITIA,
+            newMaxContextDecisions = state.choicePlayer.hand.size - 3
         )
     }),
-    MONEYLENDER_EFFECT(CardEffectTrigger.PLAY, {
+    MONEYLENDER_EFFECT(cardEffectFn = {
         GameEffect(
-            effectFn = { state ->
+            gameEffectFn = { state -> // TODO: this could be made into two game moves if we could have a conditional on the game effect
                 state.apply {
-                    if(currentPlayer.hand.contains(engine.Card.COPPER)) {
-                        moveCard(engine.Card.COPPER, currentPlayer.handLocation, engine.CardLocation.TRASH)
+                    if(currentPlayer.hand.contains(Card.COPPER)) {
+                        moveCard(Card.COPPER, currentPlayer.handLocation, CardLocation.TRASH)
                         currentPlayer.coins += 3
                     }
                 }
             }
         )
     }),
-    REMODEL_EFFECT(CardEffectTrigger.PLAY, {
+    REMODEL_EFFECT(cardEffectFn = {
         GameEffect(
             newContext = ChoiceContext.REMODEL_TRASH,
-            newContextDecisions = 1
+            newMaxContextDecisions = 1
         )
     }),
-    WITCH_EFFECT(CardEffectTrigger.PLAY, {
+    WITCH_EFFECT(cardEffectFn = {
         GameEffect(
-            effectFn = { state ->
-                state.apply {
-                    moveCard(engine.Card.CURSE, engine.CardLocation.SUPPLY, engine.CardLocation.PLAYER_TWO_DISCARD)
-                }
-            }
+            gameMove = GameMove(PlayerRole.OTHER_PLAYER, GameMoveType.GAIN, Card.CURSE)
         )
     }),
 }
 
 fun GameState.applyEffect(cardEffectFn: (GameState) -> GameEffect) {
     cardEffectFn(this).let { gameEffect ->
-        context = gameEffect.newContext ?: context
-        contextDecisionCounters = gameEffect.newContextDecisions
-        gameEffect.effectFn?.let { it(this) }
+
+        context = gameEffect.newContext?.also { contextDecisionsMade = 0 } ?: context
+        maxContextDecisions = gameEffect.newMaxContextDecisions
+        gameEffect.gameMove?.let { processGameMove(it) }
+        gameEffect.gameEffectFn?.let { it(this) }
     }
 
 }

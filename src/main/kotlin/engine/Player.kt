@@ -34,20 +34,20 @@ data class Player(
 
     val handLocation: CardLocation
         get() = when(playerNumber) {
-            PlayerNumber.PlayerOne -> CardLocation.PLAYER_ONE_HAND
-            PlayerNumber.PlayerTwo -> CardLocation.PLAYER_TWO_HAND
+            PlayerNumber.PLAYER_ONE -> CardLocation.PLAYER_ONE_HAND
+            PlayerNumber.PLAYER_TWO -> CardLocation.PLAYER_TWO_HAND
         }
 
     val inPlayLocation: CardLocation
         get() = when(playerNumber) {
-            PlayerNumber.PlayerOne -> CardLocation.PLAYER_ONE_IN_PLAY
-            PlayerNumber.PlayerTwo -> CardLocation.PLAYER_TWO_IN_PLAY
+            PlayerNumber.PLAYER_ONE -> CardLocation.PLAYER_ONE_IN_PLAY
+            PlayerNumber.PLAYER_TWO -> CardLocation.PLAYER_TWO_IN_PLAY
         }
 
     val discardLocation: CardLocation
         get() = when(playerNumber) {
-            PlayerNumber.PlayerOne -> CardLocation.PLAYER_ONE_DISCARD
-            PlayerNumber.PlayerTwo -> CardLocation.PLAYER_TWO_DISCARD
+            PlayerNumber.PLAYER_ONE -> CardLocation.PLAYER_ONE_DISCARD
+            PlayerNumber.PLAYER_TWO -> CardLocation.PLAYER_TWO_DISCARD
         }
 
     val allCards

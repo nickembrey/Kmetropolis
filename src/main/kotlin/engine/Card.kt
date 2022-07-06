@@ -10,10 +10,10 @@ enum class Card(
     val vp: Int = 0,
     val cardEffects: List<CardEffect> = listOf(),
 ) { // TODO: organize parameters
-//    CELLAR(type = CardType.ACTION, cost = 2, addActions = 1, effectList = listOf(CardEffect.CELLAR_EFFECT)),
+    CELLAR(type = CardType.ACTION, cost = 2, addActions = 1, cardEffects = listOf(CardEffect.CELLAR_EFFECT)),
     CHAPEL(type = CardType.ACTION, cost = 2, cardEffects = listOf(CardEffect.CHAPEL_EFFECT)),
-//    MOAT(type = CardType.ACTION, cost = 2, effectList = listOf(::moatEffect)), // TODO: this is probably not actually an effect
-//    HARBINGER(type = CardType.ACTION, cost = 3, addActions = 1, addCards = 1, effectList = listOf(::harbingerEffect)),
+    MOAT(type = CardType.ACTION, cost = 2, cardEffects = listOf(CardEffect.MOAT_EFFECT)),
+    HARBINGER(type = CardType.ACTION, cost = 3, addActions = 1, addCards = 1, cardEffects = listOf(CardEffect.HARBINGER_EFFECT)),
 //    MERCHANT(type = CardType.ACTION, cost = 3, addActions = 1, addCards = 1, effectList = listOf(::merchantEffect)), // TODO: probably not an effect?
 //    VASSAL(type = CardType.ACTION, cost = 3, addCoins = 2, effectList = listOf(::vassalEffect)),
     VILLAGE(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 2),
@@ -59,10 +59,18 @@ enum class Card(
     CURSE(type = CardType.OTHER, cost = 0, vp = -1);
 }
 
+fun <T> MutableList<T>.prepend(element: T) {
+    add(0, element)
+}
+
 fun MutableList<Card>.removeCard(card: Card): Card? {
     return remove(card).takeIf { it }?.let { card }
 }
 
 fun MutableList<Card>.addCard(card: Card): Card {
     return add(card).let { card }
+}
+
+fun MutableList<Card>.prependCard(card: Card): Card {
+    return prepend(card).let { card }
 }

@@ -1,9 +1,7 @@
 package engine
 
-enum class GameMove(val verb: String) {
-    BUY("buys"),
-    GAIN("gains"),
-    PLAY("plays"),
-    TRASH("trashes"),
-    DISCARD("discards");
-}
+// TODO: draw is still not integrated
+data class GameMove(
+    val playerTag: PlayerTag,
+    val type: GameMoveType,
+    val card: Card)
