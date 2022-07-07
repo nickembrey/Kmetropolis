@@ -9,7 +9,7 @@ value class PolicyName(val value: String) {
     }
 }
 
-interface Policy {
-    val name: PolicyName
-    fun policy (state: GameState, choices: CardChoices): Card?
+abstract class Policy {
+    abstract val name: PolicyName
+    abstract fun policy (state: GameState, choices: CardChoices): Card?
 }

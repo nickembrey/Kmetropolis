@@ -1,23 +1,20 @@
 import engine.DominionLogger
 import engine.GameState
-import engine.Player
-import engine.PlayerNumber
 import kingdoms.jansenTollisenBoard
-import policies.jansen_tollisen.UCTorigPolicy
-import policies.jansen_tollisen.singleWitchPolicy
+import policies.jansen_tollisen.SingleWitchPolicy
+import policies.parallelized.UCTorigParallelPolicy
 
 import java.io.File
 
 fun main(args: Array<String>) {
-    // TODO: tuck all this stuff away in a Simulation class
 
-    val policies = Pair(UCTorigPolicy, singleWitchPolicy)
+    val policies = Pair(UCTorigParallelPolicy(), SingleWitchPolicy())
 
     val logger = DominionLogger(
         logDirectory = File("/Users/nickembrey/dev/KDominion/log")
     )
 
-    val totalGames = 50
+    val totalGames = 1
     val games: MutableList<GameState> = mutableListOf()
 
     for(i in 1..totalGames) {
@@ -36,5 +33,6 @@ fun main(args: Array<String>) {
         games.add(gameState)
     }
 
+    policies.first.threadPool.shutdown()
     logger.recordSimulation()
 }

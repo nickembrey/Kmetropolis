@@ -23,10 +23,11 @@ class SimulationTimer {
 
     var totalTime: Long = 0
 
-    fun start() {
+    fun start(): SimulationTimer {
         start = System.currentTimeMillis()
         splits.clear()
         started = true
+        return this
     }
 
     fun split() {

@@ -3,9 +3,14 @@ package policies.rollout.jansen_tollisen
 import engine.*
 import policies.Policy
 import policies.PolicyName
-import policies.rollout.randomPolicy
+import policies.rollout.RandomPolicy
 
-object heuristicGreedyPolicy : Policy {
+class HeuristicGreedyPolicy : Policy() {
+
+    companion object {
+        val randomPolicy = RandomPolicy()
+    }
+
     override val name = PolicyName("heuristicGreedyPolicy")
     override fun policy(
         state: GameState,

@@ -4,7 +4,7 @@ import engine.*
 import policies.Policy
 import policies.PolicyName
 
-object firstChoicePolicy: Policy {
+class FirstChoicePolicy: Policy() {
     override val name = PolicyName("firstChoicePolicy")
     override fun policy(
         state: GameState,

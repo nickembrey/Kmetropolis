@@ -4,7 +4,7 @@ import engine.*
 import policies.Policy
 import policies.PolicyName
 
-object randomWithMPPAFPolicy : Policy {
+class RandomWithMPPAFPolicy : Policy() {
     override val name = PolicyName("randomWithMPPAFPolicy")
     override fun policy(
         state: GameState,

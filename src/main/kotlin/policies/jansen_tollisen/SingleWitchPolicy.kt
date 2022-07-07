@@ -4,7 +4,7 @@ import engine.*
 import policies.Policy
 import policies.PolicyName
 
-object singleWitchPolicy : Policy {
+class SingleWitchPolicy : Policy() {
     override val name = PolicyName("singleWitchPolicy")
     override fun policy(
         state: GameState,

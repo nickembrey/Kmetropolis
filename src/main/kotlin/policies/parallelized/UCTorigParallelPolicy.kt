@@ -1,19 +1,30 @@
-package policies.jansen_tollisen
+package policies.parallelized
 
 import engine.*
 import mcts.MCTSTreeNode
+import mcts.RolloutResult
 import policies.Policy
 import policies.PolicyName
 import policies.rollout.jansen_tollisen.EpsilonHeuristicGreedyPolicy
+import util.SimulationTimer
+import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.math.ln
 import kotlin.math.sqrt
 
-class UCTorigPolicy : Policy() {
-    override val name = PolicyName("UCTorigPolicy")
+class UCTorigParallelPolicy : Policy() {
+
+    val threadPool: ExecutorService = Executors.newFixedThreadPool(2)
+
+    override val name = PolicyName("UCTorigParallelPolicy")
     override fun policy(
         state: GameState,
         choices: CardChoices
     ): Card? { // TODO: we can get the choices from the state ourselves
+        val forwardTimer = SimulationTimer()
+        val decisionTimer = SimulationTimer().start()
 
         state.logger?.startDecision()
 
@@ -41,13 +52,16 @@ class UCTorigPolicy : Policy() {
             choiceContext = state.context
         )
 
+        val rolloutResults: Queue<RolloutResult> = ConcurrentLinkedQueue()
+
+        val treeNodeList: MutableList<MCTSTreeNode> = Collections.synchronizedList(ArrayList())
+
         // TODO: remove subfunctions from here and in MCTS policy
         // Note that toMutableList is used below to create copies of the current state.
         // TODO: this could be a bottleneck? think about it.
         // TODO: epsilonHeuristicGreedyPolicy
 
-        fun rollout(simState: GameState): Map<PlayerNumber, Double> {
-
+        fun rollout(index: Int, simState: GameState) {
             while (!simState.gameOver) {
                 simState.makeNextCardDecision()
             }
@@ -61,26 +75,29 @@ class UCTorigPolicy : Policy() {
                     (playerTwoVp - playerOneVp).toDouble() / 100.0
 
             // TODO: 100 is a magic number
-            return mapOf(
+            rolloutResults.add(RolloutResult(index, mapOf(
                 PlayerNumber.PLAYER_ONE to playerOneScore,
-                PlayerNumber.PLAYER_TWO to playerTwoScore
-            )
+                PlayerNumber.PLAYER_TWO to playerTwoScore)))
         }
 
-        fun forward(node: MCTSTreeNode, simState: GameState, simChoices: CardChoices) {
+        fun forward(
+            node: MCTSTreeNode,
+            simState: GameState,
+            simChoices: CardChoices
+        ) {
 
             if (node.children.isNotEmpty()) {
                 val index =
                     if (node.children.size == 1) {
                         0 // TODO: this should never happen, right?
-                    } else if (node.children.any { it.simulations.get() == 0 }) { // i.e., each child has not had a simulation
-                        node.children.indexOfFirst { it.simulations.get() == 0 }
+                    } else if (node.children.any { it.simulations.equals(0) }) { // i.e., each child has not had a simulation
+                        node.children.indexOfFirst { it.simulations.equals(0) }
                     } else {
-
                         node.children.map {
-                            val simulations = it.simulations
-                            (it.score / simulations.get()) +
-                                    (cParameter * sqrt(ln(node.simulations.toDouble()) / simulations.get()))
+                            val simulations = it.simulations.get()
+                            val inProcess = it.inProcess.get()
+                            (it.score / simulations) +
+                                    (cParameter * sqrt(ln(node.simulations.toDouble() + node.inProcess.toDouble()) / (simulations + inProcess)))
                         }.let { values ->
                             values.indices.maxByOrNull { values[it] }!!
                         }
@@ -107,11 +124,18 @@ class UCTorigPolicy : Policy() {
                     nextChoices = simState.context.getCardChoices(simState.choicePlayer, simState.board)
                 }
 
-                forward(node.children[index], simState, nextChoices)
+                return forward(node.children[index], simState, nextChoices)
             } else {
 
-                node.simulations.set(1)
-                node.children = simChoices.map {
+                treeNodeList.add(node)
+                node.index = treeNodeList.indexOf(node)
+                var innerCurrent: MCTSTreeNode? = node
+                while(innerCurrent != null) {
+                    innerCurrent.inProcess.incrementAndGet()
+                    innerCurrent = innerCurrent.parent
+                }
+
+                node.children = simChoices.mapIndexed { index, it ->
                     MCTSTreeNode(
                         parent = node,
                         playerNumber = simState.choicePlayer.playerNumber,
@@ -120,21 +144,10 @@ class UCTorigPolicy : Policy() {
                     )
                 }
 
-                val rolloutResults = rollout(simState)
-                node.score = rolloutResults[node.playerNumber!!]!!
+                rollout(node.index!!, simState)
 
-                // backpropagation
-                var current = node.parent
-                while (current != null) {
-                    current.score += rolloutResults[current.playerNumber]!!
-                    current.simulations.incrementAndGet()
-                    current = current.parent
-                }
             }
         }
-
-
-        val iterations = 10000
 
         val shuffledState = state.copy(
             newPolicies = Pair(EpsilonHeuristicGreedyPolicy(), EpsilonHeuristicGreedyPolicy()),
@@ -145,18 +158,49 @@ class UCTorigPolicy : Policy() {
             obfuscateUnseen = true
         )
 
-        for (it in 1..iterations) {
-            state.logger?.startSimulation()
-            forward(
-                node = root,
-                simState = shuffledState.copy(),
-                simChoices = choices
-            )
-            state.logger?.endSimulation()
+        val iterations = 10000
+        var queued = 0
+        var processed = 0
+
+        forwardTimer.start()
+
+        while(processed < iterations) {
+
+            if(queued < iterations) {
+                state.logger?.startSimulation()
+                threadPool.execute {
+                    forward(
+                        node = root,
+                        simState = shuffledState.copy(),
+                        simChoices = choices
+                    )
+                }
+                queued += 1
+                state.logger?.endSimulation()
+            }
+
+            val result = rolloutResults.poll()
+            if(result != null) {
+                val node = treeNodeList[result.index]
+                node.score += result.scores[node.playerNumber]!!
+
+                var current: MCTSTreeNode? = node
+                while (current != null) {
+                    current.score += result.scores[current.playerNumber]!!
+                    current.inProcess.decrementAndGet()
+                    current.simulations.incrementAndGet()
+                    current = current.parent
+                }
+                processed += 1
+            }
         }
+
+        forwardTimer.stop()
 
         val simulations: List<Int> = root.children.map { it.simulations.get() }
         val index = simulations.indices.maxByOrNull { simulations[it] }!!
+
+        decisionTimer.stop()
         return choices[index].also { state.logger?.endDecision() }
 
     }

@@ -4,7 +4,7 @@ import engine.*
 import policies.Policy
 import policies.PolicyName
 
-object randomPolicy : Policy {
+class RandomPolicy : Policy() {
     override val name = PolicyName("randomPolicy")
     override fun policy(
         state: GameState,
