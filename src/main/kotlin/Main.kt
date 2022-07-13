@@ -11,10 +11,10 @@ fun main(args: Array<String>) {
     val policies = Pair(UCTorigParallelPolicy(), SingleWitchPolicy())
 
     val logger = DominionLogger(
-        logDirectory = File("/Users/nickembrey/dev/KDominion/log")
+        logDirectory = File("/Users/nick/dev/dominion/KDominion/log")
     )
 
-    val totalGames = 1
+    val totalGames = 10
     val games: MutableList<GameState> = mutableListOf()
 
     for(i in 1..totalGames) {

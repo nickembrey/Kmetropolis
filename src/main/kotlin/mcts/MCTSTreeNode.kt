@@ -1,8 +1,10 @@
 package mcts
 
 import engine.Card
+import engine.CardChoices
 import engine.ChoiceContext
 import engine.PlayerNumber
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 // TODO: reconsider how we're using wins vs score and optional PolicyPlayer
@@ -15,6 +17,7 @@ class MCTSTreeNode( // TODO make a debug version that takes the state and gets a
 
 ) {
     var index: Int? = null
+    var choices: CardChoices? = Collections.synchronizedList(ArrayList())
     var score: Double = 0.0
     var inProcess: AtomicInteger = AtomicInteger(0)
     var simulations: AtomicInteger = AtomicInteger(0)

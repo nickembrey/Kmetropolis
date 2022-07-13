@@ -16,7 +16,7 @@ import kotlin.math.sqrt
 
 class UCTorigParallelPolicy : Policy() {
 
-    val threadPool: ExecutorService = Executors.newFixedThreadPool(2)
+    val threadPool: ExecutorService = Executors.newWorkStealingPool()
 
     override val name = PolicyName("UCTorigParallelPolicy")
     override fun policy(
@@ -49,8 +49,8 @@ class UCTorigParallelPolicy : Policy() {
             parent = null,
             card = null,
             playerNumber = state.choicePlayer.playerNumber,
-            choiceContext = state.context
-        )
+            choiceContext = state.context,
+        ).also { it.choices = choices }
 
         val rolloutResults: Queue<RolloutResult> = ConcurrentLinkedQueue()
 
@@ -63,7 +63,7 @@ class UCTorigParallelPolicy : Policy() {
 
         fun rollout(index: Int, simState: GameState) {
             while (!simState.gameOver) {
-                simState.makeNextCardDecision()
+                simState.makeNextCardDecision(distinctChoices = false)
             }
 
             val playerOneVp = simState.playerOne.vp
@@ -107,24 +107,28 @@ class UCTorigParallelPolicy : Policy() {
                     simState.makeCardDecision(it)
                 }
 
-                // TODO: wrap this up in a method
-                var nextChoices = simState.context.getCardChoices(simState.choicePlayer, simState.board)
-                while (true) {
-                    if (nextChoices.size == 1) {
-                        simState.makeCardDecision(nextChoices[0])
-                    } else when (simState.context) {
-                        ChoiceContext.ACTION -> { // must play plus actions first (MPPAF)
-                            nextChoices.filterNotNull().firstOrNull { it.addActions > 0 }?.let {
-                                simState.makeCardDecision(it)
-                            } ?: break
-                        }
-                        ChoiceContext.TREASURE -> simState.makeCardDecision(nextChoices[0])
-                        else -> break
-                    }
+                var nextChoices = node.children[index].choices
+                if(nextChoices == null) { // TODO: wrap this up in a method
                     nextChoices = simState.context.getCardChoices(simState.choicePlayer, simState.board)
+                    while (true) {
+                        if (nextChoices!!.size == 1) { // TODO
+                            simState.makeCardDecision(nextChoices[0])
+                        } else when (simState.context) {
+                            ChoiceContext.ACTION -> { // must play plus actions first (MPPAF)
+                                nextChoices.filterNotNull().firstOrNull { it.addActions > 0 }?.let {
+                                    simState.makeCardDecision(it)
+                                } ?: break
+                            }
+                            ChoiceContext.TREASURE -> simState.makeCardDecision(nextChoices[0])
+                            else -> break
+                        }
+                        nextChoices = simState.context.getCardChoices(simState.choicePlayer, simState.board)
+                    }
+                    node.children[index].choices = nextChoices
                 }
 
-                return forward(node.children[index], simState, nextChoices)
+
+                return forward(node.children[index], simState, nextChoices!!)
             } else {
 
                 treeNodeList.add(node)

@@ -383,9 +383,9 @@ class GameState(
         }
     }
 
-    fun makeNextCardDecision(policy: Policy = choicePlayer.defaultPolicy) {
+    fun makeNextCardDecision(policy: Policy = choicePlayer.defaultPolicy, distinctChoices: Boolean = true) {
 
-        context.getCardChoices(choicePlayer, board).let {
+        context.getCardChoices(choicePlayer, board, distinctChoices).let {
             when(it.size) {
                 1 -> makeCardDecision(it[0])
                 else -> makeCardDecision(policy.policy(this, it))
