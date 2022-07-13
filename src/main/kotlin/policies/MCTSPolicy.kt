@@ -1,7 +1,7 @@
 //package policies
 //
 //import engine.*
-//import engine.Player
+//import engine.player.Player
 //import mcts.MCTSTreeNode
 //import policies.rollout.randomPolicy
 //import kotlin.math.log2

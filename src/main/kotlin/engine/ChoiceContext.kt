@@ -1,5 +1,9 @@
 package engine
 
+import engine.card.Card
+import engine.card.CardType
+import engine.player.Player
+
 // TODO: consider making CardChoices a Set, and then just choosing a choice token from it rather than an index to a Card
 //       -- see note in Card.kt
 

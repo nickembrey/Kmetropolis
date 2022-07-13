@@ -1,6 +1,6 @@
 package mcts
 
-import engine.PlayerNumber
+import engine.player.PlayerNumber
 
 data class RolloutResult(
     val index: Int,

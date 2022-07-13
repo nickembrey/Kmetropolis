@@ -1,4 +1,7 @@
-package engine
+package engine.card
+
+import engine.*
+import engine.player.PlayerRole
 
 enum class CardEffectType {
     BASIC, ATTACK;
@@ -11,7 +14,8 @@ enum class CardEffectTrigger {
 enum class CardEffect(
     val type: CardEffectType = CardEffectType.BASIC,
     val trigger: CardEffectTrigger = CardEffectTrigger.PLAY,
-    val cardEffectFn: (GameState) -> GameEffect) {
+    val cardEffectFn: (GameState) -> GameEffect
+) {
     CELLAR_EFFECT(cardEffectFn = { state ->
         GameEffect(
             newContext = ChoiceContext.CELLAR,

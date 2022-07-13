@@ -1,6 +1,8 @@
 package policies.parallelized
 
 import engine.*
+import engine.card.Card
+import engine.player.PlayerNumber
 import mcts.MCTSTreeNode
 import mcts.RolloutResult
 import policies.Policy

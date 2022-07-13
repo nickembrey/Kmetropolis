@@ -1,4 +1,6 @@
-package engine
+package engine.player
+
+import engine.GameState
 
 enum class PlayerNumber(val value: String): PlayerTag {
     PLAYER_ONE("Player 1"),

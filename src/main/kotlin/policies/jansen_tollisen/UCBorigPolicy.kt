@@ -1,7 +1,7 @@
 //package policies.jansen_tollisen
 //
 //import engine.*
-//import engine.Player
+//import engine.player.Player
 //import mcts.MCTSTreeNode
 //import policies.Policy
 //import policies.PolicyName

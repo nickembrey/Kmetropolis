@@ -1,6 +1,8 @@
 package policies.jansen_tollisen
 
 import engine.*
+import engine.card.Card
+import engine.player.PlayerNumber
 import mcts.MCTSTreeNode
 import policies.Policy
 import policies.PolicyName

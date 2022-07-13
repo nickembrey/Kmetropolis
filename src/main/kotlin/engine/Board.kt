@@ -1,5 +1,7 @@
 package engine
 
+import engine.card.Card
+
 // TODO: we could also change it to just use the ordinal instead of the whole card
 typealias Board = HashMap<Card, Int>
 

@@ -1,4 +1,4 @@
-package engine
+package engine.card
 
 enum class Card(
     val type: CardType,

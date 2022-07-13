@@ -1,6 +1,7 @@
 package policies.utility
 
 import engine.*
+import engine.card.Card
 import policies.Policy
 import policies.PolicyName
 

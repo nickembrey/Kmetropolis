@@ -1,4 +1,6 @@
-package engine
+package engine.player
+
+import engine.GameState
 
 enum class PlayerRole(val value: String): PlayerTag {
     CURRENT_PLAYER("Current player"),

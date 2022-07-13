@@ -1,7 +1,7 @@
 package kingdoms
 
 import engine.Board
-import engine.Card
+import engine.card.Card
 
 val defaultBoard: Board
     get() = hashMapOf(
