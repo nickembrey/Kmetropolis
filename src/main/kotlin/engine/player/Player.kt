@@ -2,6 +2,8 @@ package engine.player
 
 import engine.card.Card
 import engine.card.CardLocation
+import engine.deck.Deck
+import engine.deck.ListDeck
 import policies.Policy
 
 // TODO: players should be created and named from within the GameState
