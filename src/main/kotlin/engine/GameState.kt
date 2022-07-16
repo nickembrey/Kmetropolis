@@ -5,6 +5,7 @@ import engine.player.Player
 import engine.player.PlayerNumber
 import kingdoms.defaultBoard
 import policies.Policy
+import stats.DominionLogger
 
 // TODO: make some factory methods to make this a little cleaner
 class GameState(

@@ -1,15 +1,19 @@
-package engine
+package stats
 
+import engine.GameState
+import engine.player.Player
 import policies.PolicyName
 import util.SimulationTimer
 import java.io.File
+
+// TODO: add current commit? and state?
 
 // TODO: it would be cool if we could have a setting to make the logs look like dominion.games logs
 //       1st we would need tokens for actions and have log be a series of tokens
 //       and somehow handle indentation for Dominion.games logs
 //       NOTE: this could also be a first step toward making games that are undo-able
 
-
+// TODO: break down stats by player in new class
 class DominionLogger(logDirectory: File) {
 
     // TODO: timing stats then profile
@@ -33,8 +37,6 @@ class DominionLogger(logDirectory: File) {
 
     private val timer: SimulationTimer = SimulationTimer()
 
-    private var cParameter: Double = 0.0
-
     private var gamePlayouts = 0
     private var gameDecisions = 0
 
@@ -44,7 +46,11 @@ class DominionLogger(logDirectory: File) {
 
     private var log = StringBuilder()
 
-    fun log(str: String) {
+    fun append(str: String) {
+        log.append(str)
+    }
+
+    fun appendLine(str: String) {
         log.appendLine(str)
     }
 
@@ -103,7 +109,7 @@ class DominionLogger(logDirectory: File) {
         }
 
         if(logSummary) {
-            logGameSummary()
+            logGameSummary(players = Pair(playerOne, playerTwo))
         }
 
         totalGames += 1
@@ -113,10 +119,6 @@ class DominionLogger(logDirectory: File) {
         gameDecisions = 0
     }
 
-    fun recordSimulationOptions(cParameter: Double) {
-        this.cParameter = cParameter
-    }
-
     fun recordSimulation(logSummary: Boolean = true) {
         if(logSummary) {
             logSimulationSummary()
@@ -124,44 +126,61 @@ class DominionLogger(logDirectory: File) {
         write()
     }
 
-    private fun logGameSummary() {
-        log("\nGame summary")
-        log("")
-        for((policy, vp) in gameVpRecords) {
-            log("$policy VP: $vp")
+    private fun logGameSummary(
+        players: Pair<Player, Player>
+    ) {
+        appendLine("------------")
+        appendLine("Game summary")
+        appendLine("------------")
+        appendLine("")
+        appendLine("Player 1: ${players.first.defaultPolicy.name}")
+        appendLine("Deck: ")
+        for(entry in players.first.allCards.groupingBy { it }.eachCount()) {
+            appendLine("      ${entry.key}: ${entry.value}")
         }
+        appendLine("")
+        appendLine("Player 2: ${players.second.defaultPolicy.name}")
+        appendLine("Deck: ")
+        for(entry in players.second.allCards.groupingBy { it }.eachCount()) {
+            appendLine("      ${entry.key}: ${entry.value}")
+        }
+        appendLine("")
+        for((policy, vp) in gameVpRecords) {
+            appendLine("$policy VP: $vp")
+        }
+        appendLine("")
     }
 
     private fun logSimulationSummary() {
-        log("Simulation summary\n")
-        log("")
-        log("cParameter: $cParameter")
-        log("")
+        appendLine("------------------")
+        appendLine("Simulation summary")
+        appendLine("------------------")
+        appendLine("")
         for((policy, vp) in totalVpRecords) {
-            log("$policy VP: $vp")
+            appendLine("$policy VP: $vp")
         }
-        log("")
+        appendLine("")
         for((policy, wins) in winRecords) {
-            log("$policy wins: $wins")
+            appendLine("$policy wins: $wins")
         }
         for((pair, ties) in tieRecords) {
-            log("${pair.first} vs. ${pair.second} ties: $ties")
+            appendLine("${pair.first} vs. ${pair.second} ties: $ties")
         }
-        log("")
-        log("Total playouts: $totalPlayouts")
-        log("Total decisions: $totalDecisions")
-        log("Total games: $totalGames")
-        log("")
+        appendLine("")
+        appendLine("Total playouts: $totalPlayouts")
+        appendLine("Total decisions: $totalDecisions")
+        appendLine("Total games: $totalGames")
+        appendLine("")
         if(totalPlayouts > 0 && totalDecisions > 0) {
-            log("Playouts per decision: ${totalPlayouts.toDouble() / totalDecisions}")
+            appendLine("Playouts per decision: ${totalPlayouts.toDouble() / totalDecisions}")
         }
-        log("Decisions per game: ${totalDecisions.toDouble() / totalGames}")
-        log("")
+        appendLine("Decisions per game: ${totalDecisions.toDouble() / totalGames}")
+        appendLine("")
         if(totalPlayouts > 0 && totalDecisions > 0) {
-            log("Average time per playout: ${timer.totalTime.toDouble() / totalPlayouts}")
+            appendLine("Average time per playout: ${timer.totalTime.toDouble() / totalPlayouts}")
         }
-        log("Average time per decision: ${timer.totalTime.toDouble() / totalDecisions}")
-        log("Average time per game: ${timer.totalTime.toDouble() / totalGames}")
+        appendLine("Average time per decision: ${timer.totalTime.toDouble() / totalDecisions}")
+        appendLine("Average time per game: ${timer.totalTime.toDouble() / totalGames}")
     }
 
 
