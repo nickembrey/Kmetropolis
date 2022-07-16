@@ -1,26 +1,42 @@
-package mcts
-
-import engine.CardChoices
-import engine.ChoiceContext
-import engine.card.Card
-import engine.player.PlayerNumber
-import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
-
-// TODO: reconsider how we're using wins vs score and optional PolicyPlayer
-//  this might be a good place to use a subclass
-class MCTSTreeNode( // TODO make a debug version that takes the state and gets all of this stuff
-    val parent: MCTSTreeNode?,
-    val card: Card?,
-    val playerNumber: PlayerNumber?,
-    val choiceContext: ChoiceContext?,
-
-    ) {
-    var index: Int? = null
-    var choices: CardChoices? = Collections.synchronizedList(ArrayList())
-    var score: Double = 0.0
-    var inProcess: AtomicInteger = AtomicInteger(0)
-    var simulations: AtomicInteger = AtomicInteger(0)
-
-    var children: List<MCTSTreeNode> = listOf() // TODO: does this need to be made concurrency safe?
-}
+//package mcts
+//
+//import engine.CardChoices
+//import engine.ChoiceContext
+//import engine.GameState
+//import engine.card.Card
+//import engine.player.PlayerNumber
+//import java.util.*
+//import java.util.concurrent.atomic.AtomicInteger
+//
+//abstract class MCTSTreeNode constructor(
+//    val parent: MCTSTreeNode?,
+//) {
+//
+//    companion object {
+//        fun getRoot(state: GameState): MCTSTreeNode {
+//            return MCTSTreeNode(
+//                parent = null,
+//                card = null,
+//                playerNumber = state.choicePlayer.playerNumber,
+//                choiceContext = state.context,
+//                choices = state.context.getCardChoices(state.choicePlayer, state.board)
+//            )
+//        }
+//    }
+//
+//    var children: List<MCTSTreeNode> = listOf() // TODO: does this need to be made concurrency safe?
+//
+//    fun addChildren(children: List<MCTSTreeNode>) {
+//        this.children = children
+//    }
+//
+//    var index: Int? = null
+//
+//    var score: Double = 0.0 // the original score, which could be, e.g., number of wins or vp difference
+//
+//    var value: Double = 0.0 // the score weighted by the number of simulations according to UCT
+//
+//
+//    var inProcess: AtomicInteger = AtomicInteger(0)
+//    var simulations: AtomicInteger = AtomicInteger(0)
+//}
