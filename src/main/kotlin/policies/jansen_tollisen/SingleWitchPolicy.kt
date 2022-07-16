@@ -7,6 +7,7 @@ import policies.PolicyName
 
 class SingleWitchPolicy : Policy() {
     override val name = PolicyName("singleWitchPolicy")
+    override fun shutdown() = Unit
     override fun policy(
         state: GameState,
         choices: CardChoices
@@ -30,7 +31,7 @@ class SingleWitchPolicy : Policy() {
                     Card.WITCH
                 } else if (state.currentPlayer.coins >= 5 && provinceCards < 4 && duchyLeft > 0) {
                     Card.DUCHY
-                } else if (state.currentPlayer.coins >= 5 && provinceCards < 2 && estateLeft > 0) {
+                } else if (state.currentPlayer.coins >= 2 && provinceCards < 2 && estateLeft > 0) {
                     Card.ESTATE
                 } else if (state.currentPlayer.coins >= 6) {
                     Card.GOLD
