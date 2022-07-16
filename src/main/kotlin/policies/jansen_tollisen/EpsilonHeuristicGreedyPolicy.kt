@@ -25,7 +25,7 @@ class EpsilonHeuristicGreedyPolicy : Policy() {
         // TODO: make sure this changes
         val random = (0..100).random()
 
-        return if(random > epsilon) {
+        return if(random < epsilon) {
             randomPolicy.policy(state, choices)
         } else {
             heuristicGreedyPolicy.policy(state, choices)
