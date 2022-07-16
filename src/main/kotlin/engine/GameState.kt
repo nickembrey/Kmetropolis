@@ -42,13 +42,13 @@ class GameState(
             }
         }.also { newState ->
 
-            newState.currentPlayer.inPlay = currentPlayer.inPlay.toMutableList()
-            newState.currentPlayer.discard = currentPlayer.discard.toMutableList()
-            newState.currentPlayer.inPlay = currentPlayer.inPlay.toMutableList()
-            newState.currentPlayer.discard = currentPlayer.discard.toMutableList()
             newState.currentPlayer.hand = currentPlayer.hand.toMutableList()
-            newState.currentPlayer.deck = currentPlayer.deck.toMutableList()
+            newState.currentPlayer.inPlay = currentPlayer.inPlay.toMutableList()
             newState.currentPlayer.remodelCard = currentPlayer.remodelCard
+            newState.currentPlayer.actions = currentPlayer.actions
+            newState.currentPlayer.buys = currentPlayer.buys
+            newState.currentPlayer.coins = currentPlayer.coins
+            newState.currentPlayer.baseVp = currentPlayer.baseVp
 
             if(deterministicDecks) {
                 newState.currentPlayer.deck = currentPlayer.deck.toListDeck().toDeterministicDeck()
@@ -60,6 +60,10 @@ class GameState(
 
             newState.otherPlayer.hand = otherPlayer.hand.toMutableList()
             newState.otherPlayer.remodelCard = otherPlayer.remodelCard
+            newState.otherPlayer.actions = otherPlayer.actions
+            newState.otherPlayer.buys = otherPlayer.buys
+            newState.otherPlayer.coins = otherPlayer.coins
+            newState.otherPlayer.baseVp = otherPlayer.baseVp
 
             if (obfuscateUnseen) {
                 newState.currentPlayer.deck.shuffle()
@@ -143,11 +147,11 @@ class GameState(
 
 
     fun initialize() {
+        logger?.startGame(this)
         playerOne.deck.shuffle()
         playerTwo.deck.shuffle()
-        drawCards(5, playerOne, trueShuffle)
-        drawCards(5, playerTwo, trueShuffle)
-        logger?.startGame(this)
+        drawCards(5, playerOne)
+        drawCards(5, playerTwo)
     }
 
     fun nextContext(exitCurrentContext: Boolean = false) { // TODO: debug
