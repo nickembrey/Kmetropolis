@@ -1,4 +1,4 @@
-import engine.DominionLogger
+import stats.DominionLogger
 import engine.GameState
 import kingdoms.jansenTollisenBoard
 import policies.jansen_tollisen.SingleWitchPolicy

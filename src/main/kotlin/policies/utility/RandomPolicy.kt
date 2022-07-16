@@ -1,4 +1,4 @@
-package policies.rollout
+package policies.utility
 
 import engine.*
 import engine.card.Card
@@ -14,4 +14,3 @@ class RandomPolicy : Policy() {
         return choices.random()
     }
 }
-

@@ -1,4 +1,4 @@
-package policies.rollout.jansen_tollisen
+package policies.jansen_tollisen
 
 import engine.*
 import engine.card.Card

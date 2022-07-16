@@ -1,10 +1,10 @@
-package policies.rollout.jansen_tollisen
+package policies.jansen_tollisen
 
 import engine.*
 import engine.card.Card
 import policies.Policy
 import policies.PolicyName
-import policies.rollout.RandomPolicy
+import policies.utility.RandomPolicy
 
 class HeuristicGreedyPolicy : Policy() {
 
