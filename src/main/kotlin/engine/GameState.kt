@@ -14,17 +14,16 @@ class GameState(
     val board: Board = defaultBoard,
     var turns: Int = 0,
     var context: ChoiceContext = ChoiceContext.ACTION,
-    val trueShuffle: Boolean = true,
     val logger: DominionLogger? = null,
     private val maxTurns: Int = 999,
 ) {
 
     fun copy(
         newPolicies: Pair<Policy, Policy> = policies,
-        newTrueShuffle: Boolean = trueShuffle,
         newLogger: DominionLogger? = logger,
         newMaxTurns: Int = maxTurns,
         newPoliciesInOrder: Boolean = policiesInOrder,
+        deterministicDecks: Boolean = false,
         obfuscateUnseen: Boolean = false
     ): GameState {
 
@@ -33,7 +32,6 @@ class GameState(
             board = HashMap(board),
             turns = turns,
             context = context,
-            trueShuffle = newTrueShuffle,
             logger = newLogger,
             maxTurns = newMaxTurns,
             policiesInOrder = newPoliciesInOrder
@@ -52,14 +50,21 @@ class GameState(
             newState.currentPlayer.deck = currentPlayer.deck.toMutableList()
             newState.currentPlayer.remodelCard = currentPlayer.remodelCard
 
-            newState.otherPlayer.deck = otherPlayer.deck.toMutableList()
+            if(deterministicDecks) {
+                newState.currentPlayer.deck = currentPlayer.deck.toListDeck().toDeterministicDeck()
+                newState.otherPlayer.deck = otherPlayer.deck.toListDeck().toDeterministicDeck()
+            } else {
+                newState.currentPlayer.deck = currentPlayer.deck.copy()
+                newState.otherPlayer.deck = otherPlayer.deck.copy()
+            }
+
             newState.otherPlayer.hand = otherPlayer.hand.toMutableList()
             newState.otherPlayer.remodelCard = otherPlayer.remodelCard
 
             if (obfuscateUnseen) {
                 newState.currentPlayer.deck.shuffle()
 
-                newState.otherPlayer.deck += newState.otherPlayer.hand
+                newState.otherPlayer.deck.addToDeck(*newState.otherPlayer.hand.toTypedArray())
                 newState.otherPlayer.hand.clear()
                 newState.otherPlayer.deck.shuffle()
                 newState.drawCards(otherPlayer.hand.size, newState.otherPlayer)
@@ -153,14 +158,15 @@ class GameState(
                 ChoiceContext.ACTION -> ChoiceContext.TREASURE
                 ChoiceContext.TREASURE -> ChoiceContext.BUY
                 ChoiceContext.BUY -> {
-                    endTurn(currentPlayer, trueShuffle, logger)
+                    endTurn(currentPlayer, logger)
                     turns += 1
                     currentPlayer = otherPlayer
                     ChoiceContext.ACTION
                 }
 
                 ChoiceContext.CELLAR, ChoiceContext.CHAPEL, ChoiceContext.HARBINGER,
-                ChoiceContext.MILITIA, ChoiceContext.WORKSHOP, ChoiceContext.REMODEL_GAIN -> ChoiceContext.ACTION
+                ChoiceContext.MILITIA, ChoiceContext.WORKSHOP, ChoiceContext.POACHER,
+                ChoiceContext.REMODEL_GAIN -> ChoiceContext.ACTION
 
                 ChoiceContext.REMODEL_TRASH -> when(exitCurrentContext) {
                     true -> ChoiceContext.ACTION
@@ -188,8 +194,8 @@ class GameState(
             CardLocation.PLAYER_TWO_IN_PLAY -> playerTwo.inPlay.removeCard(card)
             CardLocation.PLAYER_ONE_HAND -> playerOne.hand.removeCard(card)
             CardLocation.PLAYER_TWO_HAND -> playerTwo.hand.removeCard(card)
-            CardLocation.PLAYER_ONE_DISCARD -> playerOne.discard.removeCard(card)
-            CardLocation.PLAYER_TWO_DISCARD -> playerTwo.discard.removeCard(card)
+            CardLocation.PLAYER_ONE_DISCARD -> playerOne.deck.removeFromDiscard(card)
+            CardLocation.PLAYER_TWO_DISCARD -> playerTwo.deck.removeFromDiscard(card)
             CardLocation.PLAYER_ONE_TOPDECK, CardLocation.PLAYER_TWO_TOPDECK -> throw NotImplementedError("Must use drawCard for drawing cards!")
             // TODO: this seems a little hacky, yeah?
         }
@@ -203,10 +209,10 @@ class GameState(
             CardLocation.PLAYER_TWO_IN_PLAY -> playerTwo.inPlay.addCard(card)
             CardLocation.PLAYER_ONE_HAND -> playerOne.hand.addCard(card)
             CardLocation.PLAYER_TWO_HAND -> playerTwo.hand.addCard(card)
-            CardLocation.PLAYER_ONE_DISCARD -> playerOne.discard.addCard(card)
-            CardLocation.PLAYER_TWO_DISCARD -> playerTwo.discard.addCard(card)
-            CardLocation.PLAYER_ONE_TOPDECK -> playerOne.deck.prependCard(card)
-            CardLocation.PLAYER_TWO_TOPDECK -> playerTwo.deck.prependCard(card)
+            CardLocation.PLAYER_ONE_DISCARD -> playerOne.deck.discard(card)
+            CardLocation.PLAYER_TWO_DISCARD -> playerTwo.deck.discard(card)
+            CardLocation.PLAYER_ONE_TOPDECK -> playerOne.deck.topdeck(card)
+            CardLocation.PLAYER_TWO_TOPDECK -> playerTwo.deck.topdeck(card)
         }
     }
 
@@ -225,51 +231,41 @@ class GameState(
             }
     }
 
-    fun drawCards(number: Int, player: Player, trueShuffle: Boolean = true) {
+    fun drawCards(number: Int, player: Player) {
         if (number > 0) {
-            drawCard(player, trueShuffle)
-            drawCards(number - 1, player, trueShuffle)
+            drawCard(player)
+            drawCards(number - 1, player)
         }
     }
 
     // TODO: this can be a gamemove now
-    fun drawCard(player: Player, trueShuffle: Boolean = true): Boolean {
-        if (player.deck.size == 0) {
-            shuffle(player, trueShuffle)
-        }
-        val card = player.deck.removeFirstOrNull()?.also {
-            addCard (it, player.handLocation)
+    fun drawCard(player: Player): Boolean {
+
+        val card = player.deck.draw()?.also {
+            addCard(it, player.handLocation)
         }
 
         return card != null
     }
 
-    fun shuffle(player: Player, trueShuffle: Boolean = true) {
-        player.deck += player.discard
-        player.discard.clear()
-        if(trueShuffle) {
-            player.deck.shuffle()
-        }
-    }
+    fun endTurn(player: Player, logger: DominionLogger? = null) {
 
-    fun endTurn(player: Player, trueShuffle: Boolean = true, logger: DominionLogger? = null) {
-
-        player.discard += player.inPlay
+        player.deck.addToDiscard(*player.inPlay.toTypedArray())
         player.inPlay.clear()
-        player.discard += player.hand
+        player.deck.addToDiscard(*player.hand.toTypedArray())
         player.hand.clear()
-        drawCards(5, player, trueShuffle)
+        drawCards(5, player)
         player.actions = 1
         player.buys = 1
         player.coins = 0
-        logger?.log("\n${player.defaultPolicy.name} ends their turn\n")
+        logger?.appendLine("\n${player.defaultPolicy.name} ends their turn\n")
     }
 
     fun contextToGameMoveType(context: ChoiceContext): GameMoveType {
         return when (context) {
             ChoiceContext.ACTION, ChoiceContext.TREASURE -> GameMoveType.PLAY
             ChoiceContext.BUY -> GameMoveType.BUY
-            ChoiceContext.CELLAR, ChoiceContext.MILITIA -> GameMoveType.DISCARD
+            ChoiceContext.CELLAR, ChoiceContext.MILITIA, ChoiceContext.POACHER -> GameMoveType.DISCARD
             ChoiceContext.CHAPEL, ChoiceContext.REMODEL_TRASH -> GameMoveType.TRASH
             ChoiceContext.HARBINGER -> GameMoveType.TOPDECK
             ChoiceContext.WORKSHOP, ChoiceContext.REMODEL_GAIN -> GameMoveType.GAIN
@@ -282,7 +278,7 @@ class GameState(
         val player = move.playerTag.getPlayer(this)
         val card = move.card
         if(!move.type.requireSuccess) {
-            logger?.log("${player.defaultPolicy.name} ${move.type.verb} ${card.name}")
+            logger?.appendLine("${player.defaultPolicy.name} ${move.type.verb} ${card.name}")
         }
 
         val success = when (move.type) {
@@ -297,7 +293,7 @@ class GameState(
                 moveCard(card, player.handLocation, player.discardLocation, true)
                 true  // TODO: these should be more elegant
             }
-            GameMoveType.DRAW -> drawCard(player, trueShuffle)
+            GameMoveType.DRAW -> drawCard(player)
             GameMoveType.GAIN -> {
                 val gained = moveCard(card, CardLocation.SUPPLY, player.discardLocation) != null
                 player.baseVp += card.vp
@@ -334,7 +330,7 @@ class GameState(
                     }
                 }
 
-                drawCards(card.addCards, player, trueShuffle)
+                drawCards(card.addCards, player)
                 true // TODO: these should be more elegant
             }
             GameMoveType.TOPDECK -> { // TODO: will probably need more details
@@ -354,7 +350,7 @@ class GameState(
             }
         }
         if(success && move.type.requireSuccess) {
-            logger?.log("${player.defaultPolicy.name} ${move.type.verb} ${card.name}")
+            logger?.appendLine("${player.defaultPolicy.name} ${move.type.verb} ${card.name}")
         }
     }
 
@@ -387,9 +383,9 @@ class GameState(
         }
     }
 
-    fun makeNextCardDecision(policy: Policy = choicePlayer.defaultPolicy, distinctChoices: Boolean = true) {
+    fun makeNextCardDecision(policy: Policy = choicePlayer.defaultPolicy) {
 
-        context.getCardChoices(choicePlayer, board, distinctChoices).let {
+        context.getCardChoices(choicePlayer, board).let {
             when(it.size) {
                 1 -> makeCardDecision(it[0])
                 else -> makeCardDecision(policy.policy(this, it))

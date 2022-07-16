@@ -10,21 +10,9 @@ data class Player(
     val playerNumber: PlayerNumber,
     val defaultPolicy: Policy,
     val name: String,
-    var deck: MutableList<Card> = mutableListOf(
-        Card.COPPER,
-        Card.COPPER,
-        Card.COPPER,
-        Card.COPPER,
-        Card.COPPER,
-        Card.COPPER,
-        Card.COPPER,
-        Card.ESTATE,
-        Card.ESTATE,
-        Card.ESTATE
-    ),
+    var deck: Deck = ListDeck(),
     var hand: MutableList<Card> = mutableListOf(),
-    var inPlay: MutableList<Card> = mutableListOf(),
-    var discard: MutableList<Card> = mutableListOf()
+    var inPlay: MutableList<Card> = mutableListOf()
 ) {
 
     var actions = 1
@@ -33,6 +21,8 @@ data class Player(
     var baseVp = 3
 
     var remodelCard: Card? = null
+
+    // TODO: copy method?
 
     val handLocation: CardLocation
         get() = when(playerNumber) {
@@ -53,7 +43,7 @@ data class Player(
         }
 
     val allCards
-        get() = deck + hand + discard + inPlay
+        get() = deck.allCards + hand + inPlay
 
     val vp // TODO: test
         get() = baseVp + (allCards.count { it == Card.GARDENS } * kotlin.math.floor(allCards.size.toDouble() / 10)).toInt()
