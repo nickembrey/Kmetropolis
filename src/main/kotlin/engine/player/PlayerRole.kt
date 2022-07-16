@@ -10,4 +10,9 @@ enum class PlayerRole(val value: String): PlayerTag {
         CURRENT_PLAYER -> state.currentPlayer
         OTHER_PLAYER -> state.otherPlayer
     }
+
+    override fun getOpponent(state: GameState): Player = when(this) {
+        CURRENT_PLAYER -> state.otherPlayer
+        OTHER_PLAYER -> state.currentPlayer
+    }
 }

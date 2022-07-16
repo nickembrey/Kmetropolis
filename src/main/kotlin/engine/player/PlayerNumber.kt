@@ -12,4 +12,9 @@ enum class PlayerNumber(val value: String): PlayerTag {
         PLAYER_TWO -> state.playerTwo
     }
 
+    override fun getOpponent(state: GameState): Player = when(this) {
+        PLAYER_ONE -> state.playerTwo
+        PLAYER_TWO -> state.playerOne
+    }
+
 }
