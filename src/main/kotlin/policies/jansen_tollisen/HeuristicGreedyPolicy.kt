@@ -13,6 +13,7 @@ class HeuristicGreedyPolicy : Policy() {
     }
 
     override val name = PolicyName("heuristicGreedyPolicy")
+    override fun shutdown() = Unit
     override fun policy(
         state: GameState,
         choices: CardChoices

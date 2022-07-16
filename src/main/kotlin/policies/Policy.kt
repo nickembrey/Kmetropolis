@@ -10,7 +10,9 @@ value class PolicyName(val value: String) {
     }
 }
 
+// TODO: give policies access to the logger directly instead of having to get it from the GameState
 abstract class Policy {
     abstract val name: PolicyName
+    abstract fun shutdown()
     abstract fun policy (state: GameState, choices: CardChoices): Card?
 }

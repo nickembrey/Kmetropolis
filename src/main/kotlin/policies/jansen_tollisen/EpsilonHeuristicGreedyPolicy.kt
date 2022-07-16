@@ -14,6 +14,7 @@ class EpsilonHeuristicGreedyPolicy : Policy() {
     }
 
     override val name: PolicyName = PolicyName("EpsilonHeuristicGreedyPolicy")
+    override fun shutdown() = Unit
     override fun policy(
         state: GameState,
         choices: CardChoices
