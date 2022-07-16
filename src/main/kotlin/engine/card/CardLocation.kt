@@ -10,5 +10,5 @@ enum class CardLocation {
     PLAYER_ONE_DISCARD,
     PLAYER_TWO_DISCARD,
     PLAYER_ONE_TOPDECK,
-    PLAYER_TWO_TOPDECK;
+    PLAYER_TWO_TOPDECK; // TODO: drawing is just a move from topdeck to hand, right?
 }

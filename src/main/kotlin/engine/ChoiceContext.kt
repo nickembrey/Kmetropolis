@@ -9,43 +9,35 @@ import engine.player.Player
 
 typealias CardChoices = List<Card?>
 
+// TODO: keep hold of a set in memory and just change it for every choice instead of making a bunch of stuff
 enum class ChoiceContext {
-    ACTION, TREASURE, BUY, CELLAR, CHAPEL, HARBINGER, WORKSHOP, MILITIA, REMODEL_TRASH, REMODEL_GAIN;
+    ACTION,
+    TREASURE,
+    BUY,
+    CELLAR,
+    CHAPEL,
+    HARBINGER,
+//    VASSAL,
+    WORKSHOP,
+    MILITIA,
+    POACHER,
+    REMODEL_TRASH,
+    REMODEL_GAIN;
 
-    fun getCardChoices(player: Player, board: Board, distinct: Boolean = true): CardChoices {
-
-            if(distinct) {
-                return when(this) {
-                    ACTION -> player.hand.filter { it.type == CardType.ACTION }.toMutableSet<Card?>().apply { add(null) }.toList()
-                    TREASURE -> player.hand.filter { it.type == CardType.TREASURE }.toMutableSet<Card?>().apply { add(null) }.toList()
-                    BUY -> board.filter { it.value > 0 && player.coins >= it.key.cost }.keys.toList().plus(null)
-                    CELLAR, CHAPEL -> player.hand.toMutableSet<Card?>().apply { add(null) }.toList()
-                    HARBINGER -> player.discard.distinct().ifEmpty { listOf(null) }
-                    WORKSHOP -> board.filter { it.key.cost < 5 && it.value > 0 }.keys.toList().ifEmpty { listOf(null) }
-                    MILITIA, REMODEL_TRASH -> player.hand.distinct().ifEmpty { listOf(null) }
-                    REMODEL_GAIN -> {
-                        board.filter { it.key.cost <= player.remodelCard!!.cost + 2 && it.value > 0 }.keys.takeIf { it.isNotEmpty() }?.toList() ?: listOf(null)
-                    }
-                }.also { if(it.isEmpty()) {
-                    throw java.lang.IllegalStateException("getCardChoices must provide at least one choice!")
-                } }
-            } else {
-                val choices: MutableList<Card?> = mutableListOf()
-                return when(this) {
-                    ACTION -> player.hand.filterTo(choices) { it.type == CardType.ACTION }.apply { add(null) }
-                    TREASURE -> player.hand.filterTo(choices) { it.type == CardType.TREASURE }.apply { add(null) }
-                    BUY -> board.filter { it.value > 0 && player.coins >= it.key.cost }.keys.toList().plus(null)
-                    CELLAR, CHAPEL -> player.hand.plus(null)
-                    HARBINGER -> player.discard.ifEmpty { listOf(null) }
-                    WORKSHOP -> board.filter { it.key.cost < 5 && it.value > 0 }.keys.toList().ifEmpty { listOf(null) }
-                    MILITIA, REMODEL_TRASH -> player.hand.ifEmpty { listOf(null) }
-                    REMODEL_GAIN -> {
-                        board.filter { it.key.cost <= player.remodelCard!!.cost + 2 && it.value > 0 }.keys.takeIf { it.isNotEmpty() }?.toList() ?: listOf(null)
-                    }
-                }.also { if(it.isEmpty()) {
-                    throw java.lang.IllegalStateException("getCardChoices must provide at least one choice!")
-                } }
+    fun getCardChoices(player: Player, board: Board): CardChoices {
+        return when(this) {
+            ACTION -> player.hand.filter { it.type == CardType.ACTION }.toMutableSet<Card?>().apply { add(null) }.toList()
+            TREASURE -> player.hand.filter { it.type == CardType.TREASURE }.toMutableSet<Card?>().apply { add(null) }.toList()
+            BUY -> board.filter { it.value > 0 && player.coins >= it.key.cost }.keys.toList().plus(null)
+            CELLAR, CHAPEL -> player.hand.toMutableSet<Card?>().apply { add(null) }.toList()
+            HARBINGER -> player.deck.discard.distinct().ifEmpty { listOf(null) }
+//            VASSAL -> player.deck.
+            WORKSHOP -> board.filter { it.key.cost < 5 && it.value > 0 }.keys.toList().ifEmpty { listOf(null) }
+            MILITIA, POACHER, REMODEL_TRASH -> player.hand.distinct().ifEmpty { listOf(null) }
+            REMODEL_GAIN -> {
+                board.filter { it.key.cost <= player.remodelCard!!.cost + 2 && it.value > 0 }.keys.takeIf { it.isNotEmpty() }?.toList() ?: listOf(null)
             }
+        }
     }
 
 }

@@ -41,6 +41,12 @@ enum class CardEffect(
                 newMaxContextDecisions = 1
             )
         }),
+//    VASSAL_EFFECT(cardEffectFn = {
+//        GameEffect(
+//            newContext = ChoiceContext.VASSAL,
+//            newMaxContextDecisions = 1
+//        )
+//    }),
     WORKSHOP_EFFECT(cardEffectFn = {
         GameEffect(
             newContext = ChoiceContext.WORKSHOP,
@@ -63,6 +69,12 @@ enum class CardEffect(
                     }
                 }
             }
+        )
+    }),
+    POACHER_EFFECT(cardEffectFn = {
+        GameEffect(
+            newContext = ChoiceContext.POACHER,
+            newMaxContextDecisions = it.emptySupplyPiles
         )
     }),
     REMODEL_EFFECT(cardEffectFn = {

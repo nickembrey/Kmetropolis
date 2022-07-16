@@ -15,13 +15,13 @@ enum class Card(
     MOAT(type = CardType.ACTION, cost = 2, cardEffects = listOf(CardEffect.MOAT_EFFECT)),
     HARBINGER(type = CardType.ACTION, cost = 3, addActions = 1, addCards = 1, cardEffects = listOf(CardEffect.HARBINGER_EFFECT)),
 //    MERCHANT(type = CardType.ACTION, cost = 3, addActions = 1, addCards = 1, effectList = listOf(::merchantEffect)), // TODO: probably not an effect?
-//    VASSAL(type = CardType.ACTION, cost = 3, addCoins = 2, effectList = listOf(::vassalEffect)),
+//    VASSAL(type = CardType.ACTION, cost = 3, addCoins = 2, effectList = listOf(CardEffect.VASSAL_EFFECT)),
     VILLAGE(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 2),
     WORKSHOP(type = CardType.ACTION, cost = 3, cardEffects = listOf(CardEffect.WORKSHOP_EFFECT)),
 //    BUREAUCRAT(type = CardType.ACTION, cost = 4, effectList = listOf(::bureacratEffect)), // TODO: maybe two effects?
     MILITIA(type = CardType.ACTION, cost = 4, addCoins = 2, cardEffects = listOf(CardEffect.MILITIA_EFFECT)), // TODO: attack
     MONEYLENDER(type = CardType.ACTION, cost = 4, cardEffects = listOf(CardEffect.MONEYLENDER_EFFECT)),
-//    POACHER(type = CardType.ACTION, cost = 4, addCards = 1, addActions = 1, effectList = listOf(::poacherEffect)),
+    POACHER(type = CardType.ACTION, cost = 4, addCards = 1, addActions = 1, cardEffects = listOf(CardEffect.POACHER_EFFECT)),
     REMODEL(type = CardType.ACTION, cost = 4, cardEffects = listOf(CardEffect.REMODEL_EFFECT)),
     SMITHY(type = CardType.ACTION, cost = 4, addCards = 3),
 //    THRONE_ROOM(type = CardType.ACTION, cost = 4, effectList = listOf(::throneRoomEffect)),
