@@ -1,38 +1,71 @@
 import stats.DominionLogger
 import engine.GameState
 import kingdoms.jansenTollisenBoard
-import policies.jansen_tollisen.SingleWitchPolicy
-import policies.parallelized.UCTorigParallelPolicy
+import policies.mcts.DefaultMCTSPolicy
+import policies.playout.GreenRolloutPolicy
+import policies.playout.score.WeightVpMorePlayoutScoreFn
+import policies.playout.score.WeightVpMostPlayoutScoreFn
+import policies.provincial.JansenTollisenBoardProvinicial32Policy
 
 import java.io.File
 
-fun main(args: Array<String>) {
+val logger = DominionLogger(
+    logDirectory = File("/Users/nick/dev/dominion/KDominion/log"),
+    dataDirectory = File("/Users/nick/dev/dominion/KDominion/data")
+)
 
-    val policies = Pair(UCTorigParallelPolicy(), SingleWitchPolicy())
+fun main() {
 
-    val logger = DominionLogger(
-        logDirectory = File("/Users/nick/dev/dominion/KDominion/log")
-    )
+    val policies = listOf(// TODO: pick either "rollouts" or "playouts"
+        DefaultMCTSPolicy(
+            cParameter = 10.0,
+            rollouts = 10000,
+            GreenRolloutPolicy(),
+            WeightVpMorePlayoutScoreFn,
+            false),
+        JansenTollisenBoardProvinicial32Policy()
+    ) // TODO: allow timed rollouts
 
-    val totalGames = 10
+    val totalGames = 20
     val games: MutableList<GameState> = mutableListOf()
 
+//    getResourceStats(File("/Users/nick/dev/dominion/KDominion/data/dominion-data1"))
+
+    logger.initSimulation()
     for(i in 1..totalGames) {
-        val gameState = GameState(
+
+        println("Starting game $i")
+        println("")
+//
+//        val policy1 = policies.random()
+//        var policy2 = policies.random()
+//        while(policy1.name == policy2.name) {
+//            println("Policies are the same...")
+//            println("...re-rolling second policy...")
+//            println("")
+//            policy2 = policies.random()
+//        }
+
+        val gameState = GameState.new(
             policies = policies,
             board = jansenTollisenBoard,
-            logger = logger
+            maxTurns = 999,
+            log = true
         )
-        gameState.initialize()
+        logger.initGame(gameState)
         while(!gameState.gameOver) {
-            gameState.makeNextCardDecision()
+            gameState.processNextBranch()
         }
 
+        policies[0].endGame()
+        policies[1].endGame()
         logger.recordGame(gameState)
 
         games.add(gameState)
     }
 
-    policies.first.threadPool.shutdown()
+    // TODO:
+    policies[0].shutdown()
+    policies[1].shutdown()
     logger.recordSimulation()
 }

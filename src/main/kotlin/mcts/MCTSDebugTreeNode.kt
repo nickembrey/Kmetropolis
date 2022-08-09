@@ -1,4 +1,0 @@
-package mcts
-
-class MCTSDebugTreeNode {
-}

@@ -1,7 +1,7 @@
 package policies
 
 import engine.*
-import engine.card.Card
+import engine.branch.BranchSelection
 
 @JvmInline
 value class PolicyName(val value: String) {
@@ -13,6 +13,8 @@ value class PolicyName(val value: String) {
 // TODO: give policies access to the logger directly instead of having to get it from the GameState
 abstract class Policy {
     abstract val name: PolicyName
+
+    open fun endGame() {}
     abstract fun shutdown()
-    abstract fun policy (state: GameState, choices: CardChoices): Card?
+    abstract fun policy (state: GameState): BranchSelection
 }

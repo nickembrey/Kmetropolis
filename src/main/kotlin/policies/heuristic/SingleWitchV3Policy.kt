@@ -2,28 +2,32 @@ package policies.heuristic
 
 import engine.*
 import engine.card.Card
+import engine.branch.BranchSelection
+import engine.branch.BranchContext
+import engine.branch.SpecialBranchSelection
 import policies.Policy
 import policies.PolicyName
+import policies.delegates.draw.RandomDrawPolicy
 
-class SingleWitchV3Policy : Policy() {
+class SingleWitchV3Policy : Policy() { // TODO: abstract witch policy
+
+    private val randomDrawPolicy = RandomDrawPolicy()
+
     override val name = PolicyName("singleWitchV3Policy")
     override fun shutdown() = Unit
-    override fun policy(
-        state: GameState,
-        choices: CardChoices
-    ): Card? {
+    override fun policy(state: GameState): BranchSelection {
+
+        val options = state.context.toOptions(state)
+
         return when(state.context) {
-            ChoiceContext.ACTION -> choices[0]
-            ChoiceContext.TREASURE -> choices[0]
-            ChoiceContext.BUY -> {
+            BranchContext.DRAW -> randomDrawPolicy.policy(state)
+            BranchContext.CHOOSE_ACTION -> options.firstOrNull { it is Card } ?: options.first()
+            BranchContext.CHOOSE_TREASURE -> options.firstOrNull { it is Card } ?: options.first()
+            BranchContext.CHOOSE_BUY -> {
                 val goldCards: Int = state.currentPlayer.allCards.filter { it == Card.GOLD }.size
                 val witchCards = state.currentPlayer.allCards.filter { it == Card.WITCH }.size
-                val provinceCards = state.currentPlayer.allCards.filter { it == Card.PROVINCE }.size
 
                 val witchLeft = state.board[Card.WITCH]!!
-                val duchyLeft = state.board[Card.DUCHY]!!
-                val estateLeft = state.board[Card.ESTATE]!!
-
 
                 return if(state.currentPlayer.coins >= 8 && goldCards > 0) {
                     Card.PROVINCE
@@ -34,10 +38,10 @@ class SingleWitchV3Policy : Policy() {
                 } else if (state.currentPlayer.coins >= 3) {
                     Card.SILVER
                 } else {
-                    null
+                    SpecialBranchSelection.SKIP
                 }
             }
-            ChoiceContext.MILITIA -> choices[0]
+            BranchContext.MILITIA -> options.random()
             else -> throw NotImplementedError()
         }
     }

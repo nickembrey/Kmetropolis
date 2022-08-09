@@ -1,9 +1,9 @@
 package kingdoms
 
-import engine.Board
 import engine.card.Card
+import java.util.*
 
-val defaultBoard: Board
+val defaultBoard: Map<Card, Int>
     get() = hashMapOf(
         Card.FESTIVAL to 10,
         Card.WITCH to 10,
@@ -25,4 +25,4 @@ val defaultBoard: Board
         Card.ESTATE to 8,
 
         Card.CURSE to 10,
-    )
+    ).let { EnumMap(it) }

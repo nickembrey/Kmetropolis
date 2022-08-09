@@ -2,6 +2,9 @@ package policies.jansen_tollisen
 
 import engine.*
 import engine.card.Card
+import engine.branch.BranchContext
+import engine.branch.BranchSelection
+import engine.branch.SpecialBranchSelection
 import policies.Policy
 import policies.PolicyName
 import policies.utility.RandomPolicy
@@ -14,24 +17,37 @@ class HeuristicGreedyPolicy : Policy() {
 
     override val name = PolicyName("heuristicGreedyPolicy")
     override fun shutdown() = Unit
-    override fun policy(
-        state: GameState,
-        choices: CardChoices
-    ): Card? {
+    override fun policy(state: GameState): BranchSelection {
+
+        val options = state.context.toOptions(state)
+
         return when(state.context) {
-            ChoiceContext.ACTION -> {
+            BranchContext.CHOOSE_ACTION -> {
                 // order by number of actions first, then by cost
-                choices.sortedWith(compareBy ( { it?.addActions }, { it?.cost }) ).reversed()[0]
+                val cardSelection = options.filterIsInstance<Card>()
+                    .sortedWith(compareBy ( { it.addActions }, { it.cost }) ).reversed()
+                if(cardSelection.isNotEmpty()) {
+                    return cardSelection[0]
+                } else {
+                    SpecialBranchSelection.SKIP
+                }
             }
-            ChoiceContext.TREASURE -> choices[0]
-            ChoiceContext.BUY -> {
+            BranchContext.CHOOSE_TREASURE -> {
+                return options.firstOrNull { it is Card } ?: SpecialBranchSelection.SKIP
+            }
+            BranchContext.CHOOSE_BUY -> {
                 // TODO: weird corner case where all coppers and all curses are gone?
-                choices.filter { it != Card.CURSE }.sortedWith(compareByDescending { it?.cost })[0] // TODO: make sure null will never be first?
+                val buySelections = options
+                    .filterIsInstance<Card>()
+                    .filter { it != Card.CURSE }
+                    .sortedWith(compareByDescending { it.cost })
+                return if(buySelections.isNotEmpty()) {
+                    buySelections[0]
+                } else {
+                    SpecialBranchSelection.SKIP
+                }
             }
-            ChoiceContext.MILITIA -> throw NotImplementedError()
-            ChoiceContext.WORKSHOP -> throw NotImplementedError()
-            ChoiceContext.CHAPEL -> throw NotImplementedError()
-            else -> randomPolicy.policy(state, choices)
+            else -> randomPolicy.policy(state)
         }
     }
 }

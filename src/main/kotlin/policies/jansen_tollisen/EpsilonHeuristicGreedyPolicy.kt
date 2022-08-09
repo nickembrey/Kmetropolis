@@ -1,7 +1,7 @@
 package policies.jansen_tollisen
 
 import engine.*
-import engine.card.Card
+import engine.branch.BranchSelection
 import policies.Policy
 import policies.PolicyName
 import policies.utility.RandomPolicy
@@ -15,10 +15,7 @@ class EpsilonHeuristicGreedyPolicy : Policy() {
 
     override val name: PolicyName = PolicyName("EpsilonHeuristicGreedyPolicy")
     override fun shutdown() = Unit
-    override fun policy(
-        state: GameState,
-        choices: CardChoices
-    ): Card? {
+    override fun policy(state: GameState): BranchSelection {
 
         val epsilon = 15
 
@@ -26,9 +23,9 @@ class EpsilonHeuristicGreedyPolicy : Policy() {
         val random = (0..100).random()
 
         return if(random < epsilon) {
-            randomPolicy.policy(state, choices)
+            randomPolicy.policy(state)
         } else {
-            heuristicGreedyPolicy.policy(state, choices)
+            heuristicGreedyPolicy.policy(state)
         }
 
     }

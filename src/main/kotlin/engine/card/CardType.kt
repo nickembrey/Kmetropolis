@@ -1,5 +1,5 @@
 package engine.card
 
 enum class CardType {
-    ACTION, TREASURE, OTHER
+    ACTION, TREASURE, VICTORY, CURSE
 }
