@@ -10,6 +10,8 @@ class EventStack private constructor(
         it.addAll(GamePhase.NOT_STARTED.events)
     })
 
+    val size = list.size
+
     fun push(element: GameEvent) {
         list.add(element)
     }
@@ -18,17 +20,6 @@ class EventStack private constructor(
     fun pop() = list.removeLast()
     fun peek() = list.lastOrNull()
     fun copy(): EventStack = EventStack(ArrayList(list).apply { ensureCapacity(500) })
-    fun repetitions(context: BranchContext): Int {
-        var total = 0
-        for(event in list.asReversed()) {
-            if(event == context) {
-                total += 1
-            } else {
-                break
-            }
-        }
-        return total
-    }
 }
 
 

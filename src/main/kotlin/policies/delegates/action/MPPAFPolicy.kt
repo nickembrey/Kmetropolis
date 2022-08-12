@@ -1,6 +1,7 @@
 package policies.delegates.action
 
 import engine.*
+import engine.branch.Branch
 import engine.card.Card
 import engine.branch.BranchSelection
 import engine.branch.BranchContext
@@ -13,13 +14,19 @@ import java.lang.IllegalArgumentException
 class MPPAFPolicy: Policy() {
     override val name = PolicyName("MPPAFPolicy")
     override fun shutdown() = Unit
-    override fun policy(state: GameState): BranchSelection {
+    override fun policy(
+        state: GameState,
+        branch: Branch
+    ): BranchSelection {
         return if (state.context == BranchContext.CHOOSE_ACTION) {
-            state.context.toOptions(state).sortedWith(
-                compareBy(
-                    {it is Card && it.type == CardType.ACTION},
-                    {it is Card && it.addActions > 0 }
-                ) ).reversed()[0]
+            val options = branch.getOptions(state).filterIsInstance<Card>()
+                .sortedWith(compareBy { it.cost })
+                .sortedWith(
+                    compareBy(
+                        { it.type == CardType.ACTION },
+                        { it.addActions > 0 }
+                    )).reversed()
+            options[0]
         } else {
             throw IllegalArgumentException()
         }

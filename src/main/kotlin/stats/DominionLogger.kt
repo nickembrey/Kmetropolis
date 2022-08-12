@@ -295,8 +295,10 @@ class DominionLogger(logDirectory: File, dataDirectory: File) {
         appendLine("")
         appendLine("Average max tree depth: ${decisionMaxTreeDepths.average()}")
         appendLine("Average max tree turns: ${decisionMaxTreeTurns.average()}")
-        appendLine("Depth per playout: ${decisionMaxTreeDepths.average() / (totalPlayouts / totalDecisions)}")
-        appendLine("Turns per playout: ${decisionMaxTreeTurns.average() / (totalPlayouts / totalDecisions)}")
+        if(totalPlayouts > 0 && totalDecisions > 0) {
+            appendLine("Depth per playout: ${decisionMaxTreeDepths.average() / (totalPlayouts / totalDecisions)}")
+            appendLine("Turns per playout: ${decisionMaxTreeTurns.average() / (totalPlayouts / totalDecisions)}")
+        }
         appendLine("")
         appendLine("Context distribution: ")
         val allContexts = contextMap.values.sum()

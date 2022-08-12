@@ -55,8 +55,12 @@ class DefaultPlayerCards private constructor(
         for(card in discard) {
             internalDeck[card] += 1
         }
-        assert(internalDeck.size == 0)
         discard.clear()
+    }
+
+    override fun shuffle(card: Card) {
+        discard.remove(card)
+        internalDeck[card] += 1
     }
 
     override fun draw(card: Card) {
@@ -126,8 +130,22 @@ class DefaultPlayerCards private constructor(
         trash += card
     }
 
-    override fun getDrawPossibilities(): Set<Card> {
+    override fun getDrawPossibilities(): List<Card> {
         return internalDeck.possibilities
+    }
+
+    override fun getDrawCombinations(choose: Int): Map<List<Card>, Double> {
+        return internalDeck.getCombinations(choose)
+    }
+
+    override fun getDiscardCombinations(choose: Int): Map<List<Card>, Double> {
+        val map = EnumMap(board.keys.associateWith { 0 }.toMutableMap())
+        discard.forEach {
+            map.merge(it, 1, Int::plus)
+        }
+        return CardCountMap(
+            board, map
+        ).getCombinations(choose)
     }
 
     override fun getDrawProbabilities(): Map<Card, Double> =

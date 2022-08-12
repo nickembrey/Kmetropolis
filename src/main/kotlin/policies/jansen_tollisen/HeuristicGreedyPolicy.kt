@@ -1,12 +1,14 @@
 package policies.jansen_tollisen
 
 import engine.*
+import engine.branch.Branch
 import engine.card.Card
 import engine.branch.BranchContext
 import engine.branch.BranchSelection
 import engine.branch.SpecialBranchSelection
 import policies.Policy
 import policies.PolicyName
+import policies.delegates.action.MPPAFPolicy
 import policies.utility.RandomPolicy
 
 class HeuristicGreedyPolicy : Policy() {
@@ -17,25 +19,21 @@ class HeuristicGreedyPolicy : Policy() {
 
     override val name = PolicyName("heuristicGreedyPolicy")
     override fun shutdown() = Unit
-    override fun policy(state: GameState): BranchSelection {
+    override fun policy(
+        state: GameState,
+        branch: Branch
+    ): BranchSelection {
 
-        val options = state.context.toOptions(state)
+        val options = branch.getOptions(state)
 
         return when(state.context) {
             BranchContext.CHOOSE_ACTION -> {
-                // order by number of actions first, then by cost
-                val cardSelection = options.filterIsInstance<Card>()
-                    .sortedWith(compareBy ( { it.addActions }, { it.cost }) ).reversed()
-                if(cardSelection.isNotEmpty()) {
-                    return cardSelection[0]
-                } else {
-                    SpecialBranchSelection.SKIP
-                }
+                MPPAFPolicy().policy(state, branch)
             }
             BranchContext.CHOOSE_TREASURE -> {
                 return options.firstOrNull { it is Card } ?: SpecialBranchSelection.SKIP
             }
-            BranchContext.CHOOSE_BUY -> {
+            BranchContext.CHOOSE_BUYS -> {
                 // TODO: weird corner case where all coppers and all curses are gone?
                 val buySelections = options
                     .filterIsInstance<Card>()
@@ -47,7 +45,7 @@ class HeuristicGreedyPolicy : Policy() {
                     SpecialBranchSelection.SKIP
                 }
             }
-            else -> randomPolicy.policy(state)
+            else -> randomPolicy.policy(state, branch)
         }
     }
 }

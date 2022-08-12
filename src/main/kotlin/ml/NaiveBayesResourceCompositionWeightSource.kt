@@ -42,7 +42,7 @@ class NaiveBayesResourceCompositionWeightSource: WeightSource {
     )
 
     override fun getWeights(state: GameState, selections: Collection<BranchSelection>): List<Double> {
-        if(state.context != BranchContext.CHOOSE_BUY) {
+        if(state.context != BranchContext.CHOOSE_BUYS) {
             throw IllegalStateException()
         }
         val currentGameStage = getGameStage(state.board)

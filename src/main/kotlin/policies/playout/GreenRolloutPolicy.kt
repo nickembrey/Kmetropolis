@@ -1,6 +1,7 @@
 package policies.playout
 
 import engine.*
+import engine.branch.Branch
 import engine.card.Card
 import engine.branch.BranchContext
 import engine.branch.BranchSelection
@@ -21,12 +22,15 @@ class GreenRolloutPolicy : Policy() {
     private val cardMenu: ArrayList<Card> = ArrayList(20)
     override val name = PolicyName("greenRolloutPolicy")
     override fun shutdown() = Unit
-    override fun policy(state: GameState): BranchSelection {
+    override fun policy(
+        state: GameState,
+        branch: Branch
+    ): BranchSelection {
 
-        val options = state.context.toOptions(state)
+        val options = branch.getOptions(state)
 
         return when(state.context) {
-            BranchContext.DRAW -> randomDrawPolicy.policy(state)
+            BranchContext.DRAW -> randomDrawPolicy.policy(state, branch)
             BranchContext.CHOOSE_ACTION -> {
                 cardMenu.clear()
                 // order by number of actions first, then by cost
@@ -42,7 +46,7 @@ class GreenRolloutPolicy : Policy() {
             BranchContext.CHOOSE_TREASURE -> {
                 return options.firstOrNull { it is Card } ?: SpecialBranchSelection.SKIP
             }
-            BranchContext.CHOOSE_BUY -> {
+            BranchContext.CHOOSE_BUYS -> {
                 cardMenu.clear()
                 options
                     .filterIsInstanceTo(cardMenu)
@@ -54,7 +58,7 @@ class GreenRolloutPolicy : Policy() {
                     SpecialBranchSelection.SKIP
                 }
             }
-            else -> randomPolicy.policy(state)
+            else -> randomPolicy.policy(state, branch)
         }
     }
 }

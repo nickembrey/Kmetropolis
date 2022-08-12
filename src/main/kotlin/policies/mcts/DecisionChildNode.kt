@@ -16,11 +16,11 @@ class DecisionChildNode constructor(
     parent: MCTSTreeNode,
     history: MutableList<HistoryOperation>,
     eventStack: EventStack,
-    selection: BranchSelection,
+    selections: List<BranchSelection>,
     playerNumber: PlayerNumber,
     turns: Int,
     context: BranchContext,
     override val weight: Double = 1.0 // TODO:
-): MCTSChildNode(parent, history, eventStack, selection, playerNumber, turns, context) {
+): MCTSChildNode(parent, history, eventStack, selections, playerNumber, turns, context) {
     override var score: Double = 0.0
 }

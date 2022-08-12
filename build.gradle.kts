@@ -12,11 +12,14 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
 }
-
+// TODO: cut back on unneeded dependencies
 dependencies {
-    implementation("org.junit.jupiter:junit-jupiter:5.8.1")
+    implementation("org.junit.jupiter:junit-jupiter:5.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0-RC")
     implementation("org.nield:kotlin-statistics:1.2.1")
+    implementation("com.github.dpaukov:combinatoricslib3:3.3.3")
+    implementation("com.marcinmoskala:DiscreteMathToolkit:1.0.3")
+    implementation("com.github.shiguruikai:combinatoricskt:1.6.0")
     testImplementation(kotlin("test"))
 }
 

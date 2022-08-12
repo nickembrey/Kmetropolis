@@ -1,6 +1,7 @@
 import stats.DominionLogger
 import engine.GameState
 import kingdoms.jansenTollisenBoard
+import policies.heuristic.DevelopmentPolicy
 import policies.mcts.DefaultMCTSPolicy
 import policies.playout.GreenRolloutPolicy
 import policies.playout.score.WeightVpMorePlayoutScoreFn
@@ -18,15 +19,20 @@ fun main() {
 
     val policies = listOf(// TODO: pick either "rollouts" or "playouts"
         DefaultMCTSPolicy(
-            cParameter = 10.0,
-            rollouts = 10000,
+            cParameter = 1.0,
+            rollouts = 1000,
             GreenRolloutPolicy(),
             WeightVpMorePlayoutScoreFn,
             false),
         JansenTollisenBoardProvinicial32Policy()
     ) // TODO: allow timed rollouts
 
-    val totalGames = 20
+//    val policies = listOf(
+//        DevelopmentPolicy(),
+//        GreenRolloutPolicy()
+//    )
+
+    val totalGames = 10
     val games: MutableList<GameState> = mutableListOf()
 
 //    getResourceStats(File("/Users/nick/dev/dominion/KDominion/data/dominion-data1"))

@@ -1,6 +1,7 @@
 package policies.jansen_tollisen
 
 import engine.*
+import engine.branch.Branch
 import engine.card.Card
 import engine.branch.BranchContext
 import engine.branch.BranchSelection
@@ -11,9 +12,12 @@ import policies.PolicyName
 class RandomWithMPPAFPolicy : Policy() {
     override val name = PolicyName("randomWithMPPAFPolicy")
     override fun shutdown() = Unit
-    override fun policy(state: GameState): BranchSelection {
+    override fun policy(
+        state: GameState,
+        branch: Branch
+    ): BranchSelection {
 
-        val options = state.context.toOptions(state)
+        val options = branch.getOptions(state)
 
         // must play plus actions first (MPPAF)
         if(state.context == BranchContext.CHOOSE_ACTION) {

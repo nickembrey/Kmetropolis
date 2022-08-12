@@ -2,13 +2,16 @@ package engine.operation.stack
 
 import engine.ContextBearer
 import engine.GameState
+import engine.branch.Branch
 import engine.branch.BranchContext
+import engine.card.Card
 import engine.card.CardLocation
 import engine.operation.Operation
 import engine.operation.property.ReadPropertyOperation
 import engine.operation.property.SetToPropertyOperation
 import engine.operation.state.game.GameSimpleOperation
 import engine.operation.state.player.PlayerMoveCardOperation
+import engine.operation.state.player.PlayerMoveCardsOperation
 import engine.player.PlayerNumber
 import util.memoize
 import util.memoize2
@@ -18,7 +21,7 @@ interface StackOperation: Operation, ContextBearer {
 
         private fun opponentHandRedraw(
             currentPlayerNumber: PlayerNumber,
-            otherPlayerHandSize: Int
+            otherPlayerHand: List<Card>
         ): StackOperation {
             return StackMultipleOperation(
                 events = listOf(
@@ -26,9 +29,13 @@ interface StackOperation: Operation, ContextBearer {
                         condition = { it.currentPlayerNumber == currentPlayerNumber },
                         conditionalEvent = GameSimpleOperation.SWITCH_PLAYER,
                         context = BranchContext.NONE
-                    ), StackSimpleOperation.DISCARD_ALL
-                ).plus(
-                    List(otherPlayerHandSize) { BranchContext.DRAW }
+                    ),
+                    PlayerMoveCardsOperation(
+                        cards = otherPlayerHand,
+                        from = CardLocation.HAND,
+                        to = CardLocation.DECK
+                    ),
+                    Branch(BranchContext.DRAW, selections = otherPlayerHand.size)
                 ).plus(
                     StackConditionalOperation(
                         condition = { it.currentPlayerNumber != currentPlayerNumber },
@@ -41,7 +48,7 @@ interface StackOperation: Operation, ContextBearer {
         }
 
         // TODO: memoize?
-        val OPPONENT_HAND_REDRAW: (PlayerNumber, Int) -> StackOperation = ::opponentHandRedraw.memoize2()
+        val OPPONENT_HAND_REDRAW: (PlayerNumber, List<Card>) -> StackOperation = ::opponentHandRedraw
 
     }
 }

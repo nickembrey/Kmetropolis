@@ -1,6 +1,7 @@
 package policies.heuristic
 
 import engine.*
+import engine.branch.Branch
 import engine.card.Card
 import engine.branch.BranchSelection
 import engine.branch.BranchContext
@@ -8,6 +9,7 @@ import engine.branch.SpecialBranchSelection
 import policies.Policy
 import policies.PolicyName
 import policies.delegates.draw.RandomDrawPolicy
+import policies.utility.RandomPolicy
 
 class SingleWitchV3Policy : Policy() { // TODO: abstract witch policy
 
@@ -15,15 +17,18 @@ class SingleWitchV3Policy : Policy() { // TODO: abstract witch policy
 
     override val name = PolicyName("singleWitchV3Policy")
     override fun shutdown() = Unit
-    override fun policy(state: GameState): BranchSelection {
+    override fun policy(
+        state: GameState,
+        branch: Branch
+    ): BranchSelection {
 
-        val options = state.context.toOptions(state)
+        val options = branch.getOptions(state)
 
         return when(state.context) {
-            BranchContext.DRAW -> randomDrawPolicy.policy(state)
+            BranchContext.DRAW -> randomDrawPolicy.policy(state, branch)
             BranchContext.CHOOSE_ACTION -> options.firstOrNull { it is Card } ?: options.first()
             BranchContext.CHOOSE_TREASURE -> options.firstOrNull { it is Card } ?: options.first()
-            BranchContext.CHOOSE_BUY -> {
+            BranchContext.CHOOSE_BUYS -> {
                 val goldCards: Int = state.currentPlayer.allCards.filter { it == Card.GOLD }.size
                 val witchCards = state.currentPlayer.allCards.filter { it == Card.WITCH }.size
 
@@ -42,7 +47,7 @@ class SingleWitchV3Policy : Policy() { // TODO: abstract witch policy
                 }
             }
             BranchContext.MILITIA -> options.random()
-            else -> throw NotImplementedError()
+            else -> RandomPolicy().policy(state, branch)
         }
     }
 }

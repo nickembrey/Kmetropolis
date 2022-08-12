@@ -28,11 +28,12 @@ interface PlayerCards {
     // TODO: need undo for each operation and need to put shuffling onto the stack
     //       before we can use undo on GameState
 
-    fun shuffle()
+    fun shuffle() // TODO: get rid of in favor of below
+
+    fun shuffle(card: Card)
     fun draw(card: Card)
     fun undoDraw(card: Card)
     fun randomFromDeck(): Card
-
     fun play(card: Card)
     fun gain(card: Card)
     fun cleanup(card: Card)
@@ -40,7 +41,12 @@ interface PlayerCards {
     fun topdeck(card: Card)
     fun trash(card: Card)
 
-    fun getDrawPossibilities(): Set<Card>
+    fun getDrawPossibilities(): List<Card>
+
+    fun getDrawCombinations(choose: Int): Map<List<Card>, Double>
+
+    fun getDiscardCombinations(choose: Int): Map<List<Card>, Double>
+
     fun getDrawProbabilities(): Map<Card, Double>
     fun toCardFrequencyMap(board: Map<Card, Int>): Map<Card, Int>
 

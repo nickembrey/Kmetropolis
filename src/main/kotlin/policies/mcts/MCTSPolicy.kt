@@ -1,6 +1,7 @@
 package policies.mcts
 
 import engine.*
+import engine.branch.Branch
 import engine.branch.BranchSelection
 import engine.branch.BranchContext
 import engine.card.CardType
@@ -11,7 +12,11 @@ import policies.delegates.draw.RandomDrawPolicy
 import ml.NaiveBayesResourceCompositionWeightSource
 import policies.Policy
 import policies.delegates.action.MPPAFPolicy
+import policies.heuristic.DevelopmentPolicy
+import policies.jansen_tollisen.EpsilonHeuristicGreedyPolicy
+import policies.playout.GreenRolloutPolicy
 import policies.playout.score.PlayoutScoreFn
+import policies.utility.RandomPolicy
 import java.lang.Integer.max
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -61,6 +66,8 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
         PLAYER_ONE_SCORE, PLAYER_TWO_SCORE, SIMULATIONS, IN_PROCESS;
     }
 
+     private var rolloutPolicyMenu = arrayOf(0.0, 0.0, 0.0, 0.0)
+
     private fun backpropagate(
         node: MCTSTreeNode,
         property: BackpropProperty,
@@ -90,17 +97,12 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
         val parent = node.parent
         // TODO: get rid of the "get"
         return when(node) { // score term
-            is DrawChildNode -> {
-                when(node.playerNumber) { // best draws for opponent, but not for self
-                    node.rootPlayerNumber -> 0.0
-                    else -> (node.score / node.completedRollouts.get())
-                }
-            }
-            else -> (node.score / node.completedRollouts.get())
-        }.let { it + // variance term
-                (cParameter * sqrt(ln(parent.completedRollouts.toDouble() + node.currentRollouts.toDouble()) /
-                (node.completedRollouts.get() + node.currentRollouts.get()))) }
-            .let { it * if(it > 0) node.weight else (1 / node.weight) } // weight term
+            is DrawChildNode -> node.weight
+            else -> (node.score / node.completedRollouts.get()).let { it + // variance term
+                    (cParameter * sqrt(ln(parent.completedRollouts.toDouble() + node.currentRollouts.toDouble()) /
+                            (node.completedRollouts.get() + node.currentRollouts.get()))) }
+                .let { it * node.weight } // weight term
+        }
     }
 
     // calculate which node to move forward on
@@ -110,88 +112,6 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
             .map { getNodeValue(it) }
             .let { values -> values.indices.maxByOrNull { values[it] }!! }
             .let { node.children[it] }
-
-    // TODO: this should be put in MCTSChildNode
-    protected fun getNextOptions(simState: GameState): Collection<BranchSelection> {
-        var nextContext = simState.getNextBranchContext()
-        var nextOptions = nextContext.toOptions(simState)
-        while(true) {
-            if (nextOptions.size == 1) { // TODO
-                simState.processBranchSelection(nextContext, nextOptions.first())
-                nextContext = simState.getNextBranchContext()
-                nextOptions = nextContext.toOptions(simState)
-            } else when (nextContext) {
-                BranchContext.CHOOSE_ACTION -> {
-                    if(simState.currentPlayer.hand.firstOrNull { it.addActions > 0 } != null || simState.currentPlayer.hand.filter { it.type == CardType.ACTION }.size < 2) {
-                        val selection = actionPolicy.policy(simState)
-                        simState.processBranchSelection(nextContext, selection)
-                        nextContext = simState.getNextBranchContext()
-                        nextOptions = nextContext.toOptions(simState)
-                    } else {
-                        return nextOptions
-                    }
-                }
-                BranchContext.CHOOSE_TREASURE -> {
-                    val selection = treasurePolicy.policy(simState)
-                    simState.processBranchSelection(nextContext, selection)
-                    nextContext = simState.getNextBranchContext()
-                    nextOptions = nextContext.toOptions(simState)
-                }
-                else -> return nextOptions
-//                .also { simState.eventStack.push(nextContext)} // so the rollout doesn't skip the decision
-            }
-        }
-
-    }
-
-    protected open fun prepareRollout(node: MCTSChildNode, simState: GameState) {
-
-        if(node.depth > maxDepth) maxDepth = node.depth
-        if(node.turns > maxTurns) maxTurns = node.turns
-        contextMap.merge(node.context, 1, Int::plus)
-
-        for(op in node.history) {
-            simState.processOperation(op)
-        }
-        simState.eventStack = node.eventStack.copy()
-//        node.history.clear() // TODO: why was this breaking things?
-        // TODO: clear eventStack, or transform node into non-leaf type
-
-        simState.processBranchSelection(node.context, node.selection)
-
-        val selections = getNextOptions(simState)
-
-        if(useNBCWeights && simState.context == BranchContext.CHOOSE_BUY) {
-            node.children.addAll(
-                MCTSChildNode.getChildren(
-                    state = simState,
-                    parent = node,
-                    history = simState.operationHistory.toMutableList(),
-                    eventStack = simState.eventStack.copy(),
-                    selections = selections,
-                    weightSource = nbcClassifier)
-            )
-        } else {
-            node.children.addAll(
-                MCTSChildNode.getChildren(
-                    state = simState,
-                    parent = node,
-                    history = simState.operationHistory.toMutableList(),
-                    eventStack = simState.eventStack.copy(),
-                    selections = selections)
-            )
-        }
-
-
-        if(node is DecisionChildNode) { // only playout decisions
-            backpropagate(node, BackpropProperty.IN_PROCESS)
-            nodeList.addNode(node)
-            val rolloutResult = rollout(simState)
-            rolloutResults.addResult(node.index, rolloutResult)
-        } else {
-            rolloutResults.add(NO_ROLLOUT)
-        }
-    }
 
     protected open fun rollout(rolloutState: GameState): Map<PlayerNumber, Double> {
         logger.initPlayout() // TODO: this might not make sense if there's a timer, etc.
@@ -213,17 +133,85 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
         node: MCTSTreeNode
     ) {
         // TODO: non-recursive?
-        if (node.children.isNotEmpty()) {
-            return forward(simState, getNextNode(node))
-        } else if(node is MCTSChildNode) {
-            prepareRollout(node, simState)
-        } else { // TODO: a little hacky
-            throw IllegalStateException()
+        if(node is MCTSChildNode) {
+            if(node.depth > maxDepth) maxDepth = node.depth
+            if(node.turns > maxTurns) maxTurns = node.turns
+            contextMap.merge(node.context, 1, Int::plus)
+        }
+
+        when(node) {
+            is RootNode -> forward(simState, getNextNode(node))
+            is DecisionChildNode -> when(node.completedRollouts.get()) {
+                0 -> {
+                    for(op in node.history) {
+                        simState.processOperation(op)
+                    }
+                    simState.eventStack = node.eventStack.copy()
+                    backpropagate(node, BackpropProperty.IN_PROCESS)
+                    nodeList.addNode(node)
+                    val rolloutResult = rollout(simState)
+                    rolloutResults.addResult(node.index, rolloutResult)
+
+                    if(simState.players[0].policy.name == GreenRolloutPolicy().name) {
+                        rolloutPolicyMenu[0] += rolloutResult[PlayerNumber.PLAYER_ONE]!!
+                        rolloutPolicyMenu[1] += 1.0
+                    } else if(simState.players[0].policy.name == DevelopmentPolicy().name) {
+                        rolloutPolicyMenu[2] += rolloutResult[PlayerNumber.PLAYER_ONE]!!
+                        rolloutPolicyMenu[3] += 1.0
+                    }
+
+                    if(simState.players[1].policy.name == GreenRolloutPolicy().name) {
+                        rolloutPolicyMenu[0] += rolloutResult[PlayerNumber.PLAYER_TWO]!!
+                        rolloutPolicyMenu[1] += 1.0
+                    } else if(simState.players[1].policy.name == DevelopmentPolicy().name) {
+                        rolloutPolicyMenu[2] += rolloutResult[PlayerNumber.PLAYER_TWO]!!
+                        rolloutPolicyMenu[3] += 1.0
+                    }
+
+                }
+                1 -> {
+                    val copy = simState.copy() // TODO: clean up?
+                    for(op in node.history) {
+                        copy.processOperation(op)
+                    }
+                    copy.eventStack = node.eventStack.copy()
+
+                    node.children.addAll(MCTSChildNode.getChildren(
+                        state = copy,
+                        parent = node,
+                        actionPolicy = actionPolicy,
+                        treasurePolicy = treasurePolicy))
+
+                    forward(simState, getNextNode(node))
+                }
+                else -> forward(simState, getNextNode(node))
+            }
+            is DrawChildNode -> when(node.completedRollouts.get()) {
+                0 -> {
+                    val copy = simState.copy() // TODO: clean up?
+                    for(op in node.history) {
+                        copy.processOperation(op)
+                    }
+                    copy.eventStack = node.eventStack.copy()
+
+                    node.children.addAll(MCTSChildNode.getChildren(
+                        state = copy,
+                        parent = node,
+                        actionPolicy = actionPolicy,
+                        treasurePolicy = treasurePolicy))
+
+                    forward(simState, getNextNode(node))
+                }
+                else -> forward(simState, getNextNode(node))
+            }
+            else -> throw IllegalStateException()
         }
     }
 
-    protected open fun simulationPolicy(state: GameState): BranchSelection {
+    protected open fun simulationPolicy(state: GameState, branch: Branch): BranchSelection {
 
+
+        rolloutPolicyMenu = arrayOf(0.0, 0.0, 0.0, 0.0)
         nodeList.clear()
         rolloutResults.clear()
         stateQueue.clear()
@@ -231,36 +219,48 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
         maxDepth = 0
         maxTurns = 0
 
-        val root = if(useNBCWeights && state.context == BranchContext.CHOOSE_BUY) {
-            RootNode.new(state, nbcClassifier)
-        } else {
-            RootNode.new(state)
-        }
-
         val shuffledState = state.copy(
             newPolicies = listOf(rolloutPolicy, rolloutPolicy),
             newMaxTurns = 999, // TODO: think about this
             newLog = false)
+
         stateQueue.add(shuffledState)
 
         // simulate a redraw of the opponent's hand
         shuffledState.eventStack.push(StackOperation.OPPONENT_HAND_REDRAW(
             state.currentPlayerNumber,
-            state.otherPlayer.hand.size)
+            state.otherPlayer.hand.toMutableList())
         )
+
+        val root = if(useNBCWeights && state.context == BranchContext.CHOOSE_BUYS) {
+            RootNode.new(
+                state = shuffledState,
+                branch = branch,
+                actionPolicy = actionPolicy,
+                treasurePolicy = treasurePolicy,
+                weightSource = nbcClassifier)
+        } else {
+            RootNode.new(
+                state = shuffledState,
+                branch = branch,
+                actionPolicy = actionPolicy,
+                treasurePolicy = treasurePolicy,
+            )
+        }
 
         for(i in 2..stateCopies) {
             stateQueue.add(shuffledState.copy())
         }
 
         var queued = 0
-        var draws = 0
         var processed = 0 // TODO: replace with simulations at root?
+
+        var greenScore = 0.0
+        var greedyScore = 0.0
 
         while(processed < rollouts) {
             while(rolloutResults.isNotEmpty()) {
                 when(val next = rolloutResults.remove()) {
-                    is NO_ROLLOUT -> draws += 1
                     is RolloutResult -> {
                         val node = nodeList[next.index]
 
@@ -275,16 +275,50 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
                 }
             }
 
-            if(queued - draws < rollouts) {
+            val rParameter = 0.8
+            val totalPlays = rolloutPolicyMenu[1] + rolloutPolicyMenu[3]
+            greenScore = (rolloutPolicyMenu[0] / rolloutPolicyMenu[1]) + rParameter * sqrt(ln(totalPlays) / rolloutPolicyMenu[1])
+            greedyScore = (rolloutPolicyMenu[2] / rolloutPolicyMenu[3]) + rParameter * sqrt(ln(totalPlays) / rolloutPolicyMenu[3])
+
+            if(greenScore.isNaN()) greenScore = 0.0
+            if(greedyScore.isNaN()) greedyScore = 0.0
+
+//            val policies = listOf(rolloutPolicy, rolloutPolicy)
+
+            val policies = if(greenScore == 0.0) {
+                val otherPolicy = listOf(RandomPolicy(), DevelopmentPolicy()).random()
+                listOf(rolloutPolicy, otherPolicy).shuffled()
+            } else if(greedyScore == 0.0) {
+                val otherPolicy = listOf(RandomPolicy(), rolloutPolicy).random()
+                listOf(DevelopmentPolicy(), otherPolicy).shuffled()
+            } else if(greenScore >= greedyScore) {
+                val otherPolicy = listOf(RandomPolicy(), DevelopmentPolicy()).random()
+                listOf(rolloutPolicy, otherPolicy).shuffled()
+            } else {
+                val otherPolicy = listOf(RandomPolicy(), rolloutPolicy).random()
+                listOf(DevelopmentPolicy(), otherPolicy).shuffled()
+            }
+
+
+            if(queued < rollouts) {
                 executor.execute {
                     forward(
                         node = root,
                         simState = shuffledState.copy(
+                            newPolicies = policies,
                             newMaxTurns = max(50, maxTurns + 10)
                         )
                     ) }
                 queued += 1
             }
+        }
+
+        if(state.turns == 5 || state.turns == 10 || state.turns == 20 || state.turns == 30) {
+            greenScore = (rolloutPolicyMenu[0] / rolloutPolicyMenu[1])
+            greedyScore = (rolloutPolicyMenu[2] / rolloutPolicyMenu[3])
+            print(state.turns)
+            print("\nGreen score: $greenScore")
+            print("\nDevelopment score: $greedyScore\n")
         }
 
         val simulations: List<Int> = root.children.map { it.completedRollouts.get() }
@@ -293,27 +327,28 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
         assert(rolloutResults.isEmpty()) // TODO: make sure will fail
         nodeList.clear()
 
-        return root.children[index].selection // TODO: hacky
+        return root.children[index].selections.single() // TODO: hacky
     }
 
     override fun policy(
-        state: GameState
-    ): BranchSelection { // TODO: we can get the choices from the state ourselves
+        state: GameState,
+        branch: Branch
+    ): BranchSelection {
 
         logger.initDecision()
 
         return when(state.context) {
             // TODO: the MPPAF is causing us to make bad decisions on action cards that don't give actions
-            BranchContext.DRAW -> drawPolicy.policy(state)
+            BranchContext.DRAW -> drawPolicy.policy(state, branch)
             BranchContext.CHOOSE_ACTION -> {
                 if(state.currentPlayer.hand.firstOrNull { it.addActions > 0 } != null || state.currentPlayer.hand.filter { it.type == CardType.ACTION }.size < 2) {
-                    actionPolicy.policy(state)
+                    actionPolicy.policy(state, branch)
                 } else {
-                    simulationPolicy(state)
+                    simulationPolicy(state, branch)
                 }
             }
-            BranchContext.CHOOSE_TREASURE -> treasurePolicy.policy(state)
-            else -> simulationPolicy(state)
+            BranchContext.CHOOSE_TREASURE -> treasurePolicy.policy(state, branch)
+            else -> simulationPolicy(state, branch)
         }.also { logger.recordDecision(contextMap, maxDepth, maxTurns - state.turns) }
     }
 

@@ -1,8 +1,10 @@
 package engine.card
 
 import engine.GameEvent
+import engine.branch.Branch
 import engine.branch.BranchContext
 import engine.operation.property.ModifyPropertyOperation
+import engine.operation.property.ReadPropertyOperation
 import engine.operation.stack.StackConditionalOperation
 import engine.operation.stack.StackRepeatedOperation
 import engine.operation.property.SetFromPropertyOperation
@@ -18,18 +20,23 @@ enum class CardEffects(
 ): List<GameEvent> by operations {
 
     CHAPEL_EFFECT(
-        List(4) { BranchContext.CHAPEL }
+        listOf(Branch(
+            BranchContext.CHAPEL, selections = 4
+        ))
     ),
     WORKSHOP_EFFECT(
-        listOf(BranchContext.WORKSHOP)
+        listOf(Branch(BranchContext.WORKSHOP))
     ),
     MILITIA_EFFECT(
         listOf(
             GameSimpleOperation.SWITCH_PLAYER,
-            StackRepeatedOperation(
-                repeatedEvent = BranchContext.MILITIA,
-                repeatFn = { it.currentPlayer.hand.size - 3 },
-                context = BranchContext.NONE),
+            ReadPropertyOperation(
+                readFn = { it.currentPlayer.hand.size },
+                useFn = { SetToPropertyOperation(
+                    target = engine.GameProperty.CONTEXT,
+                    Branch(engine.branch.BranchContext.MILITIA, selections = it - 3)
+                )}
+            ),
             GameSimpleOperation.SWITCH_PLAYER
         )
     ),
@@ -48,10 +55,12 @@ enum class CardEffects(
     ),
     REMODEL_EFFECT(
         listOf(
-            BranchContext.REMODEL_TRASH, StackConditionalOperation(
-            conditionalEvent = BranchContext.REMODEL_GAIN,
-            condition = { it.currentPlayer.remodelCard != null },
-            context = BranchContext.NONE)
+            Branch(BranchContext.REMODEL_TRASH),
+            StackConditionalOperation(
+                conditionalEvent = Branch(BranchContext.REMODEL_GAIN),
+                condition = { it.currentPlayer.remodelCard != null },
+                context = BranchContext.NONE
+            )
         )
     ),
     WITCH_EFFECT(

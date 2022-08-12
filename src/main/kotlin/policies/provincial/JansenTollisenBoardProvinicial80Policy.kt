@@ -1,6 +1,7 @@
 package policies.provincial
 
 import engine.GameState
+import engine.branch.Branch
 import engine.branch.BranchContext
 import engine.branch.BranchSelection
 import engine.branch.SpecialBranchSelection
@@ -40,15 +41,18 @@ class JansenTollisenBoardProvinicial80Policy : Policy() {
         Card.SILVER to 99
     )
 
-    override fun policy(state: GameState): BranchSelection {
+    override fun policy(
+        state: GameState,
+        branch: Branch
+    ): BranchSelection {
 
-        val options = state.context.toOptions(state)
+        val options = branch.getOptions(state)
 
         return when (state.context) {
-            BranchContext.DRAW -> drawPolicy.policy(state)
-            BranchContext.CHOOSE_ACTION -> actionPolicy.policy(state)
+            BranchContext.DRAW -> drawPolicy.policy(state, branch)
+            BranchContext.CHOOSE_ACTION -> actionPolicy.policy(state, branch)
             BranchContext.CHOOSE_TREASURE -> options.firstOrNull { it is Card } ?: options.first()
-            BranchContext.CHOOSE_BUY -> {
+            BranchContext.CHOOSE_BUYS -> {
                 val coins = state.currentPlayer.coins
                 if (coins >= 8) {
                     Card.PROVINCE

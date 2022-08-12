@@ -1,6 +1,7 @@
 package engine.performance
 
 import engine.GameEvent
+import engine.branch.Branch
 import engine.branch.BranchContext
 import engine.card.Card
 import engine.card.CardLocation
@@ -27,18 +28,16 @@ object CardEffectsMap: CardEventMap(Card.values().associateWith { NO_OP }) {
     }
 
     private fun commonEffects(card: Card): List<GameEvent> {
-        return List(card.addActions) { BranchContext.CHOOSE_ACTION }
+        return List(card.addActions) { Branch(BranchContext.CHOOSE_ACTION) }
             .plus( listOf(
                 StackConditionalOperation(
                     context = BranchContext.DRAW,
                     condition = { card.addCards > 0 },
                     conditionalEvent = StackMultipleOperation(
                         context = BranchContext.DRAW,
-                        events = listOf(
-                            StackMultipleOperation(
-                                events = List(card.addCards) { BranchContext.DRAW },
-                                context = BranchContext.NONE),
-                        ) ) )))
+                        events = listOf(Branch(BranchContext.DRAW, selections = card.addCards))
+                    )
+                )))
             .let {
                 if(card.addCoins > 0) {
                     it.plus(ModifyPropertyOperation.MODIFY_COINS(card.addCoins))

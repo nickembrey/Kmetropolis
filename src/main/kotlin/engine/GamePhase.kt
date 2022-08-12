@@ -1,10 +1,8 @@
 package engine
 
-import engine.card.CardType
+import engine.branch.Branch
 import engine.branch.BranchContext
-import engine.operation.property.SetFromPropertyOperation
 import engine.operation.property.SetToPropertyOperation
-import engine.operation.stack.StackConditionalOperation
 import engine.operation.stack.StackRepeatedOperation
 import engine.operation.stack.StackSimpleOperation
 import engine.operation.stack.game.GameCompoundOperation
@@ -20,30 +18,28 @@ enum class GamePhase(val events: List<GameEvent>): GamePropertyValue {
         listOf(GameCompoundOperation.NEXT_PHASE, StackSimpleOperation.ADD_PHASE_OPERATIONS).reversed()
     ),
     START_GAME(
-        List(5) { BranchContext.DRAW } // TODO: do we need the shuffles anymore?
-            .plus(listOf(
+        listOf(
+                Branch(context = BranchContext.DRAW, selections = 5),
                 GameSimpleOperation.SWITCH_PLAYER,
                 SetToPropertyOperation.SET_BUYS(1),
-                SetToPropertyOperation.SET_COINS(0)
-            ))
-            .plus(List(5) { BranchContext.DRAW })
-            .plus(listOf(
+                SetToPropertyOperation.SET_COINS(0),
+                Branch(context = BranchContext.DRAW, selections = 5),
                 GameSimpleOperation.SWITCH_PLAYER,
                 SetToPropertyOperation.SET_BUYS(1),
-                SetToPropertyOperation.SET_COINS(0))
-            )
-            .plus(listOf(GameCompoundOperation.NEXT_PHASE, StackSimpleOperation.ADD_PHASE_OPERATIONS))
-            .reversed()
+                SetToPropertyOperation.SET_COINS(0),
+                GameCompoundOperation.NEXT_PHASE,
+                StackSimpleOperation.ADD_PHASE_OPERATIONS
+            ).reversed()
     ),
     ACTION(
         listOf(
-            BranchContext.CHOOSE_ACTION,
+            Branch(BranchContext.CHOOSE_ACTION),
             GameCompoundOperation.NEXT_PHASE, StackSimpleOperation.ADD_PHASE_OPERATIONS)
             .reversed()
     ),
     TREASURE(
         listOf(
-            BranchContext.CHOOSE_TREASURE,
+            Branch(BranchContext.CHOOSE_TREASURE),
             GameCompoundOperation.NEXT_PHASE, StackSimpleOperation.ADD_PHASE_OPERATIONS)
             .reversed() // TODO: remove all these?
     ),
@@ -51,24 +47,25 @@ enum class GamePhase(val events: List<GameEvent>): GamePropertyValue {
         listOf<GameEvent>(
             StackRepeatedOperation(
                 repeatFn = { it.currentPlayer.buys },
-                repeatedEvent = BranchContext.CHOOSE_BUY,
-                context = BranchContext.CHOOSE_BUY
+                repeatedEvent = Branch(BranchContext.CHOOSE_BUYS),
+                context = BranchContext.CHOOSE_BUYS
             ),
             GameCompoundOperation.NEXT_PHASE, StackSimpleOperation.ADD_PHASE_OPERATIONS)
             .reversed()
     ),
     END_TURN(
-        listOf<GameEvent>( // TODO: these should be organized under play
+        listOf(
             StackSimpleOperation.CLEANUP_ALL,
             StackSimpleOperation.DISCARD_ALL,
-            StackSimpleOperation.CHECK_GAME_OVER)
-            .plus(List(5) { BranchContext.DRAW })
-            .plus(listOf(GameSimpleOperation.INCREMENT_TURNS,
-                SetToPropertyOperation.SET_BUYS(1),
-                SetToPropertyOperation.SET_COINS(0),
-                GameSimpleOperation.SWITCH_PLAYER))
-            .plus(listOf(GameCompoundOperation.NEXT_PHASE, StackSimpleOperation.ADD_PHASE_OPERATIONS))
-            .reversed()
+            StackSimpleOperation.CHECK_GAME_OVER,
+            Branch(context = BranchContext.DRAW, selections = 5),
+            GameSimpleOperation.INCREMENT_TURNS,
+            SetToPropertyOperation.SET_BUYS(1),
+            SetToPropertyOperation.SET_COINS(0),
+            GameSimpleOperation.SWITCH_PLAYER,
+            GameCompoundOperation.NEXT_PHASE,
+            StackSimpleOperation.ADD_PHASE_OPERATIONS
+        ).reversed()
     ),
     END_GAME( listOf() );
 
