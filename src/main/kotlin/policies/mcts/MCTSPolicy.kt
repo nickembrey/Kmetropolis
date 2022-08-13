@@ -24,6 +24,7 @@ import java.util.concurrent.Executor
 import kotlin.math.ln
 import kotlin.math.sqrt
 
+// TODO: pick either "rollouts" or "playouts"
 // TODO: maybe we should hold onto a reference to the game state instead of passing it in every time we need it
 abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
     protected val cParameter: Double,

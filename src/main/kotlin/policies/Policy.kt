@@ -16,7 +16,7 @@ value class PolicyName(val value: String) {
 // TODO: put policy as argument and have it implement (GameState, Branch) -> BranchSelection by policy
 //       -- or better still, just add an invoke and have it call policy and make policy private?
 abstract class Policy(
-
+// TODO: allow timed rollouts
 ) {
     abstract val name: PolicyName
 

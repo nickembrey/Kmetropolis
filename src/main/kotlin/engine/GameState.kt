@@ -59,12 +59,13 @@ class GameState private constructor (
 
     companion object {
         fun new(
-            policies: List<Policy>,
+            policy1: Policy,
+            policy2: Policy,
             board: EnumMap<Card, Int>,
             maxTurns: Int,
             log: Boolean
         ): GameState = GameState(
-                players = policies
+                players = listOf(policy1, policy2)
                     .shuffled()
                     .mapIndexed { i, policy -> Player.new(board, PlayerNumber.fromInt(i), policy) },
                 currentPlayerNumber = PlayerNumber.PLAYER_ONE,
