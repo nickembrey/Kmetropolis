@@ -1,6 +1,7 @@
 .gradle
 .idea
 build/
+config/config.toml
 log/
-data
-data-archive
+data/
+data-archive/

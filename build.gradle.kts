@@ -14,12 +14,15 @@ repositories {
 }
 // TODO: cut back on unneeded dependencies
 dependencies {
+    implementation("com.squareup.okio:okio:3.2.0")
     implementation("org.junit.jupiter:junit-jupiter:5.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0-RC")
     implementation("org.nield:kotlin-statistics:1.2.1")
     implementation("com.github.dpaukov:combinatoricslib3:3.3.3")
     implementation("com.marcinmoskala:DiscreteMathToolkit:1.0.3")
     implementation("com.github.shiguruikai:combinatoricskt:1.6.0")
+    implementation("com.akuleshov7:ktoml-core:0.2.13")
+    implementation("com.akuleshov7:ktoml-file:0.2.13")
     testImplementation(kotlin("test"))
 }
 

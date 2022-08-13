@@ -1,0 +1,3 @@
+# Use a file named config.toml in this directory with this template
+
+log_directory = ""

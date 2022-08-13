@@ -1,19 +1,21 @@
-import stats.DominionLogger
+import com.akuleshov7.ktoml.Toml
+import engine.EngineConfig
 import engine.GameState
 import kingdoms.jansenTollisenBoard
-import policies.heuristic.DevelopmentPolicy
+import kotlinx.serialization.decodeFromString
 import policies.mcts.DefaultMCTSPolicy
 import policies.playout.GreenRolloutPolicy
 import policies.playout.score.WeightVpMorePlayoutScoreFn
-import policies.playout.score.WeightVpMostPlayoutScoreFn
 import policies.provincial.JansenTollisenBoardProvinicial32Policy
-
+import stats.DominionLogger
 import java.io.File
 
-val logger = DominionLogger(
-    logDirectory = File("/Users/nick/dev/dominion/KDominion/log"),
-    dataDirectory = File("/Users/nick/dev/dominion/KDominion/data")
+const val CONFIG_PATH = "./config/config.toml"
+
+val config = Toml.decodeFromString<EngineConfig>(
+    File(CONFIG_PATH).readText()
 )
+val logger = DominionLogger(config)
 
 fun main() {
 

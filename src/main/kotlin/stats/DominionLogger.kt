@@ -1,5 +1,6 @@
 package stats
 
+import engine.EngineConfig
 import engine.GameResult
 import engine.GameState
 import engine.branch.BranchContext
@@ -18,10 +19,9 @@ import kotlin.collections.ArrayList
 
 // TODO: it would be cool if we could have a setting to make the logs look like dominion.games logs
 
-class DominionLogger(logDirectory: File, dataDirectory: File) {
+class DominionLogger(config: EngineConfig) {
 
     private val logFile: File
-    private val dataFile: File
 
     private val gameVpRecords: MutableMap<String, Int> = mutableMapOf()
     private val totalVpRecords: MutableMap<String, Int> = mutableMapOf()
@@ -66,21 +66,12 @@ class DominionLogger(logDirectory: File, dataDirectory: File) {
 
         val base = "dominion-log"
         var number = 0
-        var candidateFile = File(logDirectory, base + number)
+        var candidateFile = File(config.logDirectory, base + number)
         while(candidateFile.exists()) {
             number += 1
-            candidateFile = File(logDirectory, base + number)
+            candidateFile = File(config.logDirectory, base + number)
         }
         logFile = candidateFile
-
-        val dataBase = "dominion-data"
-        number = 0
-        candidateFile = File(dataDirectory, dataBase + number)
-        while(candidateFile.exists()) {
-            number += 1
-            candidateFile = File(dataDirectory, dataBase + number)
-        }
-        dataFile = candidateFile
     }
 
     private val timer: SimulationTimer = SimulationTimer()
@@ -244,9 +235,6 @@ class DominionLogger(logDirectory: File, dataDirectory: File) {
         }
         if(write) {
             write()
-            dataFile.printWriter().use {
-                it.print(Json.encodeToString(savedDeckCardCompositions))
-            }
         }
     }
 
