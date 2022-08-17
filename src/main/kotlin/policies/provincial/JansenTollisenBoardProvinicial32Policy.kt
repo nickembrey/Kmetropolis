@@ -1,10 +1,7 @@
 package policies.provincial
 
 import engine.GameState
-import engine.branch.Branch
-import engine.branch.BranchContext
-import engine.branch.BranchSelection
-import engine.branch.SpecialBranchSelection
+import engine.branch.*
 import engine.card.Card
 import policies.Policy
 import policies.PolicyName
@@ -56,11 +53,11 @@ class JansenTollisenBoardProvinicial32Policy : Policy() {
             BranchContext.CHOOSE_BUYS -> {
                 val coins = state.currentPlayer.coins
                 if (coins >= 8) {
-                    Card.PROVINCE
+                    BuySelection(cards = listOf(Card.PROVINCE))
                 } else if (duchyCondition(state) && coins >= 5 && state.board[Card.DUCHY]!! > 0) {
-                    Card.DUCHY
+                    BuySelection(cards = listOf(Card.DUCHY))
                 } else if (estateCondition(state) && coins >= 2 && state.board[Card.ESTATE]!! > 0) {
-                    Card.ESTATE
+                    BuySelection(cards = listOf(Card.ESTATE))
                 } else {
                     val entry = buyMenu.firstOrNull {
                         it.second > 0 && state.board[it.first]!! > 0 && coins >= it.first.cost
@@ -68,7 +65,7 @@ class JansenTollisenBoardProvinicial32Policy : Policy() {
                     if (entry != null) {
                         val index = buyMenu.indexOfFirst { it.first == entry.first && it.second > 0 }
                         buyMenu[index] = (entry.first to entry.second - 1)
-                        entry.first
+                        BuySelection(cards = listOf(entry.first))
                     } else {
                         SpecialBranchSelection.SKIP
                     }

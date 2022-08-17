@@ -43,7 +43,7 @@ class RootNode private constructor(
                             parent = this,
                             actionPolicy = actionPolicy,
                             treasurePolicy = treasurePolicy,
-                            selections = branch.getOptions(state, groupDraws = true),
+                            selections = branch.getOptions(state, aggregated = true),
                             weightSource = weightSource
                         )
                     ) }

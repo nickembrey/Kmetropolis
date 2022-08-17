@@ -130,18 +130,19 @@ class GameState private constructor (
             PlayerNumber.PLAYER_TWO -> playerOne
         }
 
-    private val buyMenus: List<ArrayList<BranchSelection>> = (0..8)
+    // TODO: list of BuySelection
+    private val buyMenus: List<ArrayList<Card>> = (0..8)
         .map { coins -> ArrayList(
-            board.filter { it.key.cost <= coins && it.value > 0 }.keys.plus(SpecialBranchSelection.SKIP)
+            board.filter { it.key.cost <= coins && it.value > 0 }.keys
         )}
-    val buyMenu: ArrayList<BranchSelection>
+    val buyMenu: ArrayList<Card>
         get() = when(currentPlayer.coins) {
         in 0..7 -> buyMenus[currentPlayer.coins]
         else -> buyMenus[8] // TODO:
     }
-    val workshopMenu: ArrayList<BranchSelection>
+    val workshopMenu: ArrayList<Card>
         get() = buyMenus[4]
-    val remodelMenu: ArrayList<BranchSelection>
+    val remodelMenu: ArrayList<Card>
         get() = when(currentPlayer.remodelCard!!.cost) {
             in 0..5 -> buyMenus[currentPlayer.remodelCard!!.cost + 2]
             else -> buyMenus[8]
@@ -553,6 +554,11 @@ class GameState private constructor (
                     SpecialBranchSelection.SKIP -> eventStack.push(StackSimpleOperation.SKIP_CONTEXT)
                     SpecialBranchSelection.GAME_OVER -> eventStack.push(GameSimpleOperation.END_GAME)
                 }
+                is BuySelection -> {
+                    for(card in selection.cards) {
+                        eventStack.push(PlayerCardOperation.BUY(card))
+                    }
+                }
                 is DrawSelection -> {
                     for(card in selection.cards.asReversed()) {
                         eventStack.push(PlayerCardOperation.DRAW(card))
@@ -567,9 +573,6 @@ class GameState private constructor (
         val branch = getNextBranch()
 
         if(branch.context == BranchContext.DRAW && currentPlayer.deckSize == 0) {
-            if(log) {
-//                print("STop!")
-            }
             operationHistory.add(
                 PlayerMoveCardsOperation(
                     cards = currentPlayer.discard.toMutableList(),

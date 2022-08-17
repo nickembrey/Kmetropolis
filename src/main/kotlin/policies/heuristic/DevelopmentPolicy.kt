@@ -1,10 +1,7 @@
 package policies.heuristic
 
 import engine.*
-import engine.branch.Branch
-import engine.branch.BranchContext
-import engine.branch.BranchSelection
-import engine.branch.SpecialBranchSelection
+import engine.branch.*
 import engine.card.Card
 import engine.card.CardType
 import policies.Policy
@@ -39,18 +36,20 @@ class DevelopmentPolicy : Policy() {
                 val actionDensity = state.currentPlayer.allCards.sumOf { it.addActions } / state.currentPlayer.allCards.size.toDouble()
 
                 // TODO: weird corner case where all coppers and all curses are gone?
-                val buySelections = options
-                    .filterIsInstance<Card>()
-                    .filter { it != Card.CURSE && it != Card.COPPER && it != Card.ESTATE }
-                    .filter { !(it == Card.DUCHY && state.board.count { pile -> pile.value == 0 } == 0) }
-                    .filter { !(it == Card.GARDENS && state.currentPlayer.allCards.size < 30) }
-                    .filter { !(actionDensity < 0.1 && it.type == CardType.ACTION && it != Card.WITCH && it.addActions == 0) }
-                    .filter { !(actionDensity > 0.4 && it.type == CardType.ACTION && it.addActions > 1)}
-                    .filter { !(state.currentPlayer.allCards.count { card -> card == Card.WITCH } >= 2 && it == Card.WITCH ) }
-                    .sortedWith(compareByDescending { it.type == CardType.TREASURE })
-                    .sortedWith(compareByDescending { it.cost })
-                    .sortedWith(compareByDescending {it.type == CardType.VICTORY })
-                    .sortedWith(compareByDescending { it == Card.WITCH })
+                val buySelections = options // TODO: buying weird stuff bc of the aggergation change, probably happening elsewhere too
+                    .asSequence()
+                    .filterIsInstance<BuySelection>()
+                    .filter { !it.cards.contains(Card.CURSE) && !it.cards.contains(Card.COPPER) && !it.cards.contains(Card.ESTATE) }
+                    .filter { !(it.cards.contains(Card.DUCHY) && state.board.count { pile -> pile.value == 0 } == 0) }
+                    .filter { !(it.cards.contains(Card.GARDENS) && state.currentPlayer.allCards.size < 30) }
+                    .filter { !(actionDensity < 0.1 && it.cards.any { card -> card.type == CardType.ACTION } && !it.cards.contains(Card.WITCH) && it.cards.any { card -> card.addActions == 0} ) }
+                    .filter { !(actionDensity > 0.4 && it.cards.any { card -> card.type == CardType.ACTION } && it.cards.any { card -> card.addActions == 0})}
+                    .filter { !(state.currentPlayer.allCards.count { card -> card == Card.WITCH } >= 2 && it.cards.contains(Card.WITCH) ) }
+                    .sortedWith(compareByDescending { it.cards.contains(Card.GOLD) })
+                    .sortedWith(compareByDescending { it.cards.sumOf { card -> card.cost } })
+                    .sortedWith(compareByDescending { it.cards.any { card -> card.type == CardType.VICTORY } })
+                    .sortedWith(compareByDescending { it.cards.contains(Card.WITCH) })
+                    .toList()
                 return if (buySelections.isNotEmpty()) {
                     buySelections[0]
                 } else {

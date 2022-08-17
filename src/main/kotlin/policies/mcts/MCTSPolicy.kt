@@ -30,8 +30,7 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
     protected val cParameter: Double,
     protected val rollouts: Int,
     protected val rolloutPolicy: Policy,
-    protected val rolloutScoreFn: PlayoutScoreFn,
-    protected val useNBCWeights: Boolean
+    protected val rolloutScoreFn: PlayoutScoreFn
 ) : Policy() { // TODO: make rolloutPolicy a parameter
 
     abstract val stateCopies: Int
@@ -142,6 +141,35 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
 
         when(node) {
             is RootNode -> forward(simState, getNextNode(node))
+            is LeafChildNode -> {
+
+                val copy = simState.copy() // TODO: clean up?
+                for(op in node.history) {
+                    copy.processOperation(op)
+                }
+                val rolloutResult = rolloutScoreFn(copy)
+                if(node.index == null) {
+                    nodeList.addNode(node)
+                }
+
+                rolloutResults.addResult(node.index!!, rolloutResult)
+
+                if(simState.players[0].policy.name == GreenRolloutPolicy().name) {
+                    rolloutPolicyMenu[0] += rolloutResult[PlayerNumber.PLAYER_ONE]!!
+                    rolloutPolicyMenu[1] += 1.0
+                } else if(simState.players[0].policy.name == DevelopmentPolicy().name) {
+                    rolloutPolicyMenu[2] += rolloutResult[PlayerNumber.PLAYER_ONE]!!
+                    rolloutPolicyMenu[3] += 1.0
+                }
+
+                if(simState.players[1].policy.name == GreenRolloutPolicy().name) {
+                    rolloutPolicyMenu[0] += rolloutResult[PlayerNumber.PLAYER_TWO]!!
+                    rolloutPolicyMenu[1] += 1.0
+                } else if(simState.players[1].policy.name == DevelopmentPolicy().name) {
+                    rolloutPolicyMenu[2] += rolloutResult[PlayerNumber.PLAYER_TWO]!!
+                    rolloutPolicyMenu[3] += 1.0
+                }
+            }
             is DecisionChildNode -> when(node.completedRollouts.get()) {
                 0 -> {
                     for(op in node.history) {
@@ -151,7 +179,7 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
                     backpropagate(node, BackpropProperty.IN_PROCESS)
                     nodeList.addNode(node)
                     val rolloutResult = rollout(simState)
-                    rolloutResults.addResult(node.index, rolloutResult)
+                    rolloutResults.addResult(node.index!!, rolloutResult)
 
                     if(simState.players[0].policy.name == GreenRolloutPolicy().name) {
                         rolloutPolicyMenu[0] += rolloutResult[PlayerNumber.PLAYER_ONE]!!
@@ -176,14 +204,13 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
                         copy.processOperation(op)
                     }
                     copy.eventStack = node.eventStack.copy()
+                        node.children.addAll(MCTSChildNode.getChildren(
+                            state = copy,
+                            parent = node,
+                            actionPolicy = actionPolicy,
+                            treasurePolicy = treasurePolicy))
 
-                    node.children.addAll(MCTSChildNode.getChildren(
-                        state = copy,
-                        parent = node,
-                        actionPolicy = actionPolicy,
-                        treasurePolicy = treasurePolicy))
-
-                    forward(simState, getNextNode(node))
+                        forward(simState, getNextNode(node))
                 }
                 else -> forward(simState, getNextNode(node))
             }
@@ -233,21 +260,12 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
             state.otherPlayer.hand.toMutableList())
         )
 
-        val root = if(useNBCWeights && state.context == BranchContext.CHOOSE_BUYS) {
-            RootNode.new(
-                state = shuffledState,
-                branch = branch,
-                actionPolicy = actionPolicy,
-                treasurePolicy = treasurePolicy,
-                weightSource = nbcClassifier)
-        } else {
-            RootNode.new(
-                state = shuffledState,
-                branch = branch,
-                actionPolicy = actionPolicy,
-                treasurePolicy = treasurePolicy,
-            )
-        }
+        val root = RootNode.new(
+            state = shuffledState,
+            branch = branch,
+            actionPolicy = actionPolicy,
+            treasurePolicy = treasurePolicy,
+        )
 
         for(i in 2..stateCopies) {
             stateQueue.add(shuffledState.copy())

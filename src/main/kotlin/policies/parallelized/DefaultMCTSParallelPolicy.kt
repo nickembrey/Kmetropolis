@@ -11,14 +11,12 @@ class DefaultMCTSParallelPolicy(
     cParameter: Double,
     rollouts: Int,
     rolloutPolicy: Policy,
-    rolloutScoreFn: PlayoutScoreFn,
-    useNBCWeights: Boolean
+    rolloutScoreFn: PlayoutScoreFn
 ): MCTSPolicy(
     cParameter = cParameter,
     rollouts = rollouts,
     rolloutPolicy = rolloutPolicy,
-    rolloutScoreFn = rolloutScoreFn,
-    useNBCWeights = useNBCWeights
+    rolloutScoreFn = rolloutScoreFn
 ) {
 
     override val name = PolicyName("defaultMCTSParallelPolicy")

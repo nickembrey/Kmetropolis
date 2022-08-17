@@ -1,11 +1,8 @@
 package policies.heuristic
 
 import engine.*
-import engine.branch.Branch
+import engine.branch.*
 import engine.card.Card
-import engine.branch.BranchSelection
-import engine.branch.BranchContext
-import engine.branch.SpecialBranchSelection
 import policies.Policy
 import policies.PolicyName
 import policies.delegates.draw.RandomDrawPolicy
@@ -35,13 +32,13 @@ class SingleWitchV3Policy : Policy() { // TODO: abstract witch policy
                 val witchLeft = state.board[Card.WITCH]!!
 
                 return if(state.currentPlayer.coins >= 8 && goldCards > 0) {
-                    Card.PROVINCE
+                    BuySelection(cards = listOf(Card.PROVINCE))
                 } else if (state.currentPlayer.coins >= 5 && witchCards == 0 && witchLeft > 0) {
-                    Card.WITCH
+                    BuySelection(cards = listOf(Card.WITCH))
                 } else if (state.currentPlayer.coins >= 6) {
-                    Card.GOLD
+                    BuySelection(cards = listOf(Card.GOLD))
                 } else if (state.currentPlayer.coins >= 3) {
-                    Card.SILVER
+                    BuySelection(cards = listOf(Card.SILVER))
                 } else {
                     SpecialBranchSelection.SKIP
                 }

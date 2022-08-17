@@ -5,6 +5,7 @@ import engine.GameState
 import engine.branch.BranchContext
 import engine.branch.BranchSelection
 import engine.branch.DrawSelection
+import engine.branch.SpecialBranchSelection
 import engine.card.CardType
 import engine.operation.HistoryOperation
 import engine.player.PlayerNumber
@@ -35,7 +36,7 @@ abstract class MCTSChildNode protected constructor(
     override var children: MutableList<MCTSChildNode> = mutableListOf()
 
     // TODO: HashMap entry on creation, or even just a tree
-    var index by Delegates.notNull<Int>() // an index for keeping track of the node in some collection
+    var index: Int? = null // an index for keeping track of the node in some collection
 
     override var currentRollouts: AtomicInteger = AtomicInteger(0)
     override var completedRollouts: AtomicInteger = AtomicInteger(0)
@@ -55,21 +56,25 @@ abstract class MCTSChildNode protected constructor(
                 }
             }
             var nextBranch = simState.getNextBranch()
-            var nextOptions = nextBranch.getOptions(simState, groupDraws = true)
+            var nextOptions = nextBranch.getOptions(simState, aggregated = true)
             while(true) { // TODO: hacky
                 if(nextOptions.isEmpty()) {
                     throw IllegalStateException()
                 } else if (nextOptions.size == 1) { // TODO
-                    simState.processBranchSelection(nextBranch.context, nextOptions.first())
-                    nextBranch = simState.getNextBranch()
-                    nextOptions = nextBranch.getOptions(simState, groupDraws = true)
+                    if(nextOptions.single() == SpecialBranchSelection.GAME_OVER) {
+                        return nextOptions
+                    } else {
+                        simState.processBranchSelection(nextBranch.context, nextOptions.single())
+                        nextBranch = simState.getNextBranch()
+                        nextOptions = nextBranch.getOptions(simState, aggregated = true)
+                    }
                 } else when (nextBranch.context) {
                     BranchContext.CHOOSE_ACTION -> {
                         if(simState.currentPlayer.hand.firstOrNull { it.addActions > 0 } != null || simState.currentPlayer.hand.filter { it.type == CardType.ACTION }.size < 2) {
                             val selection = actionPolicy.policy(simState, nextBranch)
                             simState.processBranchSelection(nextBranch.context, selection)
                             nextBranch = simState.getNextBranch()
-                            nextOptions = nextBranch.getOptions(simState, groupDraws = true)
+                            nextOptions = nextBranch.getOptions(simState, aggregated = true)
                         } else {
                             return nextOptions
                         }
@@ -78,7 +83,7 @@ abstract class MCTSChildNode protected constructor(
                         val selection = treasurePolicy.policy(simState, nextBranch)
                         simState.processBranchSelection(nextBranch.context, selection)
                         nextBranch = simState.getNextBranch()
-                        nextOptions = nextBranch.getOptions(simState, groupDraws = true)
+                        nextOptions = nextBranch.getOptions(simState, aggregated = true)
                     }
                     else -> return nextOptions
 //                .also { simState.eventStack.push(nextContext)} // so the rollout doesn't skip the decision
@@ -122,6 +127,21 @@ abstract class MCTSChildNode protected constructor(
                         weight = it.probability
                     )
                 }
+            }
+            BranchContext.GAME_OVER -> {
+
+                val eventStack = state.eventStack.copy() // TODO: KISS
+
+                listOf(LeafChildNode(
+                    parent = parent,
+                    history = mutableListOf(),
+                    eventStack = eventStack,
+                    selections = listOf(),
+                    playerNumber = state.currentPlayer.playerNumber,
+                    turns = state.turns,
+                    context = state.context,
+                    weight = 1.0
+                ))
             }
             else -> {
                 val weights = weightSource?.getWeights(state, selections)

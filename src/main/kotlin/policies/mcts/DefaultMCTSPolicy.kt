@@ -15,8 +15,7 @@ class DefaultMCTSPolicy(
     cParameter = cParameter,
     rollouts = rollouts,
     rolloutPolicy = rolloutPolicy,
-    rolloutScoreFn = rolloutScoreFn,
-    useNBCWeights = useNBCWeights
+    rolloutScoreFn = rolloutScoreFn
 ) {
     override val name = PolicyName(
         "defaultMCTSPolicy ($cParameter, $rollouts, ${rolloutPolicy.name}, ${rolloutScoreFn.name}, $useNBCWeights)")

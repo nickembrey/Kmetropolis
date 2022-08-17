@@ -1,11 +1,8 @@
 package policies.jansen_tollisen
 
 import engine.*
-import engine.branch.Branch
+import engine.branch.*
 import engine.card.Card
-import engine.branch.BranchContext
-import engine.branch.BranchSelection
-import engine.branch.SpecialBranchSelection
 import policies.Policy
 import policies.PolicyName
 import policies.delegates.action.MPPAFPolicy
@@ -36,9 +33,9 @@ class HeuristicGreedyPolicy : Policy() {
             BranchContext.CHOOSE_BUYS -> {
                 // TODO: weird corner case where all coppers and all curses are gone?
                 val buySelections = options
-                    .filterIsInstance<Card>()
-                    .filter { it != Card.CURSE }
-                    .sortedWith(compareByDescending { it.cost })
+                    .filterIsInstance<BuySelection>()
+                    .filter { !it.cards.contains(Card.CURSE) }
+                    .sortedWith(compareByDescending { it.cards.sumOf { card -> card.cost } })
                 return if(buySelections.isNotEmpty()) {
                     buySelections[0]
                 } else {

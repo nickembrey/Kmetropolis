@@ -1,11 +1,8 @@
 package policies.playout
 
 import engine.*
-import engine.branch.Branch
+import engine.branch.*
 import engine.card.Card
-import engine.branch.BranchContext
-import engine.branch.BranchSelection
-import engine.branch.SpecialBranchSelection
 import engine.card.CardType
 import policies.Policy
 import policies.PolicyName
@@ -47,16 +44,11 @@ class GreenRolloutPolicy : Policy() {
                 return options.firstOrNull { it is Card } ?: SpecialBranchSelection.SKIP
             }
             BranchContext.CHOOSE_BUYS -> {
-                cardMenu.clear()
-                options
-                    .filterIsInstanceTo(cardMenu)
-                    .apply { remove(Card.CURSE) }
-                    .sortWith(compareByDescending<Card> { it.type == CardType.VICTORY }.thenByDescending { it.cost } )
-                return if(cardMenu.isNotEmpty()) {
-                    cardMenu[0]
-                } else {
-                    SpecialBranchSelection.SKIP
-                }
+                return options
+                    .filterIsInstance<BuySelection>()
+                    .filter { !it.cards.contains(Card.CURSE) }
+                    .sortedWith(compareByDescending { it.cards.sumOf { card -> card.vp } } )[0]
+                    .takeIf { it.cards.isNotEmpty() } ?: SpecialBranchSelection.SKIP
             }
             else -> randomPolicy.policy(state, branch)
         }

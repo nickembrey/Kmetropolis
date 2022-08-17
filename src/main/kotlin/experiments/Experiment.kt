@@ -6,7 +6,7 @@ import policies.playout.GreenRolloutPolicy
 import policies.playout.score.WeightVpMorePlayoutScoreFn
 
 interface Experiment {
-    fun run(times: Int)
+    fun run(times: Int) // TODO: ExperimentResult
 
     companion object {
         val DEFAULT_EXPERIMENT = SimpleExperiment(
