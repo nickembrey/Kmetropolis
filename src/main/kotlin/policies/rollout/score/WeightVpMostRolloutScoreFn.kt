@@ -1,9 +1,9 @@
-package policies.playout.score
+package policies.rollout.score
 
 import engine.GameState
 import engine.player.PlayerNumber
 
-object WeightVpMostPlayoutScoreFn: PlayoutScoreFn {
+object WeightVpMostRolloutScoreFn: RolloutScoreFn {
 
     override val name = "weightVpMostPlayoutScoreFn"
 

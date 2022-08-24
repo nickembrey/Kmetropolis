@@ -3,14 +3,13 @@ package policies.mcts
 import policies.CurrentThreadExecutor
 import policies.Policy
 import policies.PolicyName
-import policies.playout.score.PlayoutScoreFn
+import policies.rollout.score.RolloutScoreFn
 
 class DefaultMCTSPolicy(
     cParameter: Double,
     rollouts: Int,
     rolloutPolicy: Policy,
-    rolloutScoreFn: PlayoutScoreFn,
-    useNBCWeights: Boolean
+    rolloutScoreFn: RolloutScoreFn
 ): MCTSPolicy( // TODO: easier way?
     cParameter = cParameter,
     rollouts = rollouts,
@@ -18,7 +17,7 @@ class DefaultMCTSPolicy(
     rolloutScoreFn = rolloutScoreFn
 ) {
     override val name = PolicyName(
-        "defaultMCTSPolicy ($cParameter, $rollouts, ${rolloutPolicy.name}, ${rolloutScoreFn.name}, $useNBCWeights)")
+        "defaultMCTSPolicy ($cParameter, $rollouts, ${rolloutPolicy.name}, ${rolloutScoreFn.name})")
 
     override val stateCopies: Int = 1
     override val executor = CurrentThreadExecutor()

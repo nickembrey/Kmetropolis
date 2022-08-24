@@ -144,10 +144,6 @@ abstract class MCTSChildNode protected constructor(
                 ))
             }
             else -> {
-                val weights = weightSource?.getWeights(state, selections)
-                if(weights != null) {
-                    logger.logWeightUse()
-                }
 
                 val eventStack = state.eventStack.copy()
                 val operationHistory = state.operationHistory.toMutableList()
@@ -165,8 +161,7 @@ abstract class MCTSChildNode protected constructor(
                         selections = listOf(it),
                         playerNumber = state.currentPlayer.playerNumber,
                         turns = state.turns,
-                        context = state.context,
-                        weight = if(weights != null) weights[index] else 1.0
+                        context = state.context
                     )
                 }
             }

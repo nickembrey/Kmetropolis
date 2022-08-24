@@ -44,12 +44,8 @@ enum class GamePhase(val events: List<GameEvent>): GamePropertyValue {
             .reversed() // TODO: remove all these?
     ),
     BUY(
-        listOf<GameEvent>(
-            StackRepeatedOperation(
-                repeatFn = { it.currentPlayer.buys },
-                repeatedEvent = Branch(BranchContext.CHOOSE_BUYS),
-                context = BranchContext.CHOOSE_BUYS
-            ),
+        listOf(
+            Branch(BranchContext.CHOOSE_BUYS),
             GameCompoundOperation.NEXT_PHASE, StackSimpleOperation.ADD_PHASE_OPERATIONS)
             .reversed()
     ),

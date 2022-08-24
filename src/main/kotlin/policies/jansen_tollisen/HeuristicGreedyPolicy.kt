@@ -6,7 +6,7 @@ import engine.card.Card
 import policies.Policy
 import policies.PolicyName
 import policies.delegates.action.MPPAFPolicy
-import policies.utility.RandomPolicy
+import policies.rollout.RandomPolicy
 
 class HeuristicGreedyPolicy : Policy() {
 

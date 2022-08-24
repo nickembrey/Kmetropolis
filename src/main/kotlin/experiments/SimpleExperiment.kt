@@ -1,17 +1,30 @@
 package experiments
 
+import engine.GameResult
 import engine.GameState
+import engine.branch.BranchContext
+import engine.branch.BranchSelection
 import kingdoms.jansenTollisenBoard
 import logger
 import policies.Policy
+import policies.PolicyName
 
-class SimpleExperiment(private val policy1: Policy, private val policy2: Policy): Experiment {
+class SimpleExperiment( // TODO: should take in an experimentSettings object
+    private val policy1: Policy,
+    private val policy2: Policy
+): Experiment {
 
-    override fun run(times: Int) {
+    override fun run(times: Int): ExperimentResult {
 
-        val games: MutableList<GameState> = mutableListOf()
+        // TODO: seems like a lot of this should be done for ALL experiments.. so move it up?
 
-        logger.initSimulation()
+        val gameLogs: MutableList<List<Triple<PolicyName, BranchContext, BranchSelection>>> = mutableListOf()
+
+        val gameResults: Map<PolicyName, MutableList<PlayerGameSummary>> = mapOf(
+            policy1.name to mutableListOf(),
+            policy2.name to mutableListOf()
+        )
+
         for(i in 1..times) {
 
             println("Starting game $i")
@@ -33,13 +46,41 @@ class SimpleExperiment(private val policy1: Policy, private val policy2: Policy)
             policy2.endGame()
             logger.recordGame(gameState)
 
-            games.add(gameState)
+            gameLogs.add(gameState.branchSelectionHistory)
+
+            // TODO: KISS
+            gameResults[gameState.players[0].policy.name]!!.add(PlayerGameSummary( // TODO: !!
+                result = when {
+                    gameState.players[0].vp > gameState.players[1].vp -> GameResult.WIN
+                    gameState.players[0].vp < gameState.players[1].vp -> GameResult.LOSE
+                    gameState.players[0].vp == gameState.players[1].vp -> GameResult.TIE
+                    else -> throw IllegalStateException()
+                },
+                vp = gameState.players[0].vp
+            ))
+            gameResults[gameState.players[1].policy.name]!!.add(PlayerGameSummary( // TODO: !!
+                result = when {
+                    gameState.players[1].vp > gameState.players[0].vp -> GameResult.WIN
+                    gameState.players[1].vp < gameState.players[0].vp -> GameResult.LOSE
+                    gameState.players[1].vp == gameState.players[0].vp -> GameResult.TIE
+                    else -> throw IllegalStateException()
+                },
+                vp = gameState.players[1].vp
+            ))
         }
 
         // TODO:
         policy1.shutdown()
         policy2.shutdown()
-        logger.recordSimulation()
+
+        return ExperimentResult( // TODO: versioning for players
+            settings = ExperimentSettings(
+                policy1 = policy1.name,
+                policy2 = policy2.name
+            ),
+            gameLogs = gameLogs,
+            gameResults = gameResults
+        )
     }
 
 }

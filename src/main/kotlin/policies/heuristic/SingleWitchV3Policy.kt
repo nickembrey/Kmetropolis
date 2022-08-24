@@ -6,7 +6,7 @@ import engine.card.Card
 import policies.Policy
 import policies.PolicyName
 import policies.delegates.draw.RandomDrawPolicy
-import policies.utility.RandomPolicy
+import policies.rollout.RandomPolicy
 
 class SingleWitchV3Policy : Policy() { // TODO: abstract witch policy
 

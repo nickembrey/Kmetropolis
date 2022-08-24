@@ -7,6 +7,7 @@ import engine.branch.BranchContext
 import engine.card.Card
 import engine.player.Player
 import engine.player.PlayerNumber
+import experiments.ExperimentResult
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import stats.binning.GameStage
@@ -23,10 +24,6 @@ class DominionLogger(config: EngineConfig) {
 
     private val logFile: File
 
-    private val gameVpRecords: MutableMap<String, Int> = mutableMapOf()
-    private val totalVpRecords: MutableMap<String, Int> = mutableMapOf()
-    private val winRecords: MutableMap<String, Int> = mutableMapOf()
-    private val tieRecords: MutableMap<Pair<String, String>, Int> = mutableMapOf()
     private val playRecords: MutableMap<String, Int> = mutableMapOf()
 
     private var gameWeightsUsed: Int = 0
@@ -36,25 +33,6 @@ class DominionLogger(config: EngineConfig) {
     private var decisionMaxTreeTurns: MutableList<Int> = mutableListOf()
 
     private val contextMap: MutableMap<BranchContext, Long> = mutableMapOf()
-
-    private val gameDeckCardCompositions:
-            MutableMap<PlayerNumber, MutableList<Pair<GameStage, Map<Card, Double>>>> = mutableMapOf()
-    private val savedDeckCardCompositions:
-            MutableList<Triple<GameStage, Map<Card, Double>, GameResult>> = mutableListOf()
-
-    fun addDeckCardComposition(
-        playerNumber: PlayerNumber,
-        gameStage: GameStage,
-        map: Map<Card, Double>
-    ) {
-        val list = gameDeckCardCompositions[playerNumber]
-        gameDeckCardCompositions[playerNumber] = if(list != null) {
-            list.add(Pair(gameStage, map))
-            list
-        } else {
-            ArrayList(listOf(Pair(gameStage, map))).apply { ensureCapacity(100) }
-        }
-    }
 
     init {
 
@@ -89,7 +67,7 @@ class DominionLogger(config: EngineConfig) {
         log.append(str)
     }
 
-    fun appendLine(str: String = "") {
+    private fun appendLine(str: String = "") {
         log.appendLine(str)
     }
 
@@ -98,9 +76,6 @@ class DominionLogger(config: EngineConfig) {
             it.print(log)
         }
     }
-
-
-    fun initPlayout() {}
 
     fun recordPlayout() {
         gamePlayouts += 1
@@ -119,23 +94,9 @@ class DominionLogger(config: EngineConfig) {
         }
     }
 
-    fun logWeightUse() {
-        gameWeightsUsed += 1
-        totalWeightsUsed += 1
-    }
-
-    fun initGame(state: GameState) {
-        gameVpRecords[state.players[0].name] = 0
-        gameVpRecords[state.players[1].name] = 0
-        totalVpRecords.putIfAbsent(state.players[0].name, 0)
-        totalVpRecords.putIfAbsent(state.players[1].name, 0)
-        winRecords.putIfAbsent(state.players[0].name, 0)
-        winRecords.putIfAbsent(state.players[1].name, 0)
+    fun initGame(state: GameState) { // TODO: roll this into the results
         playRecords.putIfAbsent(state.players[0].name, 0)
         playRecords.putIfAbsent(state.players[1].name, 0)
-        val tiePlayers = state.players.sortedBy { it.name }.map { it.name }
-        tieRecords.putIfAbsent(Pair(tiePlayers[0], tiePlayers[1]), 0)
-        gameWeightsUsed = 0
     }
 
     // TODO: have all the intermediate logging be done from the operationHistory, not the code itself
@@ -148,35 +109,6 @@ class DominionLogger(config: EngineConfig) {
         val playerTwo = state.players[1]
         val playerOneName = playerOne.name
         val playerTwoName = playerTwo.name
-        val tiePlayers = state.players.sortedBy { it.name }.map { it.name }
-
-        gameVpRecords.merge(playerOneName, playerOne.vp, Int::plus)
-        gameVpRecords.merge(playerTwoName, playerTwo.vp, Int::plus)
-        totalVpRecords.merge(playerOneName, playerOne.vp, Int::plus)
-        totalVpRecords.merge(playerTwoName, playerTwo.vp, Int::plus)
-
-        if(playerOne.vp > playerTwo.vp) {
-            winRecords.merge(playerOneName, 1, Int::plus)
-            gameDeckCardCompositions[PlayerNumber.PLAYER_ONE]!!
-                .map { Triple(it.first, it.second, GameResult.WIN) }
-                .forEach { savedDeckCardCompositions.add(it) }
-            gameDeckCardCompositions[PlayerNumber.PLAYER_TWO]!!
-                .map { Triple(it.first, it.second, GameResult.LOSE) }
-                .forEach { savedDeckCardCompositions.add(it) }
-        } else if(playerTwo.vp > playerOne.vp) {
-            winRecords.merge(playerTwoName, 1, Int::plus)
-            gameDeckCardCompositions[PlayerNumber.PLAYER_ONE]!!
-                .map { Triple(it.first, it.second, GameResult.LOSE) }
-                .forEach { savedDeckCardCompositions.add(it) }
-            gameDeckCardCompositions[PlayerNumber.PLAYER_TWO]!!
-                .map { Triple(it.first, it.second, GameResult.WIN) }
-                .forEach { savedDeckCardCompositions.add(it) }
-        } else {
-            tieRecords.merge(Pair(tiePlayers[0], tiePlayers[1]), 1, Int::plus)
-        }
-
-        gameDeckCardCompositions[PlayerNumber.PLAYER_ONE]!!.clear()
-        gameDeckCardCompositions[PlayerNumber.PLAYER_TWO]!!.clear()
 
         playRecords.merge(playerOneName, 1, Int::plus)
         playRecords.merge(playerTwoName, 1, Int::plus)
@@ -188,8 +120,6 @@ class DominionLogger(config: EngineConfig) {
         }
 
         totalGames += 1
-        gameVpRecords.remove(playerOne.name)
-        gameVpRecords.remove(playerTwo.name)
         gamePlayouts = 0
         gameDecisions = 0
         gameWeightsUsed = 0
@@ -214,53 +144,28 @@ class DominionLogger(config: EngineConfig) {
         for(entry in players.second.allCards.groupingBy { it }.eachCount()) {
             appendLine("      ${entry.key}: ${entry.value}")
         }
-        appendLine("")
-        for((policy, vp) in gameVpRecords) {
-            appendLine("$policy VP: $vp")
-        }
-        appendLine("")
-        appendLine("Weights used: $gameWeightsUsed times")
-        appendLine("Weights used ${gameWeightsUsed.toDouble() / gameDecisions.toDouble()} times per decision")
     }
 
-    fun initSimulation() {}
+    fun logExperimentResult(result: ExperimentResult) {
 
-    fun recordSimulation(
-        logSummary: Boolean = true,
-        write: Boolean = true
-    ) {
-
-        if(logSummary) {
-            logSimulationSummary()
+        appendLine("------------------")
+        appendLine("Game logs")
+        appendLine("------------------")
+        appendLine("")
+        for(game in result.gameLogs) {
+            for(selection in game) {
+                appendLine("$selection")
+            }
+            appendLine("")
         }
-        if(write) {
-            write()
-        }
-    }
 
-    private fun logSimulationSummary() {
+        // TODO: move all of this stuff into result
         appendLine("------------------")
         appendLine("Simulation summary")
         appendLine("------------------")
         appendLine("")
         for((policy, games) in playRecords.toSortedMap()) {
             appendLine("$policy games: $games")
-        }
-        appendLine("")
-        for((policy, vp) in totalVpRecords.toSortedMap()) {
-            appendLine("$policy VP: $vp")
-        }
-        appendLine("")
-        for((policy, wins) in winRecords.toSortedMap()) {
-            appendLine("$policy wins: $wins")
-        }
-        appendLine("")
-        for((policy, wins) in winRecords.toSortedMap()) {
-            appendLine("$policy win percentage: ${wins.toDouble() / playRecords[policy]!!.toDouble() * 100.0}%")
-        }
-        appendLine("")
-        for((pair, ties) in tieRecords.toSortedMap(compareBy { it.first })) {
-            appendLine("${pair.first} vs. ${pair.second} ties: $ties")
         }
         appendLine("")
         appendLine("Total playouts: $totalPlayouts")
@@ -293,6 +198,16 @@ class DominionLogger(config: EngineConfig) {
         for(entry in contextMap) {
             appendLine("      ${entry.key}: ${entry.value.toDouble() * 100 / allContexts }% (${entry.value})")
         }
+        appendLine("")
+
+        for(entry in result.gameResults) {
+            appendLine("Player: ${entry.key}")
+            appendLine("Wins: ${entry.value.map { it.result }.count { it == GameResult.WIN }} ")
+            appendLine("VP: ${entry.value.sumOf { it.vp }} ")
+            appendLine("")
+        }
+
+        write()
     }
 
 

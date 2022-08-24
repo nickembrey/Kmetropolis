@@ -13,10 +13,9 @@ import ml.NaiveBayesResourceCompositionWeightSource
 import policies.Policy
 import policies.delegates.action.MPPAFPolicy
 import policies.heuristic.DevelopmentPolicy
-import policies.jansen_tollisen.EpsilonHeuristicGreedyPolicy
-import policies.playout.GreenRolloutPolicy
-import policies.playout.score.PlayoutScoreFn
-import policies.utility.RandomPolicy
+import policies.rollout.GreenRolloutPolicy
+import policies.rollout.score.RolloutScoreFn
+import policies.rollout.RandomPolicy
 import java.lang.Integer.max
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -24,13 +23,12 @@ import java.util.concurrent.Executor
 import kotlin.math.ln
 import kotlin.math.sqrt
 
-// TODO: pick either "rollouts" or "playouts"
 // TODO: maybe we should hold onto a reference to the game state instead of passing it in every time we need it
 abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
     protected val cParameter: Double,
     protected val rollouts: Int,
     protected val rolloutPolicy: Policy,
-    protected val rolloutScoreFn: PlayoutScoreFn
+    protected val rolloutScoreFn: RolloutScoreFn
 ) : Policy() { // TODO: make rolloutPolicy a parameter
 
     abstract val stateCopies: Int
@@ -39,8 +37,6 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
     protected var maxDepth: Int = 0
     protected var maxTurns: Int = 0
     protected val contextMap: MutableMap<BranchContext, Int> = mutableMapOf()
-
-    protected val nbcClassifier = NaiveBayesResourceCompositionWeightSource()
 
     // TODO: clear these lists in between playouts
 
@@ -114,7 +110,6 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
             .let { node.children[it] }
 
     protected open fun rollout(rolloutState: GameState): Map<PlayerNumber, Double> {
-        logger.initPlayout() // TODO: this might not make sense if there's a timer, etc.
         while (!rolloutState.gameOver) {
             rolloutState.processNextBranch()
         }
@@ -330,14 +325,6 @@ abstract class MCTSPolicy( // TODO: need a way to log these in DominionLogger
                     ) }
                 queued += 1
             }
-        }
-
-        if(state.turns == 5 || state.turns == 10 || state.turns == 20 || state.turns == 30) {
-            greenScore = (rolloutPolicyMenu[0] / rolloutPolicyMenu[1])
-            greedyScore = (rolloutPolicyMenu[2] / rolloutPolicyMenu[3])
-            print(state.turns)
-            print("\nGreen score: $greenScore")
-            print("\nDevelopment score: $greedyScore\n")
         }
 
         val simulations: List<Int> = root.children.map { it.completedRollouts.get() }

@@ -7,9 +7,8 @@ import engine.card.CardType
 import policies.Policy
 import policies.PolicyName
 import policies.delegates.action.MPPAFPolicy
-import policies.delegates.draw.RandomDrawPolicy
 import policies.jansen_tollisen.HeuristicGreedyPolicy
-import policies.utility.RandomPolicy
+import policies.rollout.RandomPolicy
 
 class DevelopmentPolicy : Policy() {
 

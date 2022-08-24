@@ -1,13 +1,11 @@
-package policies.playout
+package policies.rollout
 
 import engine.*
 import engine.branch.*
 import engine.card.Card
-import engine.card.CardType
 import policies.Policy
 import policies.PolicyName
 import policies.delegates.draw.RandomDrawPolicy
-import policies.utility.RandomPolicy
 
 class GreenRolloutPolicy : Policy() {
 

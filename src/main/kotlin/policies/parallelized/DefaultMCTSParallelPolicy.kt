@@ -3,7 +3,7 @@ package policies.parallelized
 import policies.Policy
 import policies.PolicyName
 import policies.mcts.MCTSPolicy
-import policies.playout.score.PlayoutScoreFn
+import policies.rollout.score.RolloutScoreFn
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -11,7 +11,7 @@ class DefaultMCTSParallelPolicy(
     cParameter: Double,
     rollouts: Int,
     rolloutPolicy: Policy,
-    rolloutScoreFn: PlayoutScoreFn
+    rolloutScoreFn: RolloutScoreFn
 ): MCTSPolicy(
     cParameter = cParameter,
     rollouts = rollouts,

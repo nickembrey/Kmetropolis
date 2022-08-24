@@ -5,7 +5,7 @@ import engine.branch.Branch
 import engine.branch.BranchSelection
 import policies.Policy
 import policies.PolicyName
-import policies.utility.RandomPolicy
+import policies.rollout.RandomPolicy
 
 class EpsilonHeuristicGreedyPolicy : Policy() {
 
