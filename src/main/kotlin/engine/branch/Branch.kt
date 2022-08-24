@@ -34,16 +34,10 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                     }
                 }
             }
-            BranchContext.CHOOSE_BUYS -> {
-                if(aggregated) {
-                    return Combinatorics.combinationsWithRepetition(state.buyMenu, state.currentPlayer.buys)
-                        .map { BuySelection(cards = it) }
-                        .filter { it.cards.sumOf { card -> card.cost } <= state.currentPlayer.coins }.toList()
-                        .ifEmpty { listOf(SpecialBranchSelection.SKIP) }
-                } else {
-                    state.buyMenu.map { BuySelection( cards = listOf(it) ) }.plus(SpecialBranchSelection.SKIP)
-                }
-            }
+            BranchContext.CHOOSE_BUYS -> return Combinatorics.combinationsWithRepetition(state.buyMenu, state.currentPlayer.buys)
+                .map { BuySelection(cards = it) }
+                .filter { it.cards.sumOf { card -> card.cost } <= state.currentPlayer.coins }.toList()
+                .ifEmpty { listOf(SpecialBranchSelection.SKIP) }
             BranchContext.GAME_OVER -> BranchContext.gameOver
             BranchContext.CHAPEL -> state.currentPlayer.hand
             BranchContext.WORKSHOP -> state.workshopMenu
