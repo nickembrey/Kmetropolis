@@ -50,6 +50,8 @@ class SimpleExperiment( // TODO: should take in an experimentSettings object
 
             // TODO: KISS
             gameResults[gameState.players[0].policy.name]!!.add(PlayerGameSummary( // TODO: !!
+                playerNumber = gameState.players[0].playerNumber,
+                deck = gameState.players[0].allCards,
                 result = when {
                     gameState.players[0].vp > gameState.players[1].vp -> GameResult.WIN
                     gameState.players[0].vp < gameState.players[1].vp -> GameResult.LOSE
@@ -59,6 +61,8 @@ class SimpleExperiment( // TODO: should take in an experimentSettings object
                 vp = gameState.players[0].vp
             ))
             gameResults[gameState.players[1].policy.name]!!.add(PlayerGameSummary( // TODO: !!
+                playerNumber = gameState.players[1].playerNumber,
+                deck = gameState.players[1].allCards,
                 result = when {
                     gameState.players[1].vp > gameState.players[0].vp -> GameResult.WIN
                     gameState.players[1].vp < gameState.players[0].vp -> GameResult.LOSE

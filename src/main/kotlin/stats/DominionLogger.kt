@@ -4,16 +4,9 @@ import engine.EngineConfig
 import engine.GameResult
 import engine.GameState
 import engine.branch.BranchContext
-import engine.card.Card
-import engine.player.Player
-import engine.player.PlayerNumber
 import experiments.ExperimentResult
-import kotlinx.serialization.*
-import kotlinx.serialization.json.*
-import stats.binning.GameStage
 import util.SimulationTimer
 import java.io.File
-import kotlin.collections.ArrayList
 
 
 // TODO: add current commit? and state?
@@ -101,8 +94,7 @@ class DominionLogger(config: EngineConfig) {
 
     // TODO: have all the intermediate logging be done from the operationHistory, not the code itself
     fun recordGame(
-        state: GameState,
-        logSummary: Boolean = true
+        state: GameState
     ) {
 
         val playerOne = state.players[0]
@@ -113,48 +105,29 @@ class DominionLogger(config: EngineConfig) {
         playRecords.merge(playerOneName, 1, Int::plus)
         playRecords.merge(playerTwoName, 1, Int::plus)
 
-        if(logSummary) {
-            logGameSummary(players = Pair(playerOne, playerTwo))
-        } else {
-            log.clear()
-        }
-
         totalGames += 1
         gamePlayouts = 0
         gameDecisions = 0
         gameWeightsUsed = 0
     }
 
-    private fun logGameSummary(
-        players: Pair<Player, Player>
-    ) {
-        appendLine("")
-        appendLine("------------")
-        appendLine("Game summary")
-        appendLine("------------")
-        appendLine("")
-        appendLine("Player 1: ${players.first.policy.name}")
-        appendLine("Deck: ")
-        for(entry in players.first.allCards.groupingBy { it }.eachCount()) {
-            appendLine("      ${entry.key}: ${entry.value}")
-        }
-        appendLine("")
-        appendLine("Player 2: ${players.second.policy.name}")
-        appendLine("Deck: ")
-        for(entry in players.second.allCards.groupingBy { it }.eachCount()) {
-            appendLine("      ${entry.key}: ${entry.value}")
-        }
-    }
+    fun logExperimentResult(experimentResult: ExperimentResult) {
 
-    fun logExperimentResult(result: ExperimentResult) {
-
-        appendLine("------------------")
-        appendLine("Game logs")
-        appendLine("------------------")
-        appendLine("")
-        for(game in result.gameLogs) {
-            for(selection in game) {
+        for(i in experimentResult.gameLogs.indices) {
+            appendLine("------------------")
+            appendLine("Game ${i + 1}")
+            appendLine("------------------")
+            appendLine("")
+            for(selection in experimentResult.gameLogs[i]) {
                 appendLine("$selection")
+            }
+            for(entry in experimentResult.gameResults) {
+                appendLine("")
+                appendLine("${entry.value[i].playerNumber}: ${entry.key}")
+                appendLine("Deck: ")
+                for(card in entry.value[i].deck.groupingBy { it }.eachCount()) {
+                    appendLine("      ${card.key}: ${card.value}")
+                }
             }
             appendLine("")
         }
@@ -200,7 +173,7 @@ class DominionLogger(config: EngineConfig) {
         }
         appendLine("")
 
-        for(entry in result.gameResults) {
+        for(entry in experimentResult.gameResults) {
             appendLine("Player: ${entry.key}")
             appendLine("Wins: ${entry.value.map { it.result }.count { it == GameResult.WIN }} ")
             appendLine("VP: ${entry.value.sumOf { it.vp }} ")
