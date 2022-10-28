@@ -1,4 +1,4 @@
-package policies.rollout
+package policies.mcts.rollout
 
 import engine.*
 import engine.branch.Branch
@@ -10,7 +10,7 @@ import policies.delegates.draw.RandomDrawPolicy
 
 class RandomPolicy : Policy() {
     override val name = PolicyName("randomPolicy")
-    override fun shutdown() = Unit
+    override fun finally() = Unit
 
     private val drawPolicy = RandomDrawPolicy()
     override fun policy(
@@ -18,7 +18,7 @@ class RandomPolicy : Policy() {
         branch: Branch
     ): BranchSelection {
         return when(branch.context) {
-            BranchContext.DRAW -> drawPolicy.policy(state, branch)
+            BranchContext.DRAW -> drawPolicy(state, branch)
             else -> branch.getOptions(state).random()
         }
     }

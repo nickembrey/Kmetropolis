@@ -7,6 +7,7 @@ import engine.operation.HistoryOperation
 import engine.operation.PlayerOperation
 import engine.operation.state.player.PlayerSimpleOperation
 import engine.operation.Operation
+import engine.operation.Operation.Companion.ERASE_HISTORY
 import engine.operation.property.PropertyOperation
 import engine.operation.stack.*
 import engine.operation.state.game.GameSimpleOperation
@@ -19,14 +20,12 @@ import engine.operation.state.game.GameCardOperation
 import engine.operation.state.game.GameCardOperationType
 import engine.operation.state.player.PlayerMoveCardOperation
 import engine.operation.state.player.PlayerMoveCardsOperation
-import engine.performance.CardEffectsMap
+import engine.operation.state.player.PlayerOperationType
 import engine.player.Player
 import engine.player.PlayerNumber
 import engine.player.PlayerProperty
-import logger
 import policies.Policy
 import policies.PolicyName
-import stats.binning.Bins.getGameStage
 import java.util.*
 
 // TODO: take out everything unnecessary and make it injectable so that the state can be left on the tree
@@ -42,7 +41,6 @@ class GameState private constructor (
     val board: EnumMap<Card, Int>,
     var currentPlayerNumber: PlayerNumber,
     var phase: GamePhase,
-    var context: BranchContext,
     var eventStack: EventStack,
     var turns: Int,
     val maxTurns: Int,
@@ -54,10 +52,6 @@ class GameState private constructor (
 
     private val playerOne = players[0]
     private val playerTwo = players[1]
-
-    init {
-        assert(players.size == 2)
-    }
 
     companion object {
         fun new(
@@ -73,8 +67,7 @@ class GameState private constructor (
                 currentPlayerNumber = PlayerNumber.PLAYER_ONE,
                 board = board,
                 phase = GamePhase.NOT_STARTED,
-                context = BranchContext.DRAW,
-                eventStack = EventStack(), // TODO: new constructor
+                eventStack = EventStack(mutableListOf(SpecialGameEvent.START_GAME)), // TODO: new constructor
                 turns = 0,
                 maxTurns = maxTurns,
                 emptyPiles = 0,
@@ -82,13 +75,6 @@ class GameState private constructor (
                 operationHistory = ArrayList(1200),
                 log = log
             )
-    }
-
-    fun undoOperationHistory() { // TODO:
-        for(op in operationHistory.asReversed()) {
-            processStateOperation(op.undo)
-        }
-        operationHistory.clear()
     }
 
     fun copy(
@@ -106,7 +92,6 @@ class GameState private constructor (
             currentPlayerNumber = currentPlayerNumber,
             board = EnumMap(board),
             phase = phase,
-            context = context,
             eventStack = newEventStack,
             turns = turns,
             maxTurns = newMaxTurns,
@@ -156,26 +141,41 @@ class GameState private constructor (
 
     var gameOver = false
 
-    fun getNextBranch(): Branch {
-        var event = eventStack.poll()
-        while(event !is Branch) {
-            if(event is Operation) {
-                processOperation(event)
-            } else {
-                throw IllegalStateException("Illegal event state!")
-            }
-            event = eventStack.poll()
-        }
+    fun opponentRedraw() {
 
-        operationHistory.add(SetFromPropertyOperation(
-            target = GameProperty.CONTEXT,
-            from = context,
-            to = event.context
+        currentPlayerNumber = otherPlayer.playerNumber
+        val handSize = currentPlayer.hand.size
+        processOperation(
+            PlayerMoveCardsOperation(
+                cards = currentPlayer.hand,
+                from = CardLocation.HAND,
+                to = CardLocation.DECK
+            )
+        )
+        currentPlayerNumber = otherPlayer.playerNumber
+
+        eventStack.pushAll( listOf(
+            SpecialGameEvent.SWITCH_PLAYER,
+            Branch(BranchContext.DRAW, handSize),
+            SpecialGameEvent.SWITCH_PLAYER
         ))
-        context = event.context
-
-        return event
     }
+
+    fun getNextEvent(): GameEvent = eventStack.pop()
+
+    fun getNextBranch(): Branch =
+        when(val event = eventStack.pop()) {
+            is Branch -> event
+            SpecialGameEvent.END_GAME -> {
+                gameOver = true
+                Branch(context = BranchContext.GAME_OVER)
+
+            }
+            else -> {
+                processEvent(event)
+                getNextBranch()
+            }
+        }
 
     private fun moveCard(
         card: Card,
@@ -276,7 +276,6 @@ class GameState private constructor (
                         GameProperty.PHASE -> phase = operation.to as GamePhase // TODO:
                         // TODO: does this mean maybe turns shouldn't be a property?
                         GameProperty.TURNS -> throw IllegalArgumentException("Incrementing turns can be handled with a simple operation!")
-                        GameProperty.CONTEXT -> context = operation.to as BranchContext // TODO:
                         // TODO: does this mean maybe game over shouldn't be a property?
                         GameProperty.GAME_OVER -> throw IllegalArgumentException("Setting game over can be handled with a simple operation!")
                     }
@@ -330,47 +329,69 @@ class GameState private constructor (
         when(operation) {
             is GameOperation -> when (operation) { // TODO:
                 is GameCompoundOperation -> when(operation) { // TODO:
-                    GameCompoundOperation.NEXT_PHASE -> eventStack.push(SetFromPropertyOperation.NEXT_PHASE(phase)) // TODO:
+                    GameCompoundOperation.NEXT_PHASE -> processPropertyOperation(SetFromPropertyOperation.NEXT_PHASE(phase)) // TODO:
                 }
                 else -> throw IllegalArgumentException()
             }
             is PlayerOperation -> when(operation) {
                 is PlayerCardOperation -> when(operation.type) {
                     PlayerCardOperationType.DRAW -> {
-                        eventStack.push(
+                        processStateOperation(
                             PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.DECK, CardLocation.HAND)
                         )
                     }
                     PlayerCardOperationType.PLAY -> {
 
                         when(operation.card.type) {
-                            CardType.ACTION -> eventStack.push(CardEffectsMap[operation.card])
+                            CardType.ACTION -> {
+                                operation.card.effect(this)
+                                if(operation.card.addCards > 0) {
+                                    eventStack.push(
+                                        Branch(BranchContext.DRAW, selections = operation.card.addCards)
+                                    )
+                                }
+                                if(operation.card.addCoins > 0) {
+                                    processOperation(ModifyPropertyOperation.MODIFY_COINS(operation.card.addCoins))
+                                }
+                                if(operation.card.addBuys > 0) {
+                                    processOperation(ModifyPropertyOperation.MODIFY_BUYS(operation.card.addBuys))
+                                }
+                                eventStack.pushAll(
+                                    List(operation.card.addActions) { Branch(BranchContext.CHOOSE_ACTION) }
+                                )
+                                processOperation(
+                                    PlayerMoveCardOperation(
+                                        card = operation.card,
+                                        from = CardLocation.HAND,
+                                        to = CardLocation.IN_PLAY)
+                                )
+                            }
                             CardType.TREASURE -> {
                                 eventStack.push(Branch(BranchContext.CHOOSE_TREASURE)) // try to play another
-                                eventStack.push(ModifyPropertyOperation.MODIFY_COINS(operation.card.addCoins))
-                                eventStack.push(PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.HAND, CardLocation.IN_PLAY))
+                                processPropertyOperation(ModifyPropertyOperation.MODIFY_COINS(operation.card.addCoins))
+                                processStateOperation(PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.HAND, CardLocation.IN_PLAY))
                             }
                             else -> throw IllegalStateException()
                         }
                     }
                     PlayerCardOperationType.BUY -> {
-                        eventStack.push(PlayerCardOperation.GAIN(operation.card))
+                        processOperation(PlayerCardOperation.GAIN(operation.card))
                         if(operation.card.cost > 0) {
-                            eventStack.push(ModifyPropertyOperation.MODIFY_COINS(-operation.card.cost))
+                            processOperation(ModifyPropertyOperation.MODIFY_COINS(-operation.card.cost))
                         }
                     }
                     PlayerCardOperationType.GAIN -> {
-                        eventStack.push(GameCardOperation.DECREMENT_SUPPLY(operation.card))
+                        processOperation(GameCardOperation.DECREMENT_SUPPLY(operation.card))
                         if(operation.card.vp != 0) {
-                            eventStack.push(ModifyPropertyOperation.MODIFY_VP(operation.card.vp))
+                            processOperation(ModifyPropertyOperation.MODIFY_VP(operation.card.vp))
                         }
-                        eventStack.push(PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.SUPPLY, CardLocation.DISCARD))
+                        processOperation(PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.SUPPLY, CardLocation.DISCARD))
                     }
                     PlayerCardOperationType.TRASH -> {
                         if(operation.card.vp != 0) {
-                            eventStack.push(ModifyPropertyOperation.MODIFY_VP(-operation.card.vp))
+                            processOperation(ModifyPropertyOperation.MODIFY_VP(-operation.card.vp))
                         }
-                        eventStack.push(PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.HAND, CardLocation.TRASH))
+                        processOperation(PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.HAND, CardLocation.TRASH))
                     }
                 }
                 else -> throw NotImplementedError()
@@ -378,30 +399,44 @@ class GameState private constructor (
             is StackConditionalOperation -> {
                 if(operation.condition(this)) {
                     if(operation.loopOnTrue) {
-                        eventStack.push(operation)
+                        processOperation(operation)
                     }
-                    eventStack.push(operation.conditionalEvent)
+                    when (operation.conditionalEvent) {
+                        is Branch -> eventStack.push(operation.conditionalEvent)
+                        is Operation -> processOperation(operation.conditionalEvent)
+                        else -> throw IllegalStateException()
+                    }
                 }
             }
-            is StackMultipleOperation -> eventStack.pushAll(operation.events) // TODO
-            is StackRepeatedOperation -> eventStack.pushAll(List(operation.repeatFn(this)) { operation.repeatedEvent })
-            is StackSimpleOperation -> when(operation) {
-                StackSimpleOperation.CHECK_GAME_OVER -> {
-                    if(emptyPiles >= 3 || board[Card.PROVINCE] == 0 || turns >= maxTurns) {
-                        eventStack.push(Branch(BranchContext.GAME_OVER))
+            is StackMultipleOperation -> {
+                for(event in operation.events) {
+                    when (event) {
+                        is Branch -> eventStack.push(event)
+                        is Operation -> processOperation(event)
+                        else -> throw IllegalStateException()
                     }
                 }
-                StackSimpleOperation.ADD_PHASE_OPERATIONS -> eventStack.pushAll(phase.events)
+            }
+            is StackRepeatedOperation -> {
+                for(i in 1..operation.repeatFn(this)) { // TODO: make sure this is end-inclusive
+                    when (operation.repeatedEvent) {
+                        is Branch -> eventStack.push(operation.repeatedEvent)
+                        is Operation -> processOperation(operation.repeatedEvent)
+                        else -> throw IllegalStateException()
+                    }
+                }
+            }
+            is StackSimpleOperation -> when(operation) {
                 StackSimpleOperation.SHUFFLE -> currentPlayer.discard.let { cards ->
                     PlayerMoveCardsOperation.MOVE_CARDS(cards.toList(), CardLocation.DISCARD, CardLocation.DECK)
-                }.let { eventStack.push(it) }
+                }.let { processOperation(it) }
                 StackSimpleOperation.CLEANUP_ALL -> currentPlayer.inPlay.let { cards ->
                     PlayerMoveCardsOperation.MOVE_CARDS(cards.toList(), CardLocation.IN_PLAY, CardLocation.DISCARD)
-                }.let { eventStack.push(it) }
+                }.let { processOperation(it) }
                 StackSimpleOperation.DISCARD_ALL -> currentPlayer.hand.let { cards ->
                     PlayerMoveCardsOperation.MOVE_CARDS(cards.toList(), CardLocation.HAND, CardLocation.DISCARD)
-                }.let { eventStack.push(it) }
-                StackSimpleOperation.SKIP_CONTEXT -> skipBranchContext(context)
+                }.let { processOperation(it) }
+                StackSimpleOperation.SKIP_CONTEXT -> {} // do nothing
             }
         }
     }
@@ -448,7 +483,7 @@ class GameState private constructor (
                     from = operation.from,
                     to = operation.to) // TODO: log on debug
                 is PlayerMoveCardsOperation -> {
-                    for(card in operation.cards) {
+                    for(card in operation.cards.toList()) { // TODO:
                         moveCard(
                             card = card,
                             from = operation.from,
@@ -468,6 +503,7 @@ class GameState private constructor (
             }
         }
     }
+
     fun processOperation(operation: Operation) {
         when (operation) {
             is PropertyOperation -> processPropertyOperation(operation)
@@ -475,16 +511,11 @@ class GameState private constructor (
             is StateOperation -> processStateOperation(operation).also {
                 operationHistory.add(operation)
             }
-            else -> throw NotImplementedError()
-        }
-    }
-
-    private fun skipBranchContext(context: BranchContext) {
-        when(val next = eventStack.peek()) {
-            is ContextBearer -> {
-                if(next.context == context) {
-                    eventStack.pop()
-                    skipBranchContext(context)
+            else -> {
+                if(operation == ERASE_HISTORY) { // TODO: hack for MCTS! need better design
+                    operationHistory.clear()
+                } else {
+                    throw NotImplementedError()
                 }
             }
         }
@@ -495,97 +526,163 @@ class GameState private constructor (
         selection: BranchSelection
     ) { // TODO: just do the thing, don't push operation onto stack -- then log the operation into the history
 
-        // TODO: only at root
+//        // TODO: only at root
+//        if(selection != SpecialBranchSelection.SKIP) {
+//
+//        }
+
         branchSelectionHistory.add(Triple(currentPlayer.policy.name, context, selection))
 
-        when (selection) {
-            is Card -> {
-                when(context.context) {
-                    BranchContext.DRAW -> {
-                        throw IllegalStateException()
-                    }
-                    BranchContext.CHOOSE_ACTION, BranchContext.CHOOSE_TREASURE -> {
-                        eventStack.push(PlayerCardOperation.PLAY(selection))
-                    }
-                    BranchContext.CHOOSE_BUYS -> {
-                        eventStack.push(PlayerCardOperation.BUY(selection))
-                    }
-                    BranchContext.MILITIA -> {
-                        eventStack.push(PlayerMoveCardOperation( // TODO: add some shortcuts
-                            card = selection,
-                            from = CardLocation.HAND,
-                            to = CardLocation.DISCARD
-                        ))
-                    }
-                    BranchContext.CHAPEL -> {
-                        eventStack.push(PlayerCardOperation.TRASH(selection))
-                    }
-                    BranchContext.REMODEL_TRASH -> {
-                        eventStack.push(StackMultipleOperation(
-                            events = listOf(
-                                SetToPropertyOperation.SET_REMODEL_CARD(selection),
-                                PlayerCardOperation.TRASH(selection)
-                            ), context = BranchContext.NONE
-                        ))
-                    }
-                    BranchContext.WORKSHOP, BranchContext.REMODEL_GAIN -> {
-                        eventStack.push(PlayerCardOperation.GAIN(selection))
-                    }
-                    BranchContext.ANY, BranchContext.NONE, BranchContext.GAME_OVER -> throw IllegalStateException()
+        when (selection.context) {
 
+            BranchContext.DRAW -> {
+                if(selection is DrawSelection) {
+                    for(card in selection.cards) {
+                        processOperation(PlayerCardOperation.DRAW(card))
+                    }
+                } else {
+                    throw IllegalStateException()
                 }
             }
-            is SpecialBranchSelection -> when(selection) {
-                SpecialBranchSelection.SKIP -> eventStack.push(StackSimpleOperation.SKIP_CONTEXT)
-                SpecialBranchSelection.GAME_OVER -> eventStack.push(GameSimpleOperation.END_GAME)
-            }
-            is BuySelection -> {
-                for(card in selection.cards) {
-                    eventStack.push(PlayerCardOperation.BUY(card))
+            BranchContext.CHOOSE_ACTION, BranchContext.CHOOSE_TREASURE -> {
+                if(selection is ActionSelection) {
+                    processStackOperation(PlayerCardOperation.PLAY(selection.card))
+                } else if(selection is TreasureSelection) {
+                    processStackOperation(PlayerCardOperation.PLAY(selection.card))
+                } else {
+                    throw IllegalStateException()
                 }
             }
-            is DrawSelection -> {
-                for(card in selection.cards.asReversed()) {
-                    eventStack.push(PlayerCardOperation.DRAW(card))
+            BranchContext.CHOOSE_BUY -> {
+                if(selection is BuySelection) {
+                    for(card in selection.cards) {
+                        processStackOperation(PlayerCardOperation.BUY(card))
+                    }
+                } else {
+                    throw IllegalStateException()
+                }
+
+            }
+            BranchContext.MILITIA -> {
+                if(selection is MilitiaSelection) {
+                    processStateOperation(PlayerMoveCardOperation( // TODO: add some shortcuts
+                        card = selection.card,
+                        from = CardLocation.HAND,
+                        to = CardLocation.DISCARD
+                    ))
+                } else {
+                    throw IllegalStateException()
                 }
             }
-            else -> throw NotImplementedError()
+            BranchContext.CHAPEL -> {
+                if(selection is ChapelSelection) {
+                    processStackOperation(PlayerCardOperation.TRASH(selection.card))
+                } else {
+                    throw IllegalStateException()
+                }
+            }
+            BranchContext.REMODEL_TRASH -> {
+                if(selection is RemodelTrashSelection) {
+                    processOperation(PlayerCardOperation.TRASH(selection.card))
+                    processOperation(SetFromPropertyOperation.SET_REMODEL_CARD(currentPlayer.remodelCard, selection.card))
+                } else {
+                    throw IllegalStateException()
+                }
+            }
+            BranchContext.WORKSHOP, BranchContext.REMODEL_GAIN -> {
+                if(selection is WorkshopSelection) {
+                    processStackOperation(PlayerCardOperation.GAIN(selection.card))
+                } else if(selection is RemodelGainSelection) {
+                    processStackOperation(PlayerCardOperation.GAIN(selection.card))
+                } else {
+                    throw IllegalStateException()
+                }
+            }
+            BranchContext.NONE -> {
+                when(selection) {
+                    is SpecialBranchSelection -> when(selection) {
+                        SpecialBranchSelection.SKIP -> processOperation(StackSimpleOperation.SKIP_CONTEXT)
+                        SpecialBranchSelection.GAME_OVER -> processOperation(GameSimpleOperation.END_GAME)
+                    }
+                }
+            }
+            BranchContext.ANY, BranchContext.GAME_OVER -> throw IllegalStateException()
         }
     }
 
-    fun processNextBranch() {
+    fun processEvent(event: GameEvent) {
 
-        val branch = getNextBranch()
+        if(event is Branch) {
 
-        if(branch.context == BranchContext.DRAW && currentPlayer.deckSize == 0) {
-            operationHistory.add(
-                PlayerMoveCardsOperation(
-                    cards = currentPlayer.discard.toMutableList(),
-                    to = CardLocation.DECK,
-                    from = CardLocation.DISCARD
-                ))
-            currentPlayer.shuffle()
-        }
+            // shuffle if there aren't any cards on the deck and we need to draw
+            if(event.context == BranchContext.DRAW && currentPlayer.deckSize == 0) {
+                operationHistory.add(
+                    PlayerMoveCardsOperation(
+                        cards = currentPlayer.discard.toMutableList(),
+                        to = CardLocation.DECK,
+                        from = CardLocation.DISCARD
+                    ))
+                currentPlayer.shuffle()
+            }
 
-        if(branch.context == BranchContext.DRAW && branch.selections > 1) { // TODO: hacky
-            eventStack.pushAll( // TODO: hacky
-                List(branch.selections) { Branch(BranchContext.DRAW) }
-            )
-            return processNextBranch()
-        }
+            if(event.context == BranchContext.DRAW && event.selections > 1 && !log) { // TODO: hacky
+                eventStack.pushAll( // TODO: hacky
+                    List(event.selections) { Branch(BranchContext.DRAW) }
+                )
+                return processEvent(eventStack.pop())
+            }
 
-        val options = branch.getOptions(this)
+            processBranchSelection(event.context,
+                currentPlayer.policy(this, event))
+        } else {
+            // TODO: deal with special case
+            if(event is SpecialGameEvent) {
+                when(event) {
+                    SpecialGameEvent.START_GAME -> {
+                        eventStack.pushAll(
+                            listOf(
+                                Branch(context = BranchContext.DRAW, selections = 5),
+                                SpecialGameEvent.SWITCH_PLAYER,
+                                Branch(context = BranchContext.DRAW, selections = 5),
+                                SpecialGameEvent.SWITCH_PLAYER,
+                                SpecialGameEvent.START_TURN
+                            ).reversed()
+                        )
+                    } // TODO: end game sequence review (I think there are paths that aren't used?)
+                    SpecialGameEvent.END_GAME -> {
+                        eventStack.push(Branch(context = BranchContext.GAME_OVER))
+                    }
+                    SpecialGameEvent.START_TURN -> {
+                        if(eventStack.peek() != null) {
+                            throw IllegalStateException()
+                        } else {
+                            processOperation(SetToPropertyOperation.SET_BUYS(1))
+                            processOperation(SetToPropertyOperation.SET_COINS(0))
+                            eventStack.push(SpecialGameEvent.END_TURN)
+                            eventStack.push(Branch(context = BranchContext.CHOOSE_BUY))
+                            eventStack.push(Branch(context = BranchContext.CHOOSE_TREASURE))
+                            eventStack.push(Branch(context = BranchContext.CHOOSE_ACTION))
+                        }
+                    }
+                    SpecialGameEvent.END_TURN -> {
+                        processOperation(StackSimpleOperation.CLEANUP_ALL)
+                        processOperation(StackSimpleOperation.DISCARD_ALL)
 
-        when (options.size) {
-            0 -> throw IllegalStateException()
-            // TODO: I think this only happens when there's a draw that uses up the entire deck exactly
-            //       -- maybe want better handling for that case
-
-            1 -> processBranchSelection(branch.context, options.single())
-            else -> processBranchSelection(
-                branch.context,
-                currentPlayer.policy.policy(this, branch)
-            )
+                        if(emptyPiles >= 3 || board[Card.PROVINCE] == 0 || turns >= maxTurns) {
+                            eventStack.push(SpecialGameEvent.END_GAME)
+                        } else {
+                            processOperation(GameSimpleOperation.INCREMENT_TURNS)
+                            eventStack.push(SpecialGameEvent.START_TURN)
+                            eventStack.push(SpecialGameEvent.SWITCH_PLAYER)
+                            eventStack.push(Branch(context = BranchContext.DRAW, selections = 5))
+                        }
+                    }
+                    SpecialGameEvent.SWITCH_PLAYER -> currentPlayerNumber = otherPlayer.playerNumber
+                }
+            } else {
+                throw IllegalStateException()
+            }
         }
     }
+
 }

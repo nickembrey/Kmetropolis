@@ -1,14 +1,8 @@
 package policies.mcts
 
-import engine.player.PlayerNumber
-
-interface ExecutionResult {
-}
-
-data class RolloutSelection(val index: Int): ExecutionResult
+import policies.mcts.node.MCTSTreeNode
 
 data class RolloutResult(
-    val index: Int,
-    val scores: Map<PlayerNumber, Double>): ExecutionResult
-
-object NO_ROLLOUT: ExecutionResult
+    val node: MCTSTreeNode,
+    val scores: Pair<Double, Double>
+)

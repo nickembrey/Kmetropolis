@@ -6,7 +6,7 @@ import engine.card.Card
 import policies.Policy
 import policies.PolicyName
 import policies.delegates.action.MPPAFPolicy
-import policies.rollout.RandomPolicy
+import policies.mcts.rollout.RandomPolicy
 
 class HeuristicGreedyPolicy : Policy() {
 
@@ -15,7 +15,7 @@ class HeuristicGreedyPolicy : Policy() {
     }
 
     override val name = PolicyName("heuristicGreedyPolicy")
-    override fun shutdown() = Unit
+    override fun finally() = Unit
     override fun policy(
         state: GameState,
         branch: Branch
@@ -23,14 +23,14 @@ class HeuristicGreedyPolicy : Policy() {
 
         val options = branch.getOptions(state)
 
-        return when(state.context) {
+        return when(branch.context) {
             BranchContext.CHOOSE_ACTION -> {
-                MPPAFPolicy().policy(state, branch)
+                MPPAFPolicy()(state, branch)
             }
             BranchContext.CHOOSE_TREASURE -> {
-                return options.firstOrNull { it is Card } ?: SpecialBranchSelection.SKIP
+                return options.firstOrNull { it is TreasureSelection } ?: SpecialBranchSelection.SKIP
             }
-            BranchContext.CHOOSE_BUYS -> {
+            BranchContext.CHOOSE_BUY -> {
                 // TODO: weird corner case where all coppers and all curses are gone?
                 val buySelections = options
                     .filterIsInstance<BuySelection>()
@@ -42,7 +42,7 @@ class HeuristicGreedyPolicy : Policy() {
                     SpecialBranchSelection.SKIP
                 }
             }
-            else -> randomPolicy.policy(state, branch)
+            else -> randomPolicy(state, branch)
         }
     }
 }

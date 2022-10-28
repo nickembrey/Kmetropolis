@@ -7,8 +7,7 @@ import engine.card.CardType
 import policies.Policy
 import policies.PolicyName
 import policies.delegates.action.MPPAFPolicy
-import policies.jansen_tollisen.HeuristicGreedyPolicy
-import policies.rollout.RandomPolicy
+import policies.mcts.rollout.RandomPolicy
 
 class DevelopmentPolicy : Policy() {
 
@@ -17,20 +16,20 @@ class DevelopmentPolicy : Policy() {
     }
 
     override val name: PolicyName = PolicyName("DevelopmentPolicy")
-    override fun shutdown() = Unit
+    override fun finally() = Unit
     override fun policy(
         state: GameState,
         branch: Branch
     ): BranchSelection {
         val options = branch.getOptions(state)
-        return when (state.context) {
+        return when (branch.context) {
             BranchContext.CHOOSE_ACTION -> {
-                MPPAFPolicy().policy(state, branch)
+                MPPAFPolicy()(state, branch)
             }
             BranchContext.CHOOSE_TREASURE -> {
-                return options.firstOrNull { it is Card } ?: SpecialBranchSelection.SKIP
+                return options.firstOrNull { it is TreasureSelection } ?: SpecialBranchSelection.SKIP
             }
-            BranchContext.CHOOSE_BUYS -> {
+            BranchContext.CHOOSE_BUY -> {
 
                 val actionDensity = state.currentPlayer.allCards.sumOf { it.addActions } / state.currentPlayer.allCards.size.toDouble()
 
@@ -55,7 +54,7 @@ class DevelopmentPolicy : Policy() {
                     SpecialBranchSelection.SKIP
                 }
             }
-            else -> HeuristicGreedyPolicy.randomPolicy.policy(state, branch)
+            else -> randomPolicy(state, branch)
 
         }
     }

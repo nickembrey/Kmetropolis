@@ -12,7 +12,7 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
 }
-// TODO: cut back on unneeded dependencies
+
 dependencies {
     implementation("com.squareup.okio:okio:3.2.0")
     implementation("org.junit.jupiter:junit-jupiter:5.9.0")

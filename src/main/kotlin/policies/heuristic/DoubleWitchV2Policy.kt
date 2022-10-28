@@ -7,7 +7,7 @@
 //
 //class DoubleWitchV2Policy : Policy() {
 //    override val name = PolicyName("singleWitchPolicy")
-//    override fun shutdown() = Unit
+//    override fun finally() = Unit
 //    override fun policy(
 //        state: GameState): Card? {
 //        return when(state.gamePhase) {

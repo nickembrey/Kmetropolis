@@ -8,7 +8,7 @@ import policies.PolicyName
 
 class FirstChoicePolicy: Policy() { // TODO: rethink now that choices is a set
     override val name = PolicyName("firstChoicePolicy")
-    override fun shutdown() = Unit
+    override fun finally() = Unit
     override fun policy(
         state: GameState,
         branch: Branch

@@ -1,9 +1,10 @@
-package policies.mcts
+package policies.mcts.node
 
 import engine.GameState
+import engine.SpecialGameEvent
 import engine.branch.Branch
+import engine.branch.BranchContext
 import engine.player.PlayerNumber
-import ml.WeightSource
 import policies.Policy
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -15,8 +16,8 @@ class RootNode private constructor(
     override val rootPlayerNumber: PlayerNumber = playerNumber
 
     override var score: Double = 0.0
-    override val weight: Double = 1.0
 
+    // TODO: why can't this be a passed in parameter???
     override var children: MutableList<MCTSChildNode> = mutableListOf()
 
     override val depth: Int = 0
@@ -34,19 +35,30 @@ class RootNode private constructor(
             branch: Branch,
             actionPolicy: Policy,
             treasurePolicy: Policy,
-            weightSource: WeightSource? = null): RootNode {
+        ): RootNode {
+
+            // push the branch back on
+            state.eventStack.push(branch)
+
+            // simulate a redraw of the opponent's hand
+            state.opponentRedraw()
+
             return RootNode(state.currentPlayerNumber, state.turns)
                 .apply {
-                    children.addAll(
-                        MCTSChildNode.getChildren(
-                            state = state,
-                            parent = this,
-                            actionPolicy = actionPolicy,
-                            treasurePolicy = treasurePolicy,
-                            selections = branch.getOptions(state, aggregated = true),
-                            weightSource = weightSource
-                        )
-                    ) }
-        }
+
+                    val drawBranch = state.getNextBranch()
+
+                    val newChildren = MCTSChildNode.getChildren(
+                        state = state,
+                        branch = drawBranch,
+                        parent = this,
+                        actionPolicy = actionPolicy,
+                        treasurePolicy = treasurePolicy)
+
+                    children.addAll(newChildren)
+
+                    state.eventStack.push(drawBranch)
+
+                } }
     }
 }

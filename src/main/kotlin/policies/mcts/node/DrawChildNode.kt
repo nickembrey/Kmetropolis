@@ -1,21 +1,27 @@
-package policies.mcts
+package policies.mcts.node
 
-import engine.EventStack
 import engine.branch.BranchContext
 import engine.branch.BranchSelection
-import engine.operation.HistoryOperation
 import engine.player.PlayerNumber
+import java.util.concurrent.atomic.AtomicInteger
+
+// TODO: dosn't need history or event stack
 
 // a child node that represents a draw selection
 class DrawChildNode constructor( // TODO: somehow make this only available in MCTSChildNode?
     parent: MCTSTreeNode,
-    history: MutableList<HistoryOperation>,
-    eventStack: EventStack,
-    selections: List<BranchSelection>,
+    selection: BranchSelection,
     playerNumber: PlayerNumber,
     turns: Int,
     context: BranchContext,
-    override val weight: Double
-): MCTSChildNode(parent, history, eventStack, selections, playerNumber, turns, context) {
+    val probability: Double
+): MCTSChildNode(
+    parent = parent,
+    selection = selection,
+    playerNumber = playerNumber,
+    turns = turns,
+    context = context,
+    completedRollouts = AtomicInteger(1)
+) {
     override var score: Double = 0.0
 }

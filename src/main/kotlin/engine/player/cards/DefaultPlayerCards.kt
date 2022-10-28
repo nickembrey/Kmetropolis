@@ -1,13 +1,15 @@
 package engine.player.cards
 
+import engine.branch.ActionSelection
 import engine.branch.BranchSelection
 import engine.branch.SpecialBranchSelection
+import engine.branch.TreasureSelection
 import engine.card.Card
 import engine.card.CardType
 import engine.performance.util.CardCountMap
 import java.util.*
 
-class DefaultPlayerCards private constructor(
+class DefaultPlayerCards private constructor( // TODO: buys seem to be being added to deck
     private val board: Map<Card, Int>,
     private val initialDeck: Map<Card, Int>,
     override var discard: ArrayList<Card> = ArrayList(),
@@ -46,9 +48,9 @@ class DefaultPlayerCards private constructor(
         else -> (listOf(topdeckCard!!) + internalDeck.toList() + discard + hand + inPlay)
     }.let { ArrayList(it) }.apply { ensureCapacity(100) }
 
-    override val actionMenu: MutableCollection<BranchSelection> = ArrayList<BranchSelection>(hand.filter { it.type == CardType.ACTION }
+    override val actionMenu: MutableCollection<BranchSelection> = ArrayList<BranchSelection>(hand.filter { it.type == CardType.ACTION }.map { ActionSelection(card = it) }
         .plus(SpecialBranchSelection.SKIP)).apply { ensureCapacity(20) }
-    override val treasureMenu: MutableCollection<BranchSelection> = ArrayList<BranchSelection>(hand.filter { it.type == CardType.TREASURE }
+    override val treasureMenu: MutableCollection<BranchSelection> = ArrayList<BranchSelection>(hand.filter { it.type == CardType.TREASURE }.map { TreasureSelection(card = it) }
         .plus(SpecialBranchSelection.SKIP)).apply { ensureCapacity(20) }
 
     override fun shuffle() {
@@ -65,8 +67,8 @@ class DefaultPlayerCards private constructor(
 
     override fun draw(card: Card) {
         when(card.type) {
-            CardType.ACTION -> actionMenu += card
-            CardType.TREASURE -> treasureMenu += card
+            CardType.ACTION -> actionMenu += ActionSelection(card = card)
+            CardType.TREASURE -> treasureMenu += TreasureSelection(card = card)
             else -> {}
         }
         internalDeck[card] -= 1
@@ -75,8 +77,8 @@ class DefaultPlayerCards private constructor(
 
     override fun undoDraw(card: Card) {
         when(card.type) {
-            CardType.ACTION -> actionMenu -= card
-            CardType.TREASURE -> treasureMenu -= card
+            CardType.ACTION -> actionMenu -= ActionSelection(card = card)
+            CardType.TREASURE -> treasureMenu -= TreasureSelection(card = card)
             else -> {}
         }
         internalDeck[card] += 1
@@ -87,8 +89,8 @@ class DefaultPlayerCards private constructor(
 
     override fun play(card: Card) {
         when(card.type) {
-            CardType.ACTION -> actionMenu -= card
-            CardType.TREASURE -> treasureMenu -= card
+            CardType.ACTION -> actionMenu -= ActionSelection(card = card)
+            CardType.TREASURE -> treasureMenu -= TreasureSelection(card = card)
             else -> {}
         }
         hand -= card
@@ -107,8 +109,8 @@ class DefaultPlayerCards private constructor(
 
     override fun discard(card: Card) {
         when(card.type) {
-            CardType.ACTION -> actionMenu -= card
-            CardType.TREASURE -> treasureMenu -= card
+            CardType.ACTION -> actionMenu -= ActionSelection(card = card)
+            CardType.TREASURE -> treasureMenu -= TreasureSelection(card = card)
             else -> {}
         }
         hand -= card
@@ -121,8 +123,8 @@ class DefaultPlayerCards private constructor(
 
     override fun trash(card: Card) {
         when(card.type) {
-            CardType.ACTION -> actionMenu -= card
-            CardType.TREASURE -> treasureMenu -= card
+            CardType.ACTION -> actionMenu -= ActionSelection(card = card)
+            CardType.TREASURE -> treasureMenu -= TreasureSelection(card = card)
             else -> {}
         }
         allCards -= card

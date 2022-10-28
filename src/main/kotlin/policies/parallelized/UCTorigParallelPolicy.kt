@@ -21,7 +21,7 @@
 //    val threadPool: ExecutorService = Executors.newWorkStealingPool()
 //
 //    override val name = PolicyName("UCTorigParallelPolicy")
-//    override fun shutdown() = threadPool.shutdown()
+//    override fun finally() = threadPool.shutdown()
 //    override fun policy(
 //        state: GameState,
 //        choices: CardChoices

@@ -15,17 +15,18 @@ class JansenTollisenBoardProvinicial32Policy : Policy() {
 
     override val name = PolicyName("jansenTollisenBoardProv32Policy")
 
-    override fun endGame() {
-        buyMenu = mutableListOf(
-            Card.WITCH to 2,
-            Card.GOLD to 99,
-            Card.LABORATORY to 1,
-            Card.SILVER to 5,
-            Card.GARDENS to 8,
-            Card.SILVER to 99
-        )
-    }
-    override fun shutdown() = Unit
+    // TODO:
+//    override fun endGame() {
+//        buyMenu = mutableListOf(
+//            Card.WITCH to 2,
+//            Card.GOLD to 99,
+//            Card.LABORATORY to 1,
+//            Card.SILVER to 5,
+//            Card.GARDENS to 8,
+//            Card.SILVER to 99
+//        )
+//    }
+    override fun finally() = Unit
 
     val duchyCondition: (GameState) -> Boolean = { it.board[Card.PROVINCE]!! <= 4 }
     val estateCondition: (GameState) -> Boolean = { it.board[Card.PROVINCE]!! <= 0 }
@@ -47,10 +48,10 @@ class JansenTollisenBoardProvinicial32Policy : Policy() {
         val options = branch.getOptions(state)
 
         return when (state.context) {
-            BranchContext.DRAW -> drawPolicy.policy(state, branch)
-            BranchContext.CHOOSE_ACTION -> actionPolicy.policy(state, branch)
+            BranchContext.DRAW -> drawPolicy(state, branch)
+            BranchContext.CHOOSE_ACTION -> actionPolicy(state, branch)
             BranchContext.CHOOSE_TREASURE -> options.firstOrNull { it is Card } ?: options.first()
-            BranchContext.CHOOSE_BUYS -> {
+            BranchContext.CHOOSE_BUY -> {
                 val coins = state.currentPlayer.coins
                 if (coins >= 8) {
                     BuySelection(cards = listOf(Card.PROVINCE))

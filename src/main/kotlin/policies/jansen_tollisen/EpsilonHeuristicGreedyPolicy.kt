@@ -5,7 +5,7 @@ import engine.branch.Branch
 import engine.branch.BranchSelection
 import policies.Policy
 import policies.PolicyName
-import policies.rollout.RandomPolicy
+import policies.mcts.rollout.RandomPolicy
 
 class EpsilonHeuristicGreedyPolicy : Policy() {
 
@@ -15,7 +15,7 @@ class EpsilonHeuristicGreedyPolicy : Policy() {
     }
 
     override val name: PolicyName = PolicyName("EpsilonHeuristicGreedyPolicy")
-    override fun shutdown() = Unit
+    override fun finally() = Unit
     override fun policy(
         state: GameState,
         branch: Branch
@@ -27,9 +27,9 @@ class EpsilonHeuristicGreedyPolicy : Policy() {
         val random = (0..100).random()
 
         return if(random < epsilon) {
-            randomPolicy.policy(state, branch)
+            randomPolicy(state, branch)
         } else {
-            heuristicGreedyPolicy.policy(state, branch)
+            heuristicGreedyPolicy(state, branch)
         }
 
     }

@@ -8,6 +8,4 @@ enum class CardLocation {
     HAND,
     DISCARD,
     TOPDECK;
-
-// TODO: drawing is just a move from topdeck to hand, right?
 }

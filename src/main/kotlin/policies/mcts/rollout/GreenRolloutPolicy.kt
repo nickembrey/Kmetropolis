@@ -1,4 +1,4 @@
-package policies.rollout
+package policies.mcts.rollout
 
 import engine.*
 import engine.branch.*
@@ -16,7 +16,7 @@ class GreenRolloutPolicy : Policy() {
 
     private val cardMenu: ArrayList<Card> = ArrayList(20)
     override val name = PolicyName("greenRolloutPolicy")
-    override fun shutdown() = Unit
+    override fun finally() = Unit
     override fun policy(
         state: GameState,
         branch: Branch
@@ -24,8 +24,8 @@ class GreenRolloutPolicy : Policy() {
 
         val options = branch.getOptions(state)
 
-        return when(state.context) {
-            BranchContext.DRAW -> randomDrawPolicy.policy(state, branch)
+        return when(branch.context) {
+            BranchContext.DRAW -> randomDrawPolicy(state, branch)
             BranchContext.CHOOSE_ACTION -> {
                 cardMenu.clear()
                 // order by number of actions first, then by cost
@@ -33,22 +33,22 @@ class GreenRolloutPolicy : Policy() {
                     .filterIsInstanceTo(cardMenu)
                     .sortWith(compareByDescending<Card> { it.addActions }.thenByDescending { it.cost })
                 if(cardMenu.isNotEmpty()) {
-                    return cardMenu[0]
+                    return ActionSelection(card = cardMenu[0])
                 } else {
                     SpecialBranchSelection.SKIP
                 }
             }
             BranchContext.CHOOSE_TREASURE -> {
-                return options.firstOrNull { it is Card } ?: SpecialBranchSelection.SKIP
+                return options.firstOrNull { it is TreasureSelection } ?: SpecialBranchSelection.SKIP
             }
-            BranchContext.CHOOSE_BUYS -> {
+            BranchContext.CHOOSE_BUY -> {
                 return options
                     .filterIsInstance<BuySelection>()
                     .filter { !it.cards.contains(Card.CURSE) }
                     .sortedWith(compareByDescending { it.cards.sumOf { card -> card.vp } } )[0]
                     .takeIf { it.cards.isNotEmpty() } ?: SpecialBranchSelection.SKIP
             }
-            else -> randomPolicy.policy(state, branch)
+            else -> randomPolicy(state, branch)
         }
     }
 }

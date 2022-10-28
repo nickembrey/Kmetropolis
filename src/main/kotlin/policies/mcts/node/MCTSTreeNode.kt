@@ -1,8 +1,7 @@
-package policies.mcts
+package policies.mcts.node
 
-import engine.GameState
-import engine.branch.BranchSelection
 import engine.player.PlayerNumber
+import policies.mcts.node.MCTSChildNode
 import java.util.concurrent.atomic.AtomicInteger
 
 interface MCTSTreeNode {
@@ -11,7 +10,6 @@ interface MCTSTreeNode {
     val playerNumber: PlayerNumber // the player associated with the node for scoring
 
     var score: Double // the original score, e.g., number of wins or vp difference
-    val weight: Double // a weight that affects how often the node is selected, e.g., draw probability or ml result
 
     val children: List<MCTSChildNode>
 
@@ -22,6 +20,8 @@ interface MCTSTreeNode {
 
     // TODO: these can be vals, no?
     // TODO: rename, currentRollouts and completedRollouts
+
+    // TODO: why is currentRollouts negative at decision time?
     var currentRollouts: AtomicInteger // number of rollouts in process by threads
     var completedRollouts: AtomicInteger // number of rollouts completed
 }

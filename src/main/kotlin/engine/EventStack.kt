@@ -1,25 +1,14 @@
 package engine
 
-import engine.branch.BranchContext
-
-class EventStack private constructor(
-    private val list: ArrayList<GameEvent> // TODO: try linked list?
+class EventStack(
+    private val list: MutableList<GameEvent> = mutableListOf()
 ) {
 
-    constructor() : this(ArrayList<GameEvent>(500).also {
-        it.addAll(GamePhase.NOT_STARTED.events)
-    })
-
-    val size = list.size
-
-    fun push(element: GameEvent) {
-        list.add(element)
-    }
-    fun pushAll(elements: List<GameEvent>) = list.addAll(elements)
-    fun poll() = list.removeLastOrNull()
-    fun pop() = list.removeLast()
-    fun peek() = list.lastOrNull()
-    fun copy(): EventStack = EventStack(ArrayList(list).apply { ensureCapacity(500) })
+    fun push(element: GameEvent): Boolean = list.add(element)
+    fun pushAll(elements: List<GameEvent>): Boolean = list.addAll(elements)
+    fun pop(): GameEvent = list.removeLast()
+    fun peek(): GameEvent? = list.lastOrNull()
+    fun copy(): EventStack = EventStack(ArrayList(list))
 }
 
 

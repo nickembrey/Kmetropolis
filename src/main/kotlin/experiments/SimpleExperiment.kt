@@ -39,11 +39,12 @@ class SimpleExperiment( // TODO: should take in an experimentSettings object
             )
             logger.initGame(gameState)
             while(!gameState.gameOver) {
-                gameState.processNextBranch()
+                gameState.processEvent(gameState.getNextEvent()) // TODO: just let us use the eventStack directly?
             }
 
-            policy1.endGame()
-            policy2.endGame()
+            // TODO:
+//            policy1.endGame()
+//            policy2.endGame()
             logger.recordGame(gameState)
 
             gameLogs.add(gameState.branchSelectionHistory)
@@ -72,10 +73,6 @@ class SimpleExperiment( // TODO: should take in an experimentSettings object
                 vp = gameState.players[1].vp
             ))
         }
-
-        // TODO:
-        policy1.shutdown()
-        policy2.shutdown()
 
         return ExperimentResult( // TODO: versioning for players
             settings = ExperimentSettings(

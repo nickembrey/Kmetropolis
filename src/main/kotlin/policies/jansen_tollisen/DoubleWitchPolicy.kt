@@ -9,7 +9,7 @@
 //
 //class DoubleWitchPolicy : Policy() {
 //    override val name = PolicyName("singleWitchPolicy")
-//    override fun shutdown() = Unit
+//    override fun finally() = Unit
 //    override fun policy(
 //        state: GameState,
 //        choices: GameBranchOptions
