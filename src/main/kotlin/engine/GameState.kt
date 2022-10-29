@@ -367,7 +367,6 @@ class GameState private constructor (
                                 )
                             }
                             CardType.TREASURE -> {
-                                eventStack.push(Branch(BranchContext.CHOOSE_TREASURE)) // try to play another
                                 processPropertyOperation(ModifyPropertyOperation.MODIFY_COINS(operation.card.addCoins))
                                 processStateOperation(PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.HAND, CardLocation.IN_PLAY))
                             }
@@ -545,12 +544,16 @@ class GameState private constructor (
                 }
             }
             BranchContext.CHOOSE_ACTION, BranchContext.CHOOSE_TREASURE -> {
-                if(selection is ActionSelection) {
-                    processStackOperation(PlayerCardOperation.PLAY(selection.card))
-                } else if(selection is TreasureSelection) {
-                    processStackOperation(PlayerCardOperation.PLAY(selection.card))
-                } else {
-                    throw IllegalStateException()
+                when (selection) {
+                    is ActionSelection -> processStackOperation(PlayerCardOperation.PLAY(selection.card))
+                    is TreasureSelection -> {
+                        for(card in selection.cards) {
+                            processStackOperation(PlayerCardOperation.PLAY(card))
+                        }
+                    }
+                    else -> {
+                        throw IllegalStateException()
+                    }
                 }
             }
             BranchContext.CHOOSE_BUY -> {

@@ -2,7 +2,6 @@ package policies.mcts
 
 import engine.*
 import engine.branch.*
-import engine.card.Card
 import engine.card.CardType
 import engine.player.PlayerNumber
 import logger
@@ -13,7 +12,7 @@ import policies.PolicyName
 import policies.delegates.action.MPPAFPolicy
 import policies.mcts.node.*
 import policies.mcts.rollout.score.RolloutScoreFn
-import policies.utility.PlayAllTreasuresPolicy
+import policies.delegates.treasure.PlayAllTreasuresPolicy
 import java.lang.Integer.max
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -126,7 +125,7 @@ class MCTSPolicy(
                 //       regardless of the buy.
 
                 val completedRollouts = node.completedRollouts.get()
-                if(completedRollouts == 0) { // TODO: kinda hacky
+                if(completedRollouts == 0) {
 
                     node.children.addAll(
                         MCTSChildNode.getChildren(

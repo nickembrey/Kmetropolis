@@ -50,7 +50,7 @@ class DefaultPlayerCards private constructor( // TODO: buys seem to be being add
 
     override val actionMenu: MutableCollection<BranchSelection> = ArrayList<BranchSelection>(hand.filter { it.type == CardType.ACTION }.map { ActionSelection(card = it) }
         .plus(SpecialBranchSelection.SKIP)).apply { ensureCapacity(20) }
-    override val treasureMenu: MutableCollection<BranchSelection> = ArrayList<BranchSelection>(hand.filter { it.type == CardType.TREASURE }.map { TreasureSelection(card = it) }
+    override val treasureMenu: MutableCollection<BranchSelection> = ArrayList<BranchSelection>(hand.filter { it.type == CardType.TREASURE }.map { TreasureSelection(cards = listOf(it)) }
         .plus(SpecialBranchSelection.SKIP)).apply { ensureCapacity(20) }
 
     override fun shuffle() {
@@ -68,7 +68,7 @@ class DefaultPlayerCards private constructor( // TODO: buys seem to be being add
     override fun draw(card: Card) {
         when(card.type) {
             CardType.ACTION -> actionMenu += ActionSelection(card = card)
-            CardType.TREASURE -> treasureMenu += TreasureSelection(card = card)
+            CardType.TREASURE -> treasureMenu += TreasureSelection(cards = listOf(card))
             else -> {}
         }
         internalDeck[card] -= 1
@@ -78,7 +78,7 @@ class DefaultPlayerCards private constructor( // TODO: buys seem to be being add
     override fun undoDraw(card: Card) {
         when(card.type) {
             CardType.ACTION -> actionMenu -= ActionSelection(card = card)
-            CardType.TREASURE -> treasureMenu -= TreasureSelection(card = card)
+            CardType.TREASURE -> treasureMenu -= TreasureSelection(cards = listOf(card))
             else -> {}
         }
         internalDeck[card] += 1
@@ -90,7 +90,7 @@ class DefaultPlayerCards private constructor( // TODO: buys seem to be being add
     override fun play(card: Card) {
         when(card.type) {
             CardType.ACTION -> actionMenu -= ActionSelection(card = card)
-            CardType.TREASURE -> treasureMenu -= TreasureSelection(card = card)
+            CardType.TREASURE -> treasureMenu -= TreasureSelection(cards = listOf(card))
             else -> {}
         }
         hand -= card
@@ -110,7 +110,7 @@ class DefaultPlayerCards private constructor( // TODO: buys seem to be being add
     override fun discard(card: Card) {
         when(card.type) {
             CardType.ACTION -> actionMenu -= ActionSelection(card = card)
-            CardType.TREASURE -> treasureMenu -= TreasureSelection(card = card)
+            CardType.TREASURE -> treasureMenu -= TreasureSelection(cards = listOf(card))
             else -> {}
         }
         hand -= card
@@ -124,7 +124,7 @@ class DefaultPlayerCards private constructor( // TODO: buys seem to be being add
     override fun trash(card: Card) {
         when(card.type) {
             CardType.ACTION -> actionMenu -= ActionSelection(card = card)
-            CardType.TREASURE -> treasureMenu -= TreasureSelection(card = card)
+            CardType.TREASURE -> treasureMenu -= TreasureSelection(cards = listOf(card))
             else -> {}
         }
         allCards -= card

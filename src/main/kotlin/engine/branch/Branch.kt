@@ -4,6 +4,7 @@ import com.github.shiguruikai.combinatoricskt.Combinatorics
 import engine.GameEvent
 import engine.GameState
 import engine.card.CardLocation
+import engine.card.CardType
 import engine.operation.state.player.PlayerMoveCardsOperation
 
 data class Branch(val context: BranchContext, val selections: Int = 1): GameEvent {
@@ -79,7 +80,14 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                 state.remodelMenu.map { RemodelGainSelection(card = it) }.ifEmpty { skipList }
             }
             BranchContext.CHOOSE_ACTION -> state.currentPlayer.actionMenu
-            BranchContext.CHOOSE_TREASURE -> state.currentPlayer.treasureMenu
+            BranchContext.CHOOSE_TREASURE -> {
+                val treasures = state.currentPlayer.hand.filter { it.type == CardType.TREASURE }.toList()
+                if(treasures.isNotEmpty()) {
+                    listOf(TreasureSelection(cards = treasures)) // state.currentPlayer.treasureMenu
+                } else {
+                    skipList
+                }
+            }
             BranchContext.ANY, BranchContext.NONE -> throw IllegalStateException()
         }
     }

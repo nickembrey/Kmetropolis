@@ -1,8 +1,7 @@
-package policies.utility
+package policies.delegates.treasure
 
 import engine.*
 import engine.branch.*
-import engine.card.Card
 import engine.card.CardType
 import policies.Policy
 import policies.PolicyName
@@ -15,8 +14,11 @@ class PlayAllTreasuresPolicy: Policy() { // TODO: require that all major policie
         branch: Branch
     ): BranchSelection {
         return if (branch.context == BranchContext.CHOOSE_TREASURE) {
-            val options = branch.getOptions(state)
-            options.firstOrNull { it is TreasureSelection } ?: SpecialBranchSelection.SKIP
+            val treasures = state.currentPlayer.hand.filter { it.type == CardType.TREASURE }
+            when(treasures.size) {
+                0 -> SpecialBranchSelection.SKIP
+                else -> TreasureSelection(cards = treasures)
+            }
         } else {
             throw IllegalArgumentException()
         }

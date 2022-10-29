@@ -10,7 +10,7 @@ data class ActionSelection(val card: Card): BranchSelection {
         get() = BranchContext.CHOOSE_ACTION
 }
 
-data class TreasureSelection(val card: Card): BranchSelection {
+data class TreasureSelection(val cards: List<Card>): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.CHOOSE_TREASURE
 }
