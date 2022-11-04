@@ -20,6 +20,13 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
     ): Collection<BranchSelection> {
 
         return when (this.context) {
+            // TODO: make sure cellar is no longer in hand when this gets activated
+            BranchContext.CELLAR -> Combinatorics.combinations(
+                state.currentPlayer.hand,
+                state.currentPlayer.hand.size
+            ).map {
+                CellarSelection(it)
+            }.toList()
             BranchContext.DRAW -> {
                 if(aggregated) {
                     val deck = state.currentPlayer.deck

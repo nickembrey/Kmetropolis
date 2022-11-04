@@ -5,6 +5,11 @@ import engine.card.Card
 
 interface BranchSelection : ContextBearer
 
+data class CellarSelection(val cards: List<Card>): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.CELLAR
+}
+
 data class ActionSelection(val card: Card): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.CHOOSE_ACTION

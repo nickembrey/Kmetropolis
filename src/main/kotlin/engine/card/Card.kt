@@ -17,6 +17,9 @@ enum class Card(
     val effect: (GameState) -> Unit = {}
 ): Comparable<Card> {
 
+    CELLAR(type = CardType.ACTION, cost = 2, effect = {
+        it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.CELLAR, selections = 1))
+    }),
     CHAPEL(type = CardType.ACTION, cost = 2, effect = {
         it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.CHAPEL, selections = 4))
     }),

@@ -534,6 +534,22 @@ class GameState private constructor (
 
         when (selection.context) {
 
+            BranchContext.CELLAR -> {
+                if(selection is CellarSelection) {
+                    for(card in selection.cards) {
+                        processStateOperation(PlayerMoveCardOperation( // TODO: add some shortcuts
+                            card = card,
+                            from = CardLocation.HAND,
+                            to = CardLocation.DISCARD
+                        ))
+                    }
+                    eventStack.push(
+                        Branch(context = BranchContext.DRAW, selections = selection.cards.size))
+                } else {
+                    throw IllegalStateException()
+                }
+            }
+
             BranchContext.DRAW -> {
                 if(selection is DrawSelection) {
                     for(card in selection.cards) {

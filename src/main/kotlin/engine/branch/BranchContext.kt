@@ -8,6 +8,7 @@ enum class BranchContext: ContextBearer {
     CHOOSE_ACTION,
     CHOOSE_TREASURE,
     CHOOSE_BUY,
+    CELLAR,
     CHAPEL,
     WORKSHOP,
     MILITIA,
