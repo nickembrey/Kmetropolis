@@ -39,9 +39,11 @@ class MCTSPolicy(
     }
 
     // TODO: wrap these statistics up, or maybe use the logger
+    // TODO: shouldn't these be concurrency safe?
     private var maxDepth: Int = 0
     private var maxTurns: Int = 0
     private val contextMap: MutableMap<BranchContext, Int> = mutableMapOf()
+    private val graphPairs: MutableList<Pair<Int, Int>> = mutableListOf()
 
     private val drawPolicy = RandomDrawPolicy()
     private val actionPolicy = MPPAFPolicy() // TODO:
@@ -134,6 +136,9 @@ class MCTSPolicy(
                             parent = node,
                             actionPolicy = actionPolicy,
                             treasurePolicy = treasurePolicy))
+                    for(child in node.children) {
+                        graphPairs.add(Pair(node.id, child.id))
+                    } // TODO: hacky
                     backpropagate(node, BackpropProperty.IN_PROCESS)
 
                     rolloutResults.add(
@@ -149,6 +154,9 @@ class MCTSPolicy(
                                 parent = node,
                                 actionPolicy = actionPolicy,
                                 treasurePolicy = treasurePolicy))
+                        for(child in node.children) {
+                            graphPairs.add(Pair(node.id, child.id))
+                        } // TODO: hacky
                         simState.eventStack.push(nextBranch) // TODO: hacky
                     }
 
@@ -178,6 +186,10 @@ class MCTSPolicy(
             actionPolicy = actionPolicy,
             treasurePolicy = treasurePolicy,
         )
+
+        for(child in root!!.children) {
+            graphPairs.add(Pair(root!!.id, child.id))
+        } // TODO: hacky
 
         var queued = 0
         var processed = 0 // TODO: replace with simulations at root?
@@ -216,7 +228,8 @@ class MCTSPolicy(
             firstPick.selection
         }
 
-         return selection.also { logger.recordDecision(contextMap, maxDepth, maxTurns - state.turns) }
+         return selection
+             .also { logger.recordDecision(contextMap, maxDepth, maxTurns - state.turns) }
     }
 
     override fun policy(

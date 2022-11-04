@@ -16,6 +16,7 @@ import java.io.File
 class DominionLogger(config: EngineConfig) {
 
     private val logFile: File
+    private val treeFile: File
 
     private val playRecords: MutableMap<String, Int> = mutableMapOf()
 
@@ -24,6 +25,8 @@ class DominionLogger(config: EngineConfig) {
 
     private var decisionMaxTreeDepths: MutableList<Int> = mutableListOf()
     private var decisionMaxTreeTurns: MutableList<Int> = mutableListOf()
+
+    private var gameTree: List<Pair<Int, Int>> = listOf()
 
     private val contextMap: MutableMap<BranchContext, Long> = mutableMapOf()
 
@@ -36,6 +39,7 @@ class DominionLogger(config: EngineConfig) {
         }
 
         val base = "dominion-log"
+        val treeBase = "dominion-tree"
         var number = 0
         var candidateFile = File(config.logDirectory, base + number)
         while(candidateFile.exists()) {
@@ -43,6 +47,7 @@ class DominionLogger(config: EngineConfig) {
             candidateFile = File(config.logDirectory, base + number)
         }
         logFile = candidateFile
+        treeFile = File(config.logDirectory + "/tree", "$treeBase$number.dot")
     }
 
     private val timer: SimulationTimer = SimulationTimer()
@@ -55,6 +60,7 @@ class DominionLogger(config: EngineConfig) {
     private var totalGames = 0
 
     private var log = StringBuilder()
+    private var treeLog = StringBuilder()
 
     fun append(str: String) {
         log.append(str)
@@ -67,6 +73,12 @@ class DominionLogger(config: EngineConfig) {
     private fun write() {
         logFile.printWriter().use {
             it.print(log)
+        }
+    }
+
+    private fun writeTree() {
+        treeFile.printWriter().use {
+            it.print(treeLog)
         }
     }
 
@@ -109,6 +121,17 @@ class DominionLogger(config: EngineConfig) {
         gamePlayouts = 0
         gameDecisions = 0
         gameWeightsUsed = 0
+    }
+
+    fun logTree(tree: List<Pair<Int, Int>>) {
+        treeLog.appendLine("digraph {")
+        tree.forEach {
+            treeLog.appendLine(
+                "${it.first} -> ${it.second};"
+            )
+        }
+        treeLog.appendLine("}")
+        writeTree()
     }
 
     fun logExperimentResult(experimentResult: ExperimentResult) {

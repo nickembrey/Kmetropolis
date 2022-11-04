@@ -15,7 +15,8 @@ class EndGameNode constructor(
     selection: BranchSelection,
     playerNumber: PlayerNumber,
     turns: Int,
-    context: BranchContext
-): MCTSChildNode(parent, selection, playerNumber, turns, context, AtomicInteger(0)) {
+    context: BranchContext,
+    id: Int
+): MCTSChildNode(parent, selection, playerNumber, turns, context, AtomicInteger(0), id) {
     override var score: Double = 0.0
 }

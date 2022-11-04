@@ -13,6 +13,8 @@ class RootNode private constructor(
     override val turns: Int
 ): MCTSTreeNode {
 
+    override val id: Int = 0
+
     override val rootPlayerNumber: PlayerNumber = playerNumber
 
     override var score: Double = 0.0

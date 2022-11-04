@@ -14,14 +14,16 @@ class DrawChildNode constructor( // TODO: somehow make this only available in MC
     playerNumber: PlayerNumber,
     turns: Int,
     context: BranchContext,
-    val probability: Double
+    val probability: Double,
+    id: Int
 ): MCTSChildNode(
     parent = parent,
     selection = selection,
     playerNumber = playerNumber,
     turns = turns,
     context = context,
-    completedRollouts = AtomicInteger(1)
+    completedRollouts = AtomicInteger(1),
+    id = id
 ) {
     override var score: Double = 0.0
 }

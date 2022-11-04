@@ -15,7 +15,8 @@ abstract class MCTSChildNode protected constructor(
     override val playerNumber: PlayerNumber,
     override val turns: Int,
     val context: BranchContext,
-    override var completedRollouts: AtomicInteger
+    override var completedRollouts: AtomicInteger,
+    override val id: Int
 ): MCTSTreeNode {
 
     override val rootPlayerNumber = parent.rootPlayerNumber // TODO: space or time?
@@ -30,6 +31,8 @@ abstract class MCTSChildNode protected constructor(
     override var currentRollouts: AtomicInteger = AtomicInteger(0)
 
     companion object {
+
+        val nextId: AtomicInteger = AtomicInteger(1)
 
         fun getChildren( // TODO: shouldn't this be a method of MCTSTreeNode?
             state: GameState,
@@ -50,7 +53,7 @@ abstract class MCTSChildNode protected constructor(
             return when(val context = branch.context) {
                 BranchContext.DRAW -> { // TODO: unify with below
 
-                    selections.map {
+                    selections.mapIndexed { index, it ->
 
                         if(it !is DrawSelection) { // TODO: hacky
                             throw IllegalStateException()
@@ -62,7 +65,8 @@ abstract class MCTSChildNode protected constructor(
                             playerNumber = state.currentPlayer.playerNumber,
                             turns = state.turns,
                             context = context,
-                            probability = it.probability
+                            probability = it.probability,
+                            id = nextId.getAndIncrement()
                         )
                     }
                 }
@@ -74,20 +78,22 @@ abstract class MCTSChildNode protected constructor(
                             selection = SpecialBranchSelection.GAME_OVER,
                             playerNumber = state.currentPlayer.playerNumber,
                             turns = state.turns,
-                            context = context
+                            context = context,
+                            id = nextId.getAndIncrement()
                         )
                     )
                 }
                 else -> {
 
-                    selections.mapIndexed { index, it ->
+                    selections.map {
 
                         DecisionChildNode( // TODO: not necessarily Decision
                             parent = parent,
                             selection = it,
                             playerNumber = state.currentPlayer.playerNumber,
                             turns = state.turns,
-                            context = context
+                            context = context,
+                            id = nextId.getAndIncrement()
                         )
                     }
                 }

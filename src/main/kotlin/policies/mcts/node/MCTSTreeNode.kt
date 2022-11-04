@@ -6,6 +6,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 interface MCTSTreeNode {
 
+    val id: Int
+
     val rootPlayerNumber: PlayerNumber
     val playerNumber: PlayerNumber // the player associated with the node for scoring
 
