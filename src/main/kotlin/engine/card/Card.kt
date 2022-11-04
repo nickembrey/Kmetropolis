@@ -23,6 +23,7 @@ enum class Card(
     CHAPEL(type = CardType.ACTION, cost = 2, effect = {
         it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.CHAPEL, selections = 4))
     }),
+    MERCHANT(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 1),
     VILLAGE(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 2),
     WORKSHOP(type = CardType.ACTION, cost = 3, effect = {
         it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.WORKSHOP))
@@ -59,7 +60,11 @@ enum class Card(
     WOODCUTTER(type = CardType.ACTION, cost = 3, addCoins = 2, addBuys = 1),
 
     COPPER(type = CardType.TREASURE, cost = 0, addCoins = 1),
-    SILVER(type = CardType.TREASURE, cost = 3, addCoins = 2),
+    SILVER(type = CardType.TREASURE, cost = 3, addCoins = 2, effect = {
+        it.currentPlayer.coins += it.currentPlayer.inPlay
+            .filter { card -> card == Card.MERCHANT }
+            .size
+    }),
     GOLD(type = CardType.TREASURE, cost = 6, addCoins = 3),
 
     GARDENS(type = CardType.VICTORY, cost = 4),

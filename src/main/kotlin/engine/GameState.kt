@@ -343,7 +343,7 @@ class GameState private constructor (
                     PlayerCardOperationType.PLAY -> {
 
                         when(operation.card.type) {
-                            CardType.ACTION -> {
+                            CardType.ACTION, CardType.TREASURE -> {
                                 operation.card.effect(this)
                                 if(operation.card.addCards > 0) {
                                     eventStack.push(
@@ -365,10 +365,6 @@ class GameState private constructor (
                                         from = CardLocation.HAND,
                                         to = CardLocation.IN_PLAY)
                                 )
-                            }
-                            CardType.TREASURE -> {
-                                processPropertyOperation(ModifyPropertyOperation.MODIFY_COINS(operation.card.addCoins))
-                                processStateOperation(PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.HAND, CardLocation.IN_PLAY))
                             }
                             else -> throw IllegalStateException()
                         }
