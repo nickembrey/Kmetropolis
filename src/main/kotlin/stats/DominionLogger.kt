@@ -134,7 +134,10 @@ class DominionLogger(config: EngineConfig) {
         writeTree()
     }
 
-    fun logExperimentResult(experimentResult: ExperimentResult) {
+    fun logExperimentResult(
+        experimentResult: ExperimentResult,
+        logFormat: LogFormat
+    ) {
 
         for(i in experimentResult.gameLogs.indices) {
             appendLine("------------------")
