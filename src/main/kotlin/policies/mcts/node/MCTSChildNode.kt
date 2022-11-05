@@ -47,7 +47,7 @@ abstract class MCTSChildNode protected constructor(
             val selections = when (branch.context) {
                 BranchContext.CHOOSE_ACTION -> listOf(actionPolicy(state, branch))
                 BranchContext.CHOOSE_TREASURE -> listOf(treasurePolicy(state, branch))
-                else -> branch.getOptions(state, aggregated = true)
+                else -> branch.getOptions(state)
             }
 
             return when(val context = branch.context) {

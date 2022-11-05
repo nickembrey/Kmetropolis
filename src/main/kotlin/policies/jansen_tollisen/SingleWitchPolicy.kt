@@ -19,6 +19,7 @@ class SingleWitchPolicy : Policy() { // TODO: abstract witch policy
         branch: Branch
     ): BranchSelection {
 
+
         val options = branch.getOptions(state)
 
         return when(branch.context) {

@@ -15,8 +15,7 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
     }
 
     fun getOptions(
-        state: GameState,
-        aggregated: Boolean = false
+        state: GameState
     ): Collection<BranchSelection> {
 
         return when (this.context) {
@@ -28,45 +27,24 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                 CellarSelection(it)
             }.toList()
             BranchContext.DRAW -> {
-                if(aggregated) {
-                    val deck = state.currentPlayer.deck
-                    when(deck.size) {
-                        0 -> {
-                            // TODO:
-                            if(state.currentPlayer.discard.isNotEmpty()) {
-                                state.operationHistory.add(
-                                    PlayerMoveCardsOperation(
-                                        cards = state.currentPlayer.discard.toMutableList(),
-                                        from = CardLocation.DISCARD,
-                                        to = CardLocation.DECK
-                                    )
-                                )
-                                state.currentPlayer.shuffle()
-                                return getOptions(state, true)
-                            } else {
-                                skipList
-                            }
-                        }
-                        selections -> listOf(DrawSelection(cards = deck, probability = 1.0))
-                        in 1 until selections -> state.currentPlayer// TODO:
-                            .getDiscardCombinations(selections - deck.size)
-                            .map { DrawSelection(cards = deck.plus(it.key), probability = it.value ) }
-                        else -> {
-                            state.currentPlayer.getDrawCombinations(selections)
-                                .map { DrawSelection(cards = it.key, probability = it.value )}
+                val deck = state.currentPlayer.deck
+                when(deck.size) {
+                    0 -> {
+                        // TODO:
+                        if(state.currentPlayer.discard.isNotEmpty()) {
+                            state.currentPlayer.shuffle()
+                            return getOptions(state)
+                        } else {
+                            skipList
                         }
                     }
-                } else {
-                    // TODO: always aggregated, since I don't think this adds anything
-                    when(state.currentPlayer.deck.size) {
-                        0 -> skipList
-                        else -> state.currentPlayer.getDrawProbabilities().map {
-                            DrawSelection(cards = listOf(it.key), probability = it.value)
-                        }.also {
-                            if(it[0].cards.size != 1) {
-                                throw IllegalStateException()
-                            }
-                        }
+                    selections -> listOf(DrawSelection(cards = deck, probability = 1.0))
+                    in 1 until selections -> state.currentPlayer// TODO:
+                        .getDiscardCombinations(selections - deck.size)
+                        .map { DrawSelection(cards = deck.plus(it.key), probability = it.value ) }
+                    else -> {
+                        state.currentPlayer.getDrawCombinations(selections)
+                            .map { DrawSelection(cards = it.key, probability = it.value )}
                     }
                 }
             } // TODO: need to shuffle them all, not just buy?

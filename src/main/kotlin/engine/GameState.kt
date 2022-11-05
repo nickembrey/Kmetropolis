@@ -3,11 +3,9 @@ package engine
 import engine.branch.*
 import engine.card.*
 import engine.operation.GameOperation
-import engine.operation.HistoryOperation
 import engine.operation.PlayerOperation
 import engine.operation.state.player.PlayerSimpleOperation
 import engine.operation.Operation
-import engine.operation.Operation.Companion.ERASE_HISTORY
 import engine.operation.property.PropertyOperation
 import engine.operation.stack.*
 import engine.operation.state.game.GameSimpleOperation
@@ -46,7 +44,6 @@ class GameState private constructor (
     val maxTurns: Int,
     var emptyPiles: Int,
     val branchSelectionHistory: MutableList<Triple<PolicyName, BranchContext, BranchSelection>>, // TODO: special data class for this
-    val operationHistory: ArrayList<HistoryOperation>,
     private val log: Boolean
 ) {
 
@@ -72,7 +69,6 @@ class GameState private constructor (
                 maxTurns = maxTurns,
                 emptyPiles = 0,
                 branchSelectionHistory = ArrayList(500), // TODO: audit capacities
-                operationHistory = ArrayList(1200),
                 log = log
             )
     }
@@ -98,11 +94,6 @@ class GameState private constructor (
             emptyPiles = emptyPiles,
             branchSelectionHistory = if(keepHistory) {
                 ArrayList(branchSelectionHistory).apply { ensureCapacity(1200) }
-            } else {
-                ArrayList(1200) // TODO: don't need any capacity if not using...?
-            },
-            operationHistory = if(keepHistory) {
-                ArrayList(operationHistory).apply { ensureCapacity(1200) }
             } else {
                 ArrayList(1200) // TODO: don't need any capacity if not using...?
             },
@@ -189,13 +180,6 @@ class GameState private constructor (
             CardLocation.DECK -> when(to) {
                 CardLocation.HAND -> {
                     if(currentPlayer.deckSize == 0) {
-                        operationHistory.add(
-                            PlayerMoveCardsOperation(
-                                cards = currentPlayer.discard.toMutableList(),
-                                from = CardLocation.DISCARD,
-                                to = CardLocation.DECK
-                            )
-                        )
                         currentPlayer.shuffle()
                     }
                     currentPlayer.draw(card)
@@ -242,23 +226,14 @@ class GameState private constructor (
                 PlayerProperty.BUYS -> {
                     val old = currentPlayer.buys
                     currentPlayer.buys += operation.modification
-                    operationHistory.add(SetFromPropertyOperation.SET_BUYS(
-                        old, currentPlayer.buys
-                    ))
                 }
                 PlayerProperty.COINS -> {
                     val old = currentPlayer.coins
                     currentPlayer.coins += operation.modification
-                    operationHistory.add(SetFromPropertyOperation.SET_COINS(
-                        old, currentPlayer.coins
-                    ))
                 }
                 PlayerProperty.BASE_VP -> {
                     val old = currentPlayer.baseVp
                     currentPlayer.baseVp += operation.modification
-                    operationHistory.add(SetFromPropertyOperation.SET_VP(
-                        old, currentPlayer.baseVp
-                    ))
                 }
                 else -> throw NotImplementedError()
             }.also {
@@ -289,36 +264,23 @@ class GameState private constructor (
                     else -> throw IllegalArgumentException()
                 }
 
-                operationHistory.add(operation)
             } // TODO: need to put SetProperty under StateOperations
             is SetToPropertyOperation<*> -> when(operation.target) {
                 PlayerProperty.BUYS -> {
                     val old = currentPlayer.buys
                     currentPlayer.buys = operation.to as Int // TODO
-                    operationHistory.add(SetFromPropertyOperation.SET_BUYS(
-                        old, currentPlayer.buys
-                    ))
                 }
                 PlayerProperty.COINS -> {
                     val old = currentPlayer.coins
                     currentPlayer.coins = operation.to as Int // TODO
-                    operationHistory.add(SetFromPropertyOperation.SET_COINS(
-                        old, currentPlayer.coins
-                    ))
                 }
                 PlayerProperty.BASE_VP -> {
                     val old = currentPlayer.baseVp
                     currentPlayer.baseVp = operation.to as Int // TODO
-                    operationHistory.add(SetFromPropertyOperation.SET_VP(
-                        old, currentPlayer.baseVp
-                    ))
                 }
                 PlayerProperty.REMODEL_CARD -> {
                     val old = currentPlayer.remodelCard
                     currentPlayer.remodelCard = operation.to as Card // TODO
-                    operationHistory.add(SetFromPropertyOperation.SET_REMODEL_CARD(
-                        old, currentPlayer.remodelCard
-                    ))
                 }
                 else -> throw NotImplementedError()
             }
@@ -503,28 +465,15 @@ class GameState private constructor (
         when (operation) {
             is PropertyOperation -> processPropertyOperation(operation)
             is StackOperation -> processStackOperation(operation)
-            is StateOperation -> processStateOperation(operation).also {
-                operationHistory.add(operation)
-            }
-            else -> {
-                if(operation == ERASE_HISTORY) { // TODO: hack for MCTS! need better design
-                    operationHistory.clear()
-                } else {
-                    throw NotImplementedError()
-                }
-            }
+            is StateOperation -> processStateOperation(operation)
+            else -> throw NotImplementedError()
         }
     }
 
     fun processBranchSelection(
         context: BranchContext,
         selection: BranchSelection
-    ) { // TODO: just do the thing, don't push operation onto stack -- then log the operation into the history
-
-//        // TODO: only at root
-//        if(selection != SpecialBranchSelection.SKIP) {
-//
-//        }
+    ) {
 
         branchSelectionHistory.add(Triple(currentPlayer.policy.name, context, selection))
 
@@ -631,12 +580,6 @@ class GameState private constructor (
 
             // shuffle if there aren't any cards on the deck and we need to draw
             if(event.context == BranchContext.DRAW && currentPlayer.deckSize == 0) {
-                operationHistory.add(
-                    PlayerMoveCardsOperation(
-                        cards = currentPlayer.discard.toMutableList(),
-                        to = CardLocation.DECK,
-                        from = CardLocation.DISCARD
-                    ))
                 currentPlayer.shuffle()
             }
 

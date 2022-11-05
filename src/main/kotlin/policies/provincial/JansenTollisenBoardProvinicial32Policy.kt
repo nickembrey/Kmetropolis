@@ -47,10 +47,10 @@ class JansenTollisenBoardProvinicial32Policy : Policy() {
 
         val options = branch.getOptions(state)
 
-        return when (state.context) {
+        return when (branch.context) {
             BranchContext.DRAW -> drawPolicy(state, branch)
             BranchContext.CHOOSE_ACTION -> actionPolicy(state, branch)
-            BranchContext.CHOOSE_TREASURE -> options.firstOrNull { it is Card } ?: options.first()
+            BranchContext.CHOOSE_TREASURE -> options.firstOrNull { it is TreasureSelection && it.cards.isNotEmpty() } ?: options.first()
             BranchContext.CHOOSE_BUY -> {
                 val coins = state.currentPlayer.coins
                 if (coins >= 8) {

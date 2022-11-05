@@ -23,7 +23,7 @@ class RandomDrawPolicy : Policy() {
         if (branch.selections == 1) {
             return DrawSelection(cards = listOf(state.currentPlayer.randomFromDeck()), probability = 1.0)
         } else {
-            val options = branch.getOptions(state, aggregated = true) as List<DrawSelection> // TODO:
+            val options = branch.getOptions(state) as List<DrawSelection> // TODO:
             var random = Random.nextDouble(0.0, options.sumOf { it.probability })
             for (option in options) {
                 random -= option.probability
