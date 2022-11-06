@@ -45,7 +45,7 @@ data class RemodelGainSelection(val card: Card): BranchSelection {
         get() = BranchContext.REMODEL_GAIN
 }
 
-data class DrawSelection(val cards: List<Card>, val probability: Double): BranchSelection {
+data class DrawSelection(val cards: List<Card>): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.DRAW
 }

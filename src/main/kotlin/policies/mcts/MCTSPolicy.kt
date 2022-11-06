@@ -118,7 +118,7 @@ class MCTSPolicy(
                 val branch = simState.getNextBranch()
                 if(branch.context != node.context || simState.currentPlayerNumber != node.playerNumber) {
                     throw IllegalStateException()
-                } else {
+                } else { // TODO: somehow,
                     // do the action that the node describes
                     simState.processBranchSelection(node.context, node.selection)
                 }

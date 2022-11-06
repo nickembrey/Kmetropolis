@@ -11,7 +11,7 @@ import java.util.*
 
 class DefaultPlayerCards private constructor( // TODO: buys seem to be being added to deck
     private val board: Map<Card, Int>,
-    private val initialDeck: Map<Card, Int>,
+    override var deck: ArrayList<Card>,
     override var discard: ArrayList<Card> = ArrayList(),
     override var hand: ArrayList<Card> = ArrayList(),
     override var inPlay: ArrayList<Card> = ArrayList(),
@@ -29,23 +29,19 @@ class DefaultPlayerCards private constructor( // TODO: buys seem to be being add
     companion object {
         fun new(
             board: Map<Card, Int>,
-            initialDeck: Map<Card, Int>
-        ) = DefaultPlayerCards(board, initialDeck)
+            deck: ArrayList<Card>
+        ) = DefaultPlayerCards(board, deck)
     }
 
-    private val internalDeck: CardCountMap = CardCountMap(board, initialDeck)
-    override val deck: List<Card>
-        get() = internalDeck.toList()
-
     override val deckSize: Int
-        get() = internalDeck.size
+        get() = deck.size
 
     override val cardCount: Int
         get() = allCards.size
 
     override val allCards: ArrayList<Card> = when(topdeckCard) {
-        null -> (internalDeck.toList() + discard + hand + inPlay)
-        else -> (listOf(topdeckCard!!) + internalDeck.toList() + discard + hand + inPlay)
+        null -> (deck + discard + hand + inPlay)
+        else -> (listOf(topdeckCard!!) + deck + discard + hand + inPlay)
     }.let { ArrayList(it) }.apply { ensureCapacity(100) }
 
     override val actionMenu: MutableCollection<BranchSelection> = ArrayList<BranchSelection>(hand.filter { it.type == CardType.ACTION }.map { ActionSelection(card = it) }
@@ -54,15 +50,13 @@ class DefaultPlayerCards private constructor( // TODO: buys seem to be being add
         .plus(SpecialBranchSelection.SKIP)).apply { ensureCapacity(20) }
 
     override fun shuffle() {
-        for(card in discard) {
-            internalDeck[card] += 1
-        }
+        deck += discard
         discard.clear()
     }
 
     override fun shuffle(card: Card) {
         discard.remove(card)
-        internalDeck[card] += 1
+        deck += card
     }
 
     override fun draw(card: Card) {
@@ -71,7 +65,7 @@ class DefaultPlayerCards private constructor( // TODO: buys seem to be being add
             CardType.TREASURE -> treasureMenu += TreasureSelection(cards = listOf(card))
             else -> {}
         }
-        internalDeck[card] -= 1
+        deck -= card
         hand += card
     }
 
@@ -81,11 +75,9 @@ class DefaultPlayerCards private constructor( // TODO: buys seem to be being add
             CardType.TREASURE -> treasureMenu -= TreasureSelection(cards = listOf(card))
             else -> {}
         }
-        internalDeck[card] += 1
+        deck += card
         hand -= card
     }
-
-    override fun randomFromDeck(): Card = internalDeck.random()
 
     override fun play(card: Card) {
         when(card.type) {
@@ -132,27 +124,6 @@ class DefaultPlayerCards private constructor( // TODO: buys seem to be being add
         trash += card
     }
 
-    override fun getDrawPossibilities(): List<Card> {
-        return internalDeck.possibilities
-    }
-
-    override fun getDrawCombinations(choose: Int): Map<List<Card>, Double> {
-        return internalDeck.getCombinations(choose)
-    }
-
-    override fun getDiscardCombinations(choose: Int): Map<List<Card>, Double> {
-        val map = EnumMap(board.keys.associateWith { 0 }.toMutableMap())
-        discard.forEach {
-            map.merge(it, 1, Int::plus)
-        }
-        return CardCountMap(
-            board, map
-        ).getCombinations(choose)
-    }
-
-    override fun getDrawProbabilities(): Map<Card, Double> =
-        internalDeck.probabilities
-
     override fun toCardFrequencyMap(board: Map<Card, Int>): Map<Card, Int> {
         val map = EnumMap(board.keys.associateWith { 0 }.toMutableMap())
         allCards.forEach {
@@ -164,7 +135,7 @@ class DefaultPlayerCards private constructor( // TODO: buys seem to be being add
     override fun copyCards(): DefaultPlayerCards =
         DefaultPlayerCards(
             board = board.toMap(),
-            initialDeck = internalDeck.toMap(),
+            deck = ArrayList(deck),
             discard = ArrayList(discard),
             hand = ArrayList(hand),
             inPlay = ArrayList(inPlay),

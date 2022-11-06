@@ -18,18 +18,8 @@ class RandomDrawPolicy : Policy() {
     ): BranchSelection {
         if (branch.context != BranchContext.DRAW) {
             throw IllegalStateException()
-        }
-
-        if (branch.selections == 1) {
-            return DrawSelection(cards = listOf(state.currentPlayer.randomFromDeck()), probability = 1.0)
         } else {
-            val options = branch.getOptions(state) as List<DrawSelection> // TODO:
-            var random = Random.nextDouble(0.0, options.sumOf { it.probability })
-            for (option in options) {
-                random -= option.probability
-                if (random <= 0.0) return option
-            }
+            return branch.getOptions(state).single()
         }
-        throw IllegalStateException() // TODO: hacky
     }
 }

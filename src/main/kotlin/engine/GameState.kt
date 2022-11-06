@@ -178,7 +178,7 @@ class GameState private constructor (
 
         when(from) {
             CardLocation.DECK -> when(to) {
-                CardLocation.HAND -> {
+                CardLocation.HAND -> { // TODO: really should not have to check this here
                     if(currentPlayer.deckSize == 0) {
                         currentPlayer.shuffle()
                     }
@@ -497,9 +497,11 @@ class GameState private constructor (
 
             BranchContext.DRAW -> {
                 if(selection is DrawSelection) {
-                    for(card in selection.cards) {
-                        processOperation(PlayerCardOperation.DRAW(card))
-                    }
+                    processOperation(PlayerMoveCardsOperation(
+                        cards = selection.cards,
+                        from = CardLocation.DECK,
+                        to = CardLocation.HAND
+                    ))
                 } else {
                     throw IllegalStateException()
                 }

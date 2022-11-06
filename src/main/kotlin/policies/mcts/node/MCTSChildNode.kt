@@ -53,7 +53,7 @@ abstract class MCTSChildNode protected constructor(
             return when(val context = branch.context) {
                 BranchContext.DRAW -> { // TODO: unify with below
 
-                    selections.mapIndexed { index, it ->
+                    selections.map {
 
                         if(it !is DrawSelection) { // TODO: hacky
                             throw IllegalStateException()
@@ -65,7 +65,6 @@ abstract class MCTSChildNode protected constructor(
                             playerNumber = state.currentPlayer.playerNumber,
                             turns = state.turns,
                             context = context,
-                            probability = it.probability,
                             id = nextId.getAndIncrement()
                         )
                     }

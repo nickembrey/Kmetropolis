@@ -14,7 +14,6 @@ class DrawChildNode constructor( // TODO: somehow make this only available in MC
     playerNumber: PlayerNumber,
     turns: Int,
     context: BranchContext,
-    val probability: Double,
     id: Int
 ): MCTSChildNode(
     parent = parent,

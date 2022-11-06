@@ -6,7 +6,9 @@ import engine.GameState
 import engine.card.CardLocation
 import engine.card.CardType
 import engine.operation.state.player.PlayerMoveCardsOperation
+import org.nield.kotlinstatistics.random
 
+// TODO: "selections" is a confusing name
 data class Branch(val context: BranchContext, val selections: Int = 1): GameEvent {
 
     companion object {
@@ -14,40 +16,17 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
         val skipList = listOf(SpecialBranchSelection.SKIP)
     }
 
-    fun getOptions(
-        state: GameState
-    ): Collection<BranchSelection> {
+    fun getOptions(state: GameState): Collection<BranchSelection> {
 
         return when (this.context) {
             // TODO: make sure cellar is no longer in hand when this gets activated
             BranchContext.CELLAR -> Combinatorics.combinations(
                 state.currentPlayer.hand,
                 state.currentPlayer.hand.size
-            ).map {
-                CellarSelection(it)
-            }.toList()
-            BranchContext.DRAW -> {
-                val deck = state.currentPlayer.deck
-                when(deck.size) {
-                    0 -> {
-                        // TODO:
-                        if(state.currentPlayer.discard.isNotEmpty()) {
-                            state.currentPlayer.shuffle()
-                            return getOptions(state)
-                        } else {
-                            skipList
-                        }
-                    }
-                    selections -> listOf(DrawSelection(cards = deck, probability = 1.0))
-                    in 1 until selections -> state.currentPlayer// TODO:
-                        .getDiscardCombinations(selections - deck.size)
-                        .map { DrawSelection(cards = deck.plus(it.key), probability = it.value ) }
-                    else -> {
-                        state.currentPlayer.getDrawCombinations(selections)
-                            .map { DrawSelection(cards = it.key, probability = it.value )}
-                    }
-                }
-            } // TODO: need to shuffle them all, not just buy?
+            ).map { CellarSelection(it) }.toList()
+            BranchContext.DRAW -> listOf(
+                DrawSelection(cards = state.currentPlayer.deck.random(selections))
+            )
             // TODO: make sure skiplist exists where applicable
             BranchContext.CHOOSE_BUY -> return Combinatorics.combinationsWithRepetition(state.buyMenu, state.currentPlayer.buys)
                 .map { BuySelection(cards = it) }

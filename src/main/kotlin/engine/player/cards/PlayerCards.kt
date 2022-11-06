@@ -8,8 +8,12 @@ interface PlayerCards {
     companion object {
         fun new(
             board: Map<Card, Int>,
-            initialDeck: Map<Card, Int> = mapOf(Card.COPPER to 7, Card.ESTATE to 3)
-        ): PlayerCards = DefaultPlayerCards.new(board, initialDeck)
+            deck: ArrayList<Card> = ArrayList(
+                listOf(Card.ESTATE, Card.ESTATE, Card.ESTATE,
+                    Card.COPPER, Card.COPPER, Card.COPPER, Card.COPPER,
+                    Card.COPPER, Card.COPPER, Card.COPPER)
+            )
+        ): PlayerCards = DefaultPlayerCards.new(board, deck)
     }
 
     val deckSize: Int
@@ -33,7 +37,6 @@ interface PlayerCards {
     fun shuffle(card: Card)
     fun draw(card: Card)
     fun undoDraw(card: Card)
-    fun randomFromDeck(): Card
     fun play(card: Card)
     fun gain(card: Card)
     fun cleanup(card: Card)
@@ -41,13 +44,6 @@ interface PlayerCards {
     fun topdeck(card: Card)
     fun trash(card: Card)
 
-    fun getDrawPossibilities(): List<Card>
-
-    fun getDrawCombinations(choose: Int): Map<List<Card>, Double>
-
-    fun getDiscardCombinations(choose: Int): Map<List<Card>, Double>
-
-    fun getDrawProbabilities(): Map<Card, Double>
     fun toCardFrequencyMap(board: Map<Card, Int>): Map<Card, Int>
 
     fun copyCards(): PlayerCards
