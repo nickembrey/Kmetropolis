@@ -1,12 +1,8 @@
 package engine.operation.state.game
 
-import engine.branch.BranchContext
 import engine.card.Card
 import engine.operation.GameOperation
 import engine.operation.HistoryOperation
-import engine.operation.PlayerOperation
-import engine.operation.stack.StackOperation
-import engine.operation.stack.player.PlayerCardOperationType
 import engine.operation.state.StateOperation
 
 data class GameCardOperation(
@@ -27,14 +23,6 @@ data class GameCardOperation(
     }
 
     companion object {
-        // TODO: check performance on lambda vs regular fn
-        // TODO: use these
-        val INCREMENT_SUPPLY: (Card) -> GameCardOperation = {
-            GameCardOperation(
-                type = GameCardOperationType.INCREMENT_CARD_SUPPLY,
-                card = it
-            )
-        }
 
         val DECREMENT_SUPPLY: (Card) -> GameCardOperation = {
             GameCardOperation(

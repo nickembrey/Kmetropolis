@@ -28,8 +28,8 @@ class JansenTollisenBoardProvinicial32Policy : Policy() {
 //    }
     override fun finally() = Unit
 
-    val duchyCondition: (GameState) -> Boolean = { it.board[Card.PROVINCE]!! <= 4 }
-    val estateCondition: (GameState) -> Boolean = { it.board[Card.PROVINCE]!! <= 0 }
+    val duchyCondition: (GameState) -> Boolean = { it.board[Card.PROVINCE] <= 4 }
+    val estateCondition: (GameState) -> Boolean = { it.board[Card.PROVINCE] <= 0 }
 
     private var buyMenu = mutableListOf(
         Card.WITCH to 2,
@@ -55,13 +55,13 @@ class JansenTollisenBoardProvinicial32Policy : Policy() {
                 val coins = state.currentPlayer.coins
                 if (coins >= 8) {
                     BuySelection(cards = listOf(Card.PROVINCE))
-                } else if (duchyCondition(state) && coins >= 5 && state.board[Card.DUCHY]!! > 0) {
+                } else if (duchyCondition(state) && coins >= 5 && state.board[Card.DUCHY] > 0) {
                     BuySelection(cards = listOf(Card.DUCHY))
-                } else if (estateCondition(state) && coins >= 2 && state.board[Card.ESTATE]!! > 0) {
+                } else if (estateCondition(state) && coins >= 2 && state.board[Card.ESTATE] > 0) {
                     BuySelection(cards = listOf(Card.ESTATE))
                 } else {
                     val entry = buyMenu.firstOrNull {
-                        it.second > 0 && state.board[it.first]!! > 0 && coins >= it.first.cost
+                        it.second > 0 && state.board[it.first] > 0 && coins >= it.first.cost
                     }
                     if (entry != null) {
                         val index = buyMenu.indexOfFirst { it.first == entry.first && it.second > 0 }

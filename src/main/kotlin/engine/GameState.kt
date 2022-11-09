@@ -18,7 +18,7 @@ import engine.operation.state.game.GameCardOperation
 import engine.operation.state.game.GameCardOperationType
 import engine.operation.state.player.PlayerMoveCardOperation
 import engine.operation.state.player.PlayerMoveCardsOperation
-import engine.operation.state.player.PlayerOperationType
+import engine.performance.util.CardCountMap
 import engine.player.Player
 import engine.player.PlayerNumber
 import engine.player.PlayerProperty
@@ -36,7 +36,7 @@ fun List<Player>.copy(policies: List<Policy>) =
 // TODO: if we always use the currentPlayer, can we just have state implement Player?
 class GameState private constructor (
     val players: List<Player>, // needs to be in order // TODO: replace with two args
-    val board: EnumMap<Card, Int>,
+    val board: CardCountMap,
     var currentPlayerNumber: PlayerNumber,
     var phase: GamePhase,
     var eventStack: EventStack,
@@ -54,7 +54,7 @@ class GameState private constructor (
         fun new(
             policy1: Policy,
             policy2: Policy,
-            board: EnumMap<Card, Int>,
+            board: CardCountMap,
             maxTurns: Int,
             log: Boolean
         ): GameState = GameState(
@@ -81,12 +81,10 @@ class GameState private constructor (
         newLog: Boolean = log
     ): GameState {
 
-        assert(newPolicies.size == 2)
-
         return GameState(
             players = players.copy(newPolicies),
             currentPlayerNumber = currentPlayerNumber,
-            board = EnumMap(board),
+            board = board.copy(),
             phase = phase,
             eventStack = newEventStack,
             turns = turns,
@@ -113,9 +111,10 @@ class GameState private constructor (
         }
 
     // TODO: list of BuySelection
+    // TODO: seems like we're getting curses even when they're gone?
     private val buyMenus: List<ArrayList<Card>> = (0..8)
         .map { coins -> ArrayList(
-            board.filter { it.key.cost <= coins && it.value > 0 }.keys
+            board.toMap().filter { it.key.cost <= coins && it.value > 0 }.keys
         )}
     val buyMenu: ArrayList<Card>
         get() = when(currentPlayer.coins) {
@@ -134,20 +133,11 @@ class GameState private constructor (
 
     fun opponentRedraw() {
 
-        currentPlayerNumber = otherPlayer.playerNumber
-        val handSize = currentPlayer.hand.size
-        processOperation(
-            PlayerMoveCardsOperation(
-                cards = currentPlayer.hand,
-                from = CardLocation.HAND,
-                to = CardLocation.DECK
-            )
-        )
-        currentPlayerNumber = otherPlayer.playerNumber
+        otherPlayer.redeck()
 
         eventStack.pushAll( listOf(
             SpecialGameEvent.SWITCH_PLAYER,
-            Branch(BranchContext.DRAW, handSize),
+            Branch(BranchContext.DRAW, otherPlayer.handCount),
             SpecialGameEvent.SWITCH_PLAYER
         ))
     }
@@ -160,60 +150,12 @@ class GameState private constructor (
             SpecialGameEvent.END_GAME -> {
                 gameOver = true
                 Branch(context = BranchContext.GAME_OVER)
-
             }
             else -> {
                 processEvent(event)
                 getNextBranch()
             }
         }
-
-    private fun moveCard(
-        card: Card,
-        from: CardLocation,
-        to: CardLocation,
-    ) {
-        // TODO: also, better logging?
-        // TODO: make each move add its history, make sure nothing upstream is adding history
-
-        when(from) {
-            CardLocation.DECK -> when(to) {
-                CardLocation.HAND -> { // TODO: really should not have to check this here
-                    if(currentPlayer.deckSize == 0) {
-                        currentPlayer.shuffle()
-                    }
-                    currentPlayer.draw(card)
-                }
-                else -> throw NotImplementedError()
-            }
-            CardLocation.DISCARD -> when(to) {
-                CardLocation.HAND -> {
-                    throw NotImplementedError() //TODO:
-                }
-                CardLocation.DECK -> {
-                    currentPlayer.shuffle(card)
-                }
-                else -> throw NotImplementedError()
-            }
-            CardLocation.HAND -> when(to) {
-                CardLocation.DECK -> currentPlayer.undoDraw(card)
-                CardLocation.DISCARD -> currentPlayer.discard(card)
-                CardLocation.IN_PLAY -> currentPlayer.play(card)
-                CardLocation.TRASH -> currentPlayer.trash(card)
-                else -> throw NotImplementedError()
-            }
-            CardLocation.SUPPLY -> when(to) {
-                // TODO: feel like we just do all the board / empty pile management here
-                CardLocation.DISCARD -> currentPlayer.gain(card)
-                else -> throw NotImplementedError()
-            }
-            CardLocation.IN_PLAY -> when(to) {
-                CardLocation.DISCARD -> currentPlayer.cleanup(card)
-                else -> throw NotImplementedError()
-            }
-            else -> throw NotImplementedError()
-        }
-    }
 
 
     // TODO: this should be parcelled out between stack and state
@@ -321,12 +263,7 @@ class GameState private constructor (
                                 eventStack.pushAll(
                                     List(operation.card.addActions) { Branch(BranchContext.CHOOSE_ACTION) }
                                 )
-                                processOperation(
-                                    PlayerMoveCardOperation(
-                                        card = operation.card,
-                                        from = CardLocation.HAND,
-                                        to = CardLocation.IN_PLAY)
-                                )
+                                currentPlayer.play(operation.card)
                             }
                             else -> throw IllegalStateException()
                         }
@@ -342,13 +279,13 @@ class GameState private constructor (
                         if(operation.card.vp != 0) {
                             processOperation(ModifyPropertyOperation.MODIFY_VP(operation.card.vp))
                         }
-                        processOperation(PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.SUPPLY, CardLocation.DISCARD))
+                        currentPlayer.gain(operation.card)
                     }
                     PlayerCardOperationType.TRASH -> {
                         if(operation.card.vp != 0) {
                             processOperation(ModifyPropertyOperation.MODIFY_VP(-operation.card.vp))
                         }
-                        processOperation(PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.HAND, CardLocation.TRASH))
+                        currentPlayer.trash(operation.card)
                     }
                 }
                 else -> throw NotImplementedError()
@@ -384,15 +321,6 @@ class GameState private constructor (
                 }
             }
             is StackSimpleOperation -> when(operation) {
-                StackSimpleOperation.SHUFFLE -> currentPlayer.discard.let { cards ->
-                    PlayerMoveCardsOperation.MOVE_CARDS(cards.toList(), CardLocation.DISCARD, CardLocation.DECK)
-                }.let { processOperation(it) }
-                StackSimpleOperation.CLEANUP_ALL -> currentPlayer.inPlay.let { cards ->
-                    PlayerMoveCardsOperation.MOVE_CARDS(cards.toList(), CardLocation.IN_PLAY, CardLocation.DISCARD)
-                }.let { processOperation(it) }
-                StackSimpleOperation.DISCARD_ALL -> currentPlayer.hand.let { cards ->
-                    PlayerMoveCardsOperation.MOVE_CARDS(cards.toList(), CardLocation.HAND, CardLocation.DISCARD)
-                }.let { processOperation(it) }
                 StackSimpleOperation.SKIP_CONTEXT -> {} // do nothing
             }
         }
@@ -406,7 +334,7 @@ class GameState private constructor (
 
             is GameCardOperation -> when(operation.type) {
                 GameCardOperationType.DECREMENT_CARD_SUPPLY -> {
-                    val numberLeft = board[operation.card]!! - 1 // TODO:
+                    val numberLeft = board[operation.card] - 1 // TODO:
                     board[operation.card] = numberLeft
                     if(numberLeft == 0) {
                         emptyPiles += 1
@@ -414,7 +342,7 @@ class GameState private constructor (
                     }
                 }
                 GameCardOperationType.INCREMENT_CARD_SUPPLY -> {
-                    val previousNumber = board[operation.card]!!
+                    val previousNumber = board[operation.card]
                     board[operation.card] = previousNumber + 1
                     if(previousNumber == 0) {
                         emptyPiles -= 1
@@ -435,19 +363,8 @@ class GameState private constructor (
             } // TODO: log on debug
 
             is PlayerOperation -> when(operation) {
-                is PlayerMoveCardOperation -> moveCard(
-                    card = operation.card,
-                    from = operation.from,
-                    to = operation.to) // TODO: log on debug
-                is PlayerMoveCardsOperation -> {
-                    for(card in operation.cards.toList()) { // TODO:
-                        moveCard(
-                            card = card,
-                            from = operation.from,
-                            to = operation.to
-                        )
-                    }
-                }
+                is PlayerMoveCardOperation -> throw IllegalStateException()
+                is PlayerMoveCardsOperation -> throw IllegalStateException()
                 is PlayerSimpleOperation -> when(operation) {
                     PlayerSimpleOperation.INCREMENT_BUYS -> currentPlayer.buys += 1
                     PlayerSimpleOperation.DECREMENT_BUYS -> currentPlayer.buys -= 1
@@ -497,11 +414,9 @@ class GameState private constructor (
 
             BranchContext.DRAW -> {
                 if(selection is DrawSelection) {
-                    processOperation(PlayerMoveCardsOperation(
-                        cards = selection.cards,
-                        from = CardLocation.DECK,
-                        to = CardLocation.HAND
-                    ))
+                    for(card in selection.cards) {
+                        currentPlayer.draw(card)
+                    }
                 } else {
                     throw IllegalStateException()
                 }
@@ -581,7 +496,7 @@ class GameState private constructor (
         if(event is Branch) {
 
             // shuffle if there aren't any cards on the deck and we need to draw
-            if(event.context == BranchContext.DRAW && currentPlayer.deckSize == 0) {
+            if(event.context == BranchContext.DRAW && currentPlayer.deckCount == 0) {
                 currentPlayer.shuffle()
             }
 
@@ -625,8 +540,17 @@ class GameState private constructor (
                         }
                     }
                     SpecialGameEvent.END_TURN -> {
-                        processOperation(StackSimpleOperation.CLEANUP_ALL)
-                        processOperation(StackSimpleOperation.DISCARD_ALL)
+                        // TODO: the problem is that a game can't be characterized as just a series of branches
+                        //       and branch selections. the cleanups, etc. have to happen too.
+                        //       -- or maybe it can, since the events are handled "automatically"
+                        //       -- check up on this
+                        currentPlayer.cleanup()
+                        if(!currentPlayer.visibleHand) {
+                            throw IllegalStateException()
+                        }
+                        for(card in currentPlayer.knownHand.toList()) {
+                            currentPlayer.discard(card)
+                        }
 
                         if(emptyPiles >= 3 || board[Card.PROVINCE] == 0 || turns >= maxTurns) {
                             eventStack.push(SpecialGameEvent.END_GAME)

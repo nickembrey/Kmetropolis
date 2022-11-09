@@ -26,10 +26,10 @@ class SingleWitchV3Policy : Policy() { // TODO: abstract witch policy
             BranchContext.CHOOSE_ACTION -> options.firstOrNull { it is ActionSelection } ?: options.first()
             BranchContext.CHOOSE_TREASURE -> options.firstOrNull { it is TreasureSelection } ?: options.first()
             BranchContext.CHOOSE_BUY -> {
-                val goldCards: Int = state.currentPlayer.allCards.filter { it == Card.GOLD }.size
-                val witchCards = state.currentPlayer.allCards.filter { it == Card.WITCH }.size
+                val goldCards: Int = state.currentPlayer.allCards[Card.GOLD]
+                val witchCards = state.currentPlayer.allCards[Card.WITCH]
 
-                val witchLeft = state.board[Card.WITCH]!!
+                val witchLeft = state.board[Card.WITCH]
 
                 return if(state.currentPlayer.coins >= 8 && goldCards > 0) {
                     BuySelection(cards = listOf(Card.PROVINCE))

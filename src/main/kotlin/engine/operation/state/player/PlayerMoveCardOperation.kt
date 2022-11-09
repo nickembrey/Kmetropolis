@@ -2,8 +2,6 @@ package engine.operation.state.player
 
 import engine.card.Card
 import engine.card.CardLocation
-import engine.operation.HistoryOperation
-import engine.operation.Operation
 import engine.operation.PlayerOperation
 import engine.operation.state.StateOperation
 import util.memoize

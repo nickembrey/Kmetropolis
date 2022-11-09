@@ -1,9 +1,7 @@
 package policies.mcts.node
 
-import engine.EventStack
 import engine.GameState
 import engine.branch.*
-import engine.operation.HistoryOperation
 import engine.player.PlayerNumber
 import policies.Policy
 import java.util.concurrent.atomic.AtomicInteger

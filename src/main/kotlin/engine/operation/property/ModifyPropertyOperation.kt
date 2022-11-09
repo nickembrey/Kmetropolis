@@ -1,6 +1,5 @@
 package engine.operation.property
 
-import engine.operation.state.StateOperation
 import engine.player.PlayerProperty
 import util.memoize
 

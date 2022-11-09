@@ -1,144 +1,160 @@
 package engine.player.cards
 
-import engine.branch.ActionSelection
-import engine.branch.BranchSelection
-import engine.branch.SpecialBranchSelection
-import engine.branch.TreasureSelection
 import engine.card.Card
-import engine.card.CardType
 import engine.performance.util.CardCountMap
-import java.util.*
 
-class DefaultPlayerCards private constructor( // TODO: buys seem to be being added to deck
-    private val board: Map<Card, Int>,
-    override var deck: ArrayList<Card>,
-    override var discard: ArrayList<Card> = ArrayList(),
-    override var hand: ArrayList<Card> = ArrayList(),
-    override var inPlay: ArrayList<Card> = ArrayList(),
-    override var trash: ArrayList<Card> = ArrayList(),
-    private var topdeckCard: Card? = null
+// TODO: buys seem to be being added to deck
+class DefaultPlayerCards private constructor(
+    private val board: CardCountMap,
+    override val unknownCards: CardCountMap,
+    override val knownHand: CardCountMap,
+    override val inPlay: CardCountMap,
+    override val knownDeck: MutableMap<Int, Card>,
+    override val knownDiscard: CardCountMap,
+    override val trash: CardCountMap,
+    override var handCount: Int,
+    override var deckCount: Int,
+    override var discardCount: Int
 ): PlayerCards {
-
-    init {
-        discard.ensureCapacity(50)
-        hand.ensureCapacity(20)
-        inPlay.ensureCapacity(20)
-        trash.ensureCapacity(100)
-    }
 
     companion object {
         fun new(
-            board: Map<Card, Int>,
-            deck: ArrayList<Card>
-        ) = DefaultPlayerCards(board, deck)
+            board: CardCountMap,
+            initialDeck: CardCountMap
+        ) = DefaultPlayerCards(
+            board = board,
+            unknownCards = initialDeck,
+            knownHand = CardCountMap.empty(board),
+            inPlay = CardCountMap.empty(board),
+            knownDeck = mutableMapOf(),
+            knownDiscard = CardCountMap.empty(board),
+            trash = CardCountMap.empty(board),
+            handCount = 0,
+            deckCount = initialDeck.size,
+            discardCount = 0
+        )
     }
 
-    override val deckSize: Int
-        get() = deck.size
+    override fun copy(): DefaultPlayerCards =
+        DefaultPlayerCards(
+            board = board.copy(),
+            unknownCards = unknownCards.copy(),
+            knownHand = knownHand.copy(),
+            inPlay = inPlay.copy(),
+            knownDeck = knownDeck.toMutableMap(),
+            knownDiscard = knownDiscard.copy(),
+            trash = trash.copy(),
+            handCount = handCount,
+            deckCount = deckCount,
+            discardCount = discardCount
+        )
 
-    override val cardCount: Int
-        get() = allCards.size
+    override val allCards: CardCountMap
+        get() = unknownCards + knownHand + inPlay + CardCountMap.fromKnownDeck(board, knownDeck) + knownDiscard + trash
 
-    override val allCards: ArrayList<Card> = when(topdeckCard) {
-        null -> (deck + discard + hand + inPlay)
-        else -> (listOf(topdeckCard!!) + deck + discard + hand + inPlay)
-    }.let { ArrayList(it) }.apply { ensureCapacity(100) }
+    override fun sample(n: Int): List<Card> {
 
-    override val actionMenu: MutableCollection<BranchSelection> = ArrayList<BranchSelection>(hand.filter { it.type == CardType.ACTION }.map { ActionSelection(card = it) }
-        .plus(SpecialBranchSelection.SKIP)).apply { ensureCapacity(20) }
-    override val treasureMenu: MutableCollection<BranchSelection> = ArrayList<BranchSelection>(hand.filter { it.type == CardType.TREASURE }.map { TreasureSelection(cards = listOf(it)) }
-        .plus(SpecialBranchSelection.SKIP)).apply { ensureCapacity(20) }
+        val unknownCardsCopy = unknownCards.copy()
+        val knownDiscardCopy = knownDiscard.copy()
+
+        return (0 until n).map { index ->
+            if(knownDeck[index] != null) {
+                knownDeck[index]!!
+            } else if(deckCount > n || index < deckCount) {
+                unknownCardsCopy.random().also { card ->
+                    unknownCardsCopy[card] -= 1
+                }
+            } else {
+                (unknownCardsCopy + knownDiscardCopy).random().also { card ->
+                    if(knownDiscardCopy[card] > 0) {
+                        knownDiscardCopy[card] -= 1
+                    } else {
+                        unknownCardsCopy[card] -= 1
+                    }
+                }
+            }
+        }
+    }
+
+    override fun cleanup() {
+        knownDiscard.add(inPlay)
+        discardCount += inPlay.size
+        inPlay.clear()
+    }
 
     override fun shuffle() {
-        deck += discard
-        discard.clear()
+        unknownCards.add(knownDiscard)
+        deckCount += discardCount
+        discardCount = 0
+        knownDiscard.clear()
     }
 
-    override fun shuffle(card: Card) {
-        discard.remove(card)
-        deck += card
+    override fun redeck() {
+        unknownCards.add(knownHand)
+        deckCount += handCount
+        handCount = 0
+        knownHand.clear()
     }
 
     override fun draw(card: Card) {
-        when(card.type) {
-            CardType.ACTION -> actionMenu += ActionSelection(card = card)
-            CardType.TREASURE -> treasureMenu += TreasureSelection(cards = listOf(card))
-            else -> {}
+        if(knownDeck[0] != null) {
+            knownDeck.remove(0)
+            for(entry in knownDeck.entries) {
+                knownDeck.remove(entry.key)
+                knownDeck[entry.key - 1] = entry.value
+            }
+        } else if(deckCount == 0) {
+            shuffle()
+            unknownCards[card] -= 1
+        } else {
+            unknownCards[card] -= 1
         }
-        deck -= card
-        hand += card
-    }
-
-    override fun undoDraw(card: Card) {
-        when(card.type) {
-            CardType.ACTION -> actionMenu -= ActionSelection(card = card)
-            CardType.TREASURE -> treasureMenu -= TreasureSelection(cards = listOf(card))
-            else -> {}
-        }
-        deck += card
-        hand -= card
+        deckCount -= 1
+        handCount += 1
+        knownHand[card] += 1
     }
 
     override fun play(card: Card) {
-        when(card.type) {
-            CardType.ACTION -> actionMenu -= ActionSelection(card = card)
-            CardType.TREASURE -> treasureMenu -= TreasureSelection(cards = listOf(card))
-            else -> {}
+        if(knownHand[card] > 0) {
+            knownHand[card] -= 1
+        } else {
+            unknownCards[card] -= 1
         }
-        hand -= card
-        inPlay += card
+        handCount -= 1
+        inPlay[card] += 1
     }
 
     override fun gain(card: Card) {
-        allCards += card
-        discard += card
-    }
-
-    override fun cleanup(card: Card) {
-        inPlay -= card
-        discard += card
+        knownDiscard[card] += 1
+        discardCount += 1
     }
 
     override fun discard(card: Card) {
-        when(card.type) {
-            CardType.ACTION -> actionMenu -= ActionSelection(card = card)
-            CardType.TREASURE -> treasureMenu -= TreasureSelection(cards = listOf(card))
-            else -> {}
+        knownDiscard[card] += 1
+        if(knownHand[card] > 0) {
+            knownHand[card] -= 1
+        } else {
+            unknownCards[card] -= 1
         }
-        hand -= card
-        discard += card
-    }
-
-    override fun topdeck(card: Card) {
-        topdeckCard = card
+        handCount -= 1
+        discardCount += 1
     }
 
     override fun trash(card: Card) {
-        when(card.type) {
-            CardType.ACTION -> actionMenu -= ActionSelection(card = card)
-            CardType.TREASURE -> treasureMenu -= TreasureSelection(cards = listOf(card))
-            else -> {}
+        trash[card] += 1
+        if(knownHand[card] > 0) {
+            knownHand[card] -= 1
+        } else {
+            unknownCards[card] -= 1
         }
-        allCards -= card
-        hand -= card
-        trash += card
+        handCount -= 1
     }
 
-    override fun toCardFrequencyMap(board: Map<Card, Int>): Map<Card, Int> {
-        val map = EnumMap(board.keys.associateWith { 0 }.toMutableMap())
-        allCards.forEach {
-            map.merge(it, 1, Int::plus)
-        }
-        return map
-    }
+    override val visibleHand: Boolean
+        get() = knownHand.size == handCount
 
-    override fun copyCards(): DefaultPlayerCards =
-        DefaultPlayerCards(
-            board = board.toMap(),
-            deck = ArrayList(deck),
-            discard = ArrayList(discard),
-            hand = ArrayList(hand),
-            inPlay = ArrayList(inPlay),
-            trash = ArrayList(trash),
-            topdeckCard = topdeckCard)
+    override fun identify(card: Card, index: Int) {
+        unknownCards[card] -= 1
+        knownDeck[index] = card
+    }
 }

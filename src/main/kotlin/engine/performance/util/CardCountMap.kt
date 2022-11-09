@@ -2,22 +2,56 @@ package engine.performance.util
 
 import com.github.shiguruikai.combinatoricskt.Combinatorics
 import com.marcinmoskala.math.factorial
-import com.marcinmoskala.math.permutationsNumber
 import engine.CardMap
 import engine.card.Card
-import org.paukov.combinatorics3.Generator
-import kotlin.math.abs
 
 // TODO: change initialValues to Board
 class CardCountMap(
     private val board: Map<Card, Int>,
     private val initialValues: Map<Card, Int>): CardMap<Int> {
 
+    companion object {
+
+        fun fromKnownDeck(board: CardCountMap, knownDeck: Map<Int, Card>): CardCountMap {
+            val map = mutableMapOf<Card, Int>()
+            knownDeck.values.forEach {
+                map.merge(it, 1, Int::plus)
+            }
+            return CardCountMap(board.toMap(), map)
+        }
+
+        fun empty(board: CardCountMap): CardCountMap {
+            return CardCountMap(board.toMap(), board.toMap().keys.associateWith { 0 })
+        }
+    }
+
     private val cardsByOrdinal: Map<Int, Card> = board.keys.associateBy { it.ordinal }
     private val maxOrdinal: Int = board.keys.maxOf { card -> card.ordinal }
 
     private val backingArray: IntArray = IntArray(maxOrdinal + 1) { index ->
         initialValues.keys.firstOrNull { it.ordinal == index }.let { initialValues[it] } ?: 0
+    }
+
+    fun clear() {
+        backingArray.indices.forEach {
+            backingArray[it] = 0
+        }
+    }
+
+    operator fun plus(other: CardCountMap): CardCountMap {
+        return CardCountMap(board, board.keys.associate {
+            (it to this[it] + other[it])
+        })
+    }
+
+    fun add(other: CardCountMap) {
+        board.keys.forEach {
+            this[it] += other[it]
+        }
+    }
+
+    fun copy(): CardCountMap {
+        return CardCountMap(board, this.toMap())
     }
 
     fun getCombinations(choose: Int, set: Set<Int> = possibleOrdinals): Map<List<Card>, Double> {
@@ -58,6 +92,22 @@ class CardCountMap(
             else -> throw IllegalStateException()
         }
         backingArray[card.ordinal] = value
+    }
+
+    operator fun compareTo(freqMap: Map<Card, Int>): Int {
+        var ret = 0
+        for(entry in freqMap.entries) {
+            if(entry.value > this[entry.key]) {
+                return -1
+            } else if(entry.value < this[entry.key]) {
+                ret = 1
+            }
+        }
+        return ret
+    }
+
+    operator fun compareTo(cards: List<Card>): Int {
+        return compareTo(cards.groupingBy { it }.eachCount())
     }
 
     fun random(): Card {

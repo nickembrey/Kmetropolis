@@ -2,7 +2,6 @@ package engine.operation.property
 
 import engine.GamePhase
 import engine.GameProperty
-import engine.branch.BranchContext
 import engine.card.Card
 import engine.operation.HistoryOperation
 import engine.operation.state.StateOperation
@@ -25,21 +24,6 @@ class SetFromPropertyOperation<T>(
 
     companion object {
 
-        private fun setBuys(from: Int, to: Int) =
-            SetFromPropertyOperation(
-                from = from,
-                to = to,
-                target = PlayerProperty.BUYS)
-        private fun setCoins(from: Int, to: Int) =
-            SetFromPropertyOperation(
-                from = from,
-                to = to,
-                target = PlayerProperty.COINS)
-        private fun setVp(from: Int, to: Int) =
-            SetFromPropertyOperation(
-                from = from,
-                to = to,
-                target = PlayerProperty.BASE_VP)
         private fun nextPhase(currentPhase: GamePhase) =
             SetFromPropertyOperation(
                 from = currentPhase,
@@ -52,9 +36,6 @@ class SetFromPropertyOperation<T>(
                 to = to,
                 target = PlayerProperty.REMODEL_CARD)
 
-        val SET_BUYS: (Int, Int) -> SetFromPropertyOperation<Int> = ::setBuys.memoize()
-        val SET_COINS: (Int, Int) -> SetFromPropertyOperation<Int> = ::setCoins.memoize()
-        val SET_VP: (Int, Int) -> SetFromPropertyOperation<Int> = ::setVp.memoize()
         val SET_REMODEL_CARD: (Card?, Card?) -> SetFromPropertyOperation<Card?> =
             ::setRemodelCard.memoize()
 

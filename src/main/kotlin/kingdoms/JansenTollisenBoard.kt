@@ -1,9 +1,9 @@
 package kingdoms
 
 import engine.card.Card
-import java.util.*
+import engine.performance.util.CardCountMap
 
-val jansenTollisenBoard: EnumMap<Card, Int>
+val jansenTollisenBoard: CardCountMap
     get() = mapOf(
         Card.FESTIVAL to 10,
         Card.WITCH to 10,
@@ -25,4 +25,4 @@ val jansenTollisenBoard: EnumMap<Card, Int>
         Card.ESTATE to 8,
 
         Card.CURSE to 10,
-    ).let { EnumMap(it) }
+    ).let { CardCountMap(it, it) }

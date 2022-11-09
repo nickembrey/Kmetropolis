@@ -1,13 +1,11 @@
 package policies.delegates.draw
 
-import engine.*
+import engine.GameState
 import engine.branch.Branch
 import engine.branch.BranchContext
 import engine.branch.BranchSelection
-import engine.branch.DrawSelection
 import policies.Policy
 import policies.PolicyName
-import kotlin.random.Random
 
 class RandomDrawPolicy : Policy() {
     override val name = PolicyName("randomPolicy")

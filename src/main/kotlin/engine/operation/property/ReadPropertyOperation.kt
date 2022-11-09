@@ -1,7 +1,6 @@
 package engine.operation.property
 
 import engine.GameState
-import engine.branch.BranchContext
 import engine.operation.Operation
 
 data class ReadPropertyOperation<T>(

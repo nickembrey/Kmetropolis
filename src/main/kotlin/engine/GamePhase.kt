@@ -1,12 +1,5 @@
 package engine
 
-import engine.branch.Branch
-import engine.branch.BranchContext
-import engine.operation.property.SetToPropertyOperation
-import engine.operation.stack.StackSimpleOperation
-import engine.operation.stack.game.GameCompoundOperation
-import engine.operation.state.game.GameSimpleOperation
-
 // TODO: just make these all sequences?
 // TODO: then the list will go onto the stack in GameState and get processed in order
 
@@ -14,7 +7,7 @@ import engine.operation.state.game.GameSimpleOperation
 
 
 // TODO: make these functions or something simpler
-enum class GamePhase(): GamePropertyValue {
+enum class GamePhase : GamePropertyValue {
     NOT_STARTED,
     START_GAME,
     ACTION,

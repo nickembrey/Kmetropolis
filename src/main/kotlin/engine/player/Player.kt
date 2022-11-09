@@ -1,7 +1,7 @@
 package engine.player
 
 import engine.card.Card
-import engine.player.cards.DefaultPlayerCards
+import engine.performance.util.CardCountMap
 import engine.player.cards.PlayerCards
 import policies.Policy
 
@@ -21,14 +21,17 @@ data class Player internal constructor(
 
     companion object {
         fun new(
-            board: Map<Card, Int>,
+            board: CardCountMap,
             playerNumber: PlayerNumber,
             policy: Policy
         ): Player {
             return Player(
                 playerNumber = playerNumber,
                 policy = policy,
-                cards = PlayerCards.new(board),
+                cards = PlayerCards.new(board, CardCountMap(board.toMap(), mapOf(
+                    Card.COPPER to 7,
+                    Card.ESTATE to 3
+                ))),
                 buys = 0,
                 coins = 0,
                 baseVp = 3,
@@ -43,7 +46,7 @@ data class Player internal constructor(
         return Player(
             playerNumber = playerNumber,
             policy = newPolicy,
-            cards = cards.copyCards(),
+            cards = cards.copy(),
             buys = buys,
             coins = coins,
             baseVp = baseVp,
@@ -52,7 +55,7 @@ data class Player internal constructor(
     }
 
     val vp // TODO: test
-        get() = baseVp + (cards.allCards.count { it == Card.GARDENS } * kotlin.math.floor(cards.cardCount.toDouble() / 10)).toInt()
+        get() = baseVp + (cards.allCards[Card.GARDENS] * kotlin.math.floor(cards.allCards.size.toDouble() / 10)).toInt()
 
     // TODO: one way we could make this more functional is by adding the notion of an Effect type,
     //       which playing a card would return and could be passed up to the state to be processed

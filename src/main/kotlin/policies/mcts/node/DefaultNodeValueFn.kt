@@ -1,10 +1,7 @@
 package policies.mcts.node
 
-import engine.GameState
-import engine.player.PlayerNumber
 import kotlin.math.ln
 import kotlin.math.sqrt
-import kotlin.random.Random
 
 object DefaultNodeValueFn: NodeValueFn {
 

@@ -105,7 +105,38 @@ class MCTSPolicy(
         }
 
         when(node) {
-            is RootNode -> forward(simState, getNextNode(node))
+            is RootNode -> {
+                val drawBranch = simState.getNextBranch()
+                val sample = MCTSChildNode.getChildren(
+                    state = simState,
+                    branch = drawBranch,
+                    parent = node,
+                    actionPolicy = actionPolicy,
+                    treasurePolicy = treasurePolicy).single()
+                val sampleCards = (sample.selection as DrawSelection).cards.sorted()
+
+                // TODO: clean up
+                var alreadySampled = false
+                var gameOver = false // TODO: hacky
+                for(child in node.children) {
+                    if(child.selection != SpecialBranchSelection.GAME_OVER) {
+                        val childCards = (child.selection as DrawSelection).cards.sorted()
+                        if(childCards == sampleCards) {
+                            alreadySampled = true
+                            child.score += 1
+                        }
+                    } else {
+                        gameOver = true
+                    }
+                }
+
+                if(!alreadySampled && !gameOver) {
+                    node.children.add(sample)
+                    graphPairs.add(Pair(node.id, sample.id))
+                }
+                simState.eventStack.push(drawBranch)
+                forward(simState, getNextNode(node))
+            }
             is EndGameNode -> {
                 backpropagate(node, BackpropProperty.IN_PROCESS)
                 // TODO: make sure that the selection is always the game over selection for this
@@ -145,8 +176,37 @@ class MCTSPolicy(
                         RolloutResult(node, rollout(simState))
                     )
                 } else {
-                    if(node is DrawChildNode && completedRollouts == 1) {
-                        val nextBranch = simState.getNextBranch()
+                    val nextBranch = simState.getNextBranch()
+
+                    if(nextBranch.context == BranchContext.DRAW) {
+
+                        val sample = MCTSChildNode.getChildren(
+                            state = simState,
+                            branch = nextBranch,
+                            parent = node,
+                            actionPolicy = actionPolicy,
+                            treasurePolicy = treasurePolicy).single()
+                        val sampleCards = (sample.selection as DrawSelection).cards.sorted()
+
+                        // TODO: clean up
+                        var alreadySampled = false
+                        var gameOver = false // TODO: hacky
+                        for(child in node.children) {
+                            if(child.selection != SpecialBranchSelection.GAME_OVER) {
+                                val childCards = (child.selection as DrawSelection).cards.sorted()
+                                if(childCards == sampleCards) {
+                                    alreadySampled = true
+                                }
+                            } else {
+                                gameOver = true
+                            }
+                        }
+
+                        if(!alreadySampled && !gameOver) {
+                            node.children.add(sample)
+                            graphPairs.add(Pair(node.id, sample.id))
+                        }
+                    } else if(node is DrawChildNode && completedRollouts == 1) {
                         node.children.addAll(
                             MCTSChildNode.getChildren(
                                 state = simState,
@@ -157,8 +217,9 @@ class MCTSPolicy(
                         for(child in node.children) {
                             graphPairs.add(Pair(node.id, child.id))
                         } // TODO: hacky
-                        simState.eventStack.push(nextBranch) // TODO: hacky
                     }
+
+                    simState.eventStack.push(nextBranch)
 
                     forward(simState, getNextNode(node))
                 }
@@ -219,16 +280,12 @@ class MCTSPolicy(
 
         // the first node will always be the redraw of the opponent's hand
 
-        val firstPick = root!!.children.maxBy { it.completedRollouts.get() }
+        val opponentDraw = root!!.children.maxBy { it.completedRollouts.get() }
 
         // TODO: simplify
-        val selection = if(firstPick is DrawChildNode) {
-            firstPick.children.maxBy { it.completedRollouts.get() }.selection
-        } else {
-            firstPick.selection
-        }
+        val selection = opponentDraw.children.maxBy { it.completedRollouts.get() }.selection
 
-         return selection
+        return selection
              .also { logger.recordDecision(contextMap, maxDepth, maxTurns - state.turns) }
     }
 
@@ -241,7 +298,11 @@ class MCTSPolicy(
             BranchContext.GAME_OVER -> SpecialBranchSelection.GAME_OVER
             BranchContext.DRAW -> drawPolicy(state, branch)
             BranchContext.CHOOSE_ACTION -> {
-                if(state.currentPlayer.hand.firstOrNull { it.addActions > 0 } != null || state.currentPlayer.hand.filter { it.type == CardType.ACTION }.size < 2) {
+                if(!state.currentPlayer.visibleHand) {
+                    throw IllegalStateException()
+                }
+                val hand = state.currentPlayer.knownHand.toList()
+                if(hand.firstOrNull { it.addActions > 0 } != null || hand.filter { it.type == CardType.ACTION }.size < 2) {
                     actionPolicy(state, branch)
                 } else {
                     simulationPolicy(state, branch)

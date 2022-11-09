@@ -49,21 +49,6 @@ fun <A, B> ((A, A) -> B).memoize(): (A, A) -> B { // 1
     }
 }
 
-// TODO: better name
-fun <A, B, C> ((A, B) -> C).memoize2(): (A, B) -> C { // 1
-    val cache by lazy { HashMap<Pair<A, B>, C>() } // 2
-    return { a1: A, a2: B ->  // 3
-        val pair = Pair(a1, a2)
-        val cached = cache[pair] // 4
-        if (cached == null) {
-            cache[pair] = this(a1, a2)
-            this(a1, a2)
-        } else {
-            cached
-        } // 5
-    }
-}
-
 fun ((Card, CardLocation, CardLocation) -> PlayerMoveCardOperation).memoize():
             (Card, CardLocation, CardLocation) -> PlayerMoveCardOperation
 {

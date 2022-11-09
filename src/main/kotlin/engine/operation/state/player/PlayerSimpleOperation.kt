@@ -1,7 +1,6 @@
 package engine.operation.state.player
 
 import engine.operation.HistoryOperation
-import engine.operation.Operation
 import engine.operation.PlayerOperation
 import engine.operation.state.StateOperation
 

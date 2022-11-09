@@ -13,8 +13,8 @@ class PlayAllTreasuresPolicy: Policy() { // TODO: require that all major policie
         state: GameState,
         branch: Branch
     ): BranchSelection {
-        return if (branch.context == BranchContext.CHOOSE_TREASURE) {
-            val treasures = state.currentPlayer.hand.filter { it.type == CardType.TREASURE }
+        return if (branch.context == BranchContext.CHOOSE_TREASURE && state.currentPlayer.visibleHand) {
+            val treasures = state.currentPlayer.knownHand.toList().filter { it.type == CardType.TREASURE }
             when(treasures.size) {
                 0 -> SpecialBranchSelection.SKIP
                 else -> TreasureSelection(cards = treasures)

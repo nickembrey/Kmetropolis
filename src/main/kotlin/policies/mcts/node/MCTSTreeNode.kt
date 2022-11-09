@@ -1,7 +1,6 @@
 package policies.mcts.node
 
 import engine.player.PlayerNumber
-import policies.mcts.node.MCTSChildNode
 import java.util.concurrent.atomic.AtomicInteger
 
 interface MCTSTreeNode {

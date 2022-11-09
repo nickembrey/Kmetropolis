@@ -2,7 +2,6 @@ package engine.card
 
 import engine.GameState
 import engine.SpecialGameEvent
-import engine.branch.BranchSelection
 import engine.operation.property.ModifyPropertyOperation
 import engine.operation.stack.player.PlayerCardOperation
 
@@ -32,15 +31,18 @@ enum class Card(
         it.eventStack.pushAll(
             listOf(
                 SpecialGameEvent.SWITCH_PLAYER,
-                engine.branch.Branch(engine.branch.BranchContext.MILITIA, selections = it.currentPlayer.hand.size - 3),
+                engine.branch.Branch(engine.branch.BranchContext.MILITIA, selections = it.currentPlayer.handCount - 3),
                 SpecialGameEvent.SWITCH_PLAYER
             ).reversed()
         )
     }),
     MONEYLENDER(type = CardType.ACTION, cost = 4, effect = {
-        if(it.currentPlayer.hand.contains(COPPER)) {
+        if(!it.currentPlayer.visibleHand) {
+            throw IllegalStateException()
+        }
+        if(it.currentPlayer.knownHand[COPPER] > 0) {
             it.processOperation(ModifyPropertyOperation.MODIFY_COINS(3))
-            it.processOperation(PlayerCardOperation.TRASH(Card.COPPER))
+            it.processOperation(PlayerCardOperation.TRASH(COPPER))
         }
     }),
     REMODEL(type = CardType.ACTION, cost = 4, effect = {
@@ -61,8 +63,8 @@ enum class Card(
 
     COPPER(type = CardType.TREASURE, cost = 0, addCoins = 1),
     SILVER(type = CardType.TREASURE, cost = 3, addCoins = 2, effect = {
-        it.currentPlayer.coins += it.currentPlayer.inPlay
-            .filter { card -> card == Card.MERCHANT }
+        it.currentPlayer.coins += it.currentPlayer.inPlay.toList()
+            .filter { card -> card == MERCHANT }
             .size
     }),
     GOLD(type = CardType.TREASURE, cost = 6, addCoins = 3),

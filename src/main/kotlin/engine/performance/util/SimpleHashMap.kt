@@ -1,8 +1,5 @@
 package engine.performance.util
 
-import engine.GameEvent
-import engine.card.Card
-
 class SimpleHashMap <T> (arrayClass: Class<T>, maxSize: Int) {
 
     @Suppress("UNCHECKED_CAST")

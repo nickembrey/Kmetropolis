@@ -1,7 +1,7 @@
 package experiments
 
 import policies.InputPolicy
-import policies.heuristic.SingleWitchPolicy
+import policies.jansen_tollisen.SingleWitchPolicy
 import policies.heuristic.SingleWitchV3Policy
 import policies.mcts.MCTSPolicy
 import policies.mcts.node.DefaultNodeValueFn

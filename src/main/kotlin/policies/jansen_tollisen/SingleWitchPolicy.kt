@@ -1,4 +1,4 @@
-package policies.heuristic
+package policies.jansen_tollisen
 
 import engine.*
 import engine.branch.*
@@ -27,14 +27,14 @@ class SingleWitchPolicy : Policy() { // TODO: abstract witch policy
             BranchContext.CHOOSE_ACTION -> options.firstOrNull { it is ActionSelection } ?: options.first()
             BranchContext.CHOOSE_TREASURE -> options.firstOrNull { it is TreasureSelection } ?: options.first()
             BranchContext.CHOOSE_BUY -> {
-                val goldCards: Int = state.currentPlayer.allCards.filter { it == Card.GOLD }.size
-                val witchCards = state.currentPlayer.allCards.filter { it == Card.WITCH }.size
+                val goldCards: Int = state.currentPlayer.allCards.toList().filter { it == Card.GOLD }.size
+                val witchCards = state.currentPlayer.allCards.toList().filter { it == Card.WITCH }.size
 
-                val witchLeft = state.board[Card.WITCH]!!
+                val witchLeft = state.board[Card.WITCH]
 
-                val provinceCards = state.currentPlayer.allCards.filter { it == Card.PROVINCE }.size
-                val duchyLeft = state.board[Card.DUCHY]!!
-                val estateLeft = state.board[Card.ESTATE]!!
+                val provinceCards = state.currentPlayer.allCards.toList().filter { it == Card.PROVINCE }.size
+                val duchyLeft = state.board[Card.DUCHY]
+                val estateLeft = state.board[Card.ESTATE]
 
                 return if(state.currentPlayer.coins >= 8 && goldCards > 0) {
                     BuySelection(cards = listOf(Card.PROVINCE))
@@ -44,9 +44,9 @@ class SingleWitchPolicy : Policy() { // TODO: abstract witch policy
                     BuySelection(cards = listOf(Card.DUCHY))
                 } else if (state.currentPlayer.coins >= 2 && provinceCards < 2 && estateLeft > 0) {
                     BuySelection(cards = listOf(Card.ESTATE))
-                } else if (state.currentPlayer.coins >= 6) {
+                } else if (state.currentPlayer.coins >= 6 && state.board[Card.GOLD] > 0) {
                     BuySelection(cards = listOf(Card.GOLD))
-                } else if (state.currentPlayer.coins >= 3) {
+                } else if (state.currentPlayer.coins >= 3 && state.board[Card.SILVER] > 0) {
                     BuySelection(cards = listOf(Card.SILVER))
                 } else {
                     SpecialBranchSelection.SKIP

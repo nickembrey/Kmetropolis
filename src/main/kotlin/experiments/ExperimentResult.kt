@@ -1,6 +1,5 @@
 package experiments
 
-import engine.GameResult
 import engine.branch.BranchContext
 import engine.branch.BranchSelection
 import policies.PolicyName

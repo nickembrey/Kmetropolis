@@ -2,7 +2,6 @@ package engine.operation.state.game
 
 import engine.operation.GameOperation
 import engine.operation.HistoryOperation
-import engine.operation.Operation
 import engine.operation.state.StateOperation
 
 // TODO: put check game over somewhere
