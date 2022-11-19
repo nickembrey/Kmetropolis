@@ -244,7 +244,7 @@ class GameState private constructor (
                             PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.DECK, CardLocation.HAND)
                         )
                     }
-                    PlayerCardOperationType.PLAY -> {
+                    PlayerCardOperationType.PLAY, PlayerCardOperationType.PLAY_FROM_DISCARD -> {
 
                         when(operation.card.type) {
                             CardType.ACTION, CardType.TREASURE -> {
@@ -263,7 +263,12 @@ class GameState private constructor (
                                 eventStack.pushAll(
                                     List(operation.card.addActions) { Branch(BranchContext.CHOOSE_ACTION) }
                                 )
-                                currentPlayer.play(operation.card)
+                                when(operation.type) {
+                                    PlayerCardOperationType.PLAY -> currentPlayer.play(operation.card)
+                                    PlayerCardOperationType.PLAY_FROM_DISCARD -> currentPlayer.playFromDiscard(operation.card)
+                                    else -> throw IllegalStateException()
+                                }
+
                             }
                             else -> throw IllegalStateException()
                         }
@@ -447,6 +452,15 @@ class GameState private constructor (
             BranchContext.HARBINGER -> {
                 if(selection is HarbingerSelection) {
                     currentPlayer.topdeck(selection.card)
+                } else {
+                    throw IllegalStateException()
+                }
+            }
+            BranchContext.VASSAL -> {
+                if(selection is VassalSelection) {
+                    processOperation(
+                        PlayerCardOperation.PLAY_FROM_DISCARD(selection.card)
+                    )
                 } else {
                     throw IllegalStateException()
                 }

@@ -22,6 +22,7 @@ interface PlayerCards {
     val knownDiscard: CardCountMap
     val trash: CardCountMap
 
+    var vassalCard: Card?
     val visibleHand: Boolean
 
     val handCount: Int
@@ -37,8 +38,10 @@ interface PlayerCards {
     fun redeck()
 
 
+    // TODO: one unified move method that takes a card and two locations (like before)
     fun draw(card: Card)
-    fun play(card: Card)
+    fun play(card: Card) // i.e., play from hand
+    fun playFromDiscard(card: Card)
     fun gain(card: Card)
     fun discard(card: Card)
     fun topdeck(card: Card) // puts a card from the discard onto the deck

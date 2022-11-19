@@ -26,6 +26,14 @@ enum class Card(
         it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.HARBINGER, selections = 1))
     }),
     MERCHANT(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 1),
+    VASSAL(type = CardType.ACTION, cost = 3, effect = {
+        val card = it.currentPlayer.sample(1).single()
+        it.currentPlayer.discard(card)
+        if(card.type == CardType.ACTION) {
+            it.currentPlayer.vassalCard = card
+            it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.VASSAL, selections = 1))
+        }
+    }),
     VILLAGE(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 2),
     WORKSHOP(type = CardType.ACTION, cost = 3, effect = {
         it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.WORKSHOP))

@@ -40,6 +40,13 @@ data class PlayerCardOperation(
                 context = BranchContext.NONE
             )
         }
+        val PLAY_FROM_DISCARD: (Card) -> PlayerCardOperation = {
+            PlayerCardOperation(
+                type = PlayerCardOperationType.PLAY_FROM_DISCARD,
+                card = it,
+                context = BranchContext.NONE
+            )
+        }
         val TRASH: (Card) -> PlayerCardOperation = {
             PlayerCardOperation(
                 type = PlayerCardOperationType.TRASH,

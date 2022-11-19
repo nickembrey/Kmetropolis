@@ -12,6 +12,7 @@ class DefaultPlayerCards private constructor(
     override val knownDeck: MutableMap<Int, Card>,
     override val knownDiscard: CardCountMap,
     override val trash: CardCountMap,
+    override var vassalCard: Card?,
     override var handCount: Int,
     override var deckCount: Int,
     override var discardCount: Int
@@ -29,6 +30,7 @@ class DefaultPlayerCards private constructor(
             knownDeck = mutableMapOf(),
             knownDiscard = CardCountMap.empty(board),
             trash = CardCountMap.empty(board),
+            vassalCard = null,
             handCount = 0,
             deckCount = initialDeck.size,
             discardCount = 0
@@ -44,6 +46,7 @@ class DefaultPlayerCards private constructor(
             knownDeck = knownDeck.toMutableMap(),
             knownDiscard = knownDiscard.copy(),
             trash = trash.copy(),
+            vassalCard = vassalCard,
             handCount = handCount,
             deckCount = deckCount,
             discardCount = discardCount
@@ -122,6 +125,16 @@ class DefaultPlayerCards private constructor(
         }
         handCount -= 1
         inPlay[card] += 1
+    }
+
+    override fun playFromDiscard(card: Card) {
+        if(knownDiscard[card] > 0) {
+            knownDiscard[card] -= 1
+        } else {
+            unknownCards[card] -= 1
+        }
+        discardCount -= 1
+        inPlay[card] -= 1
     }
 
     override fun gain(card: Card) {

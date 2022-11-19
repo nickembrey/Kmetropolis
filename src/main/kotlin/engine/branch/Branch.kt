@@ -40,6 +40,7 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                 // TODO: check that discard is all visible
                 state.currentPlayer.knownDiscard.possibilities.map { HarbingerSelection(card = it) }
             }
+            BranchContext.VASSAL -> listOf(SpecialBranchSelection.SKIP, VassalSelection(card = state.currentPlayer.vassalCard!!))
             BranchContext.WORKSHOP -> state.workshopMenu.map { WorkshopSelection(card = it) }
             BranchContext.MILITIA -> hand.map { MilitiaSelection(card = it) }
             BranchContext.REMODEL_TRASH -> hand
