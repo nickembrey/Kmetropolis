@@ -2,6 +2,8 @@ package engine
 
 interface GameEvent
 
+data class AttackEvent(val attack: DelayedGameOperation): GameEvent
+
 data class DelayedGameOperation(
     val operation: (GameState) -> Unit
 ): GameEvent

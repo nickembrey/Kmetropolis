@@ -401,6 +401,19 @@ class GameState private constructor (
 
         when (selection.context) {
 
+            BranchContext.ATTACK -> {
+                if(selection is AttackSelection) {
+                    if(selection.block) {
+                        val attack = eventStack.pop()
+                        if(attack !is DelayedGameOperation) {
+                            throw IllegalStateException()
+                        }
+                    }
+                } else {
+                    throw IllegalStateException()
+                }
+            }
+
             BranchContext.CELLAR -> {
                 if(selection is CellarSelection) {
                     for(card in selection.cards) {
@@ -573,7 +586,7 @@ class GameState private constructor (
                         }
                     }
                     SpecialGameEvent.END_TURN -> {
-                        // TODO: the problem is that a game can't be characterized as just a series of branches
+                        // TODO: the problem in MCTS implementation is that a game can't be characterized as just a series of branches
                         //       and branch selections. the cleanups, etc. have to happen too.
                         //       -- or maybe it can, since the events are handled "automatically"
                         //       -- check up on this
@@ -598,6 +611,13 @@ class GameState private constructor (
                 }
             } else if(event is DelayedGameOperation) {
                 event.operation(this)
+            } else if(event is AttackEvent) {
+                eventStack.pushAll(
+                    listOf(
+                        Branch(context = BranchContext.ATTACK),
+                        event.attack
+                    ).reversed()
+                )
             } else {
                 throw IllegalStateException()
             }

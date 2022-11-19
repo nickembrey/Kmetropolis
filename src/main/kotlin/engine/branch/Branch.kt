@@ -3,6 +3,7 @@ package engine.branch
 import com.github.shiguruikai.combinatoricskt.Combinatorics
 import engine.GameEvent
 import engine.GameState
+import engine.card.Card
 import engine.card.CardType
 
 // TODO: "selections" is a confusing name
@@ -22,6 +23,13 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
         val hand = state.currentPlayer.knownHand.toList()
 
         return when (this.context) {
+
+            BranchContext.ATTACK -> if(hand.contains(Card.MOAT)) {
+                listOf(AttackSelection(block = true), AttackSelection(block = false))
+            } else {
+                listOf(AttackSelection(block = false))
+            }
+
             // TODO: make sure cellar is no longer in hand when this gets activated
             BranchContext.CELLAR -> Combinatorics.combinations(
                 hand,

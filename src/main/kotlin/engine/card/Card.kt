@@ -1,12 +1,14 @@
 package engine.card
 
+import engine.AttackEvent
+import engine.DelayedGameOperation
 import engine.GameState
 import engine.SpecialGameEvent
 import engine.operation.property.ModifyPropertyOperation
 import engine.operation.stack.player.PlayerCardOperation
 
 enum class Card(
-    val type: CardType,
+    val type: CardType, // TODO: should allow more than one
     val cost: Int,
     val addActions: Int = 0,
     val addBuys: Int = 0,
@@ -22,6 +24,7 @@ enum class Card(
     CHAPEL(type = CardType.ACTION, cost = 2, effect = {
         it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.CHAPEL, selections = 4))
     }),
+    MOAT(type = CardType.ACTION, cost = 2),
     HARBINGER(type = CardType.ACTION, cost = 3, addActions = 1,addCards = 1, effect = {
         it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.HARBINGER, selections = 1))
     }),
@@ -42,10 +45,16 @@ enum class Card(
         it.eventStack.pushAll(
             listOf(
                 SpecialGameEvent.SWITCH_PLAYER,
-                engine.branch.Branch(engine.branch.BranchContext.MILITIA, selections = it.currentPlayer.handCount - 3),
+                engine.AttackEvent( attack = DelayedGameOperation { state ->
+                    state.eventStack.push(
+                        engine.branch.Branch(
+                            engine.branch.BranchContext.MILITIA,
+                            selections = state.currentPlayer.handCount - 3
+                        )
+                    )
+                }),
                 SpecialGameEvent.SWITCH_PLAYER
-            ).reversed()
-        )
+            ).reversed())
     }),
     MONEYLENDER(type = CardType.ACTION, cost = 4, effect = {
         if(!it.currentPlayer.visibleHand) {
@@ -73,7 +82,16 @@ enum class Card(
     LABORATORY(type = CardType.ACTION, cost = 5, addCards = 2, addActions = 1),
     MARKET(type = CardType.ACTION, cost = 5, addCards = 1, addActions = 1, addBuys = 1),
     WITCH(type = CardType.ACTION, cost = 5, addCards = 2, effect = {
-        // TODO: maybe use an AttackSelection that has a function in it
+        it.eventStack.pushAll(
+            listOf(
+                SpecialGameEvent.SWITCH_PLAYER,
+                AttackEvent(attack = DelayedGameOperation { state ->
+                    if(state.board[CURSE] > 0) {
+                        state.currentPlayer.gain(CURSE) // TODO: other player or current player?
+                    }
+                }),
+                SpecialGameEvent.SWITCH_PLAYER
+            ).reversed())
     }),
     WOODCUTTER(type = CardType.ACTION, cost = 3, addCoins = 2, addBuys = 1),
 

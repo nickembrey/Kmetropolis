@@ -5,6 +5,11 @@ import engine.card.Card
 
 interface BranchSelection : ContextBearer
 
+data class AttackSelection(val block: Boolean): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.ATTACK
+}
+
 data class CellarSelection(val cards: List<Card>): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.CELLAR

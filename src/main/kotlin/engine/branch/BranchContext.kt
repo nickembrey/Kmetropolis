@@ -3,6 +3,7 @@ package engine.branch
 import engine.ContextBearer
 
 enum class BranchContext: ContextBearer {
+    ATTACK,
     GAME_OVER,
     DRAW,
     CHOOSE_ACTION,
