@@ -17,7 +17,7 @@ enum class Card(
 ): Comparable<Card> {
 
     CELLAR(type = CardType.ACTION, cost = 2, effect = {
-        it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.CELLAR, selections = 1))
+        it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.CELLAR, selections = 1)) // TODO: only one?
     }),
     CHAPEL(type = CardType.ACTION, cost = 2, effect = {
         it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.CHAPEL, selections = 4))
@@ -66,10 +66,15 @@ enum class Card(
         )
     }),
     SMITHY(type = CardType.ACTION, cost = 4, addCards = 3),
+    THRONE_ROOM(type = CardType.ACTION, cost = 4, effect = {
+        it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.THRONE_ROOM, selections = 1))
+    }),
     FESTIVAL(type = CardType.ACTION, cost = 5, addCoins = 2, addActions = 2, addBuys = 1),
     LABORATORY(type = CardType.ACTION, cost = 5, addCards = 2, addActions = 1),
     MARKET(type = CardType.ACTION, cost = 5, addCards = 1, addActions = 1, addBuys = 1),
-    WITCH(type = CardType.ACTION, cost = 5, addCards = 2, effect = {}),
+    WITCH(type = CardType.ACTION, cost = 5, addCards = 2, effect = {
+        // TODO: maybe use an AttackSelection that has a function in it
+    }),
     WOODCUTTER(type = CardType.ACTION, cost = 3, addCoins = 2, addBuys = 1),
 
     COPPER(type = CardType.TREASURE, cost = 0, addCoins = 1),

@@ -500,6 +500,18 @@ class GameState private constructor (
                     throw IllegalStateException()
                 }
             }
+            BranchContext.THRONE_ROOM -> {
+                if(selection is ThroneRoomSelection) {
+                    eventStack.push(DelayedGameOperation(
+                        operation = {
+                            processStackOperation(PlayerCardOperation.PLAY(selection.card))
+                        }
+                    ))
+                    processStackOperation(PlayerCardOperation.PLAY(selection.card))
+                } else {
+                    throw IllegalStateException()
+                }
+            }
             BranchContext.NONE -> {
                 when(selection) {
                     is SpecialBranchSelection -> when(selection) {
@@ -584,6 +596,8 @@ class GameState private constructor (
                     }
                     SpecialGameEvent.SWITCH_PLAYER -> currentPlayerNumber = otherPlayer.playerNumber
                 }
+            } else if(event is DelayedGameOperation) {
+                event.operation(this)
             } else {
                 throw IllegalStateException()
             }

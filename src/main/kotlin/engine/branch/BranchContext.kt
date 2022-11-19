@@ -16,6 +16,7 @@ enum class BranchContext: ContextBearer {
     MILITIA,
     REMODEL_TRASH,
     REMODEL_GAIN,
+    THRONE_ROOM,
     ANY,
     NONE;
 

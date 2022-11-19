@@ -50,6 +50,10 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
             } else {
                 state.remodelMenu.map { RemodelGainSelection(card = it) }.ifEmpty { skipList }
             }
+            BranchContext.THRONE_ROOM -> hand
+                .filter { it.type == CardType.ACTION }
+                .map { ThroneRoomSelection(card = it) }
+                .ifEmpty { skipList }
             BranchContext.CHOOSE_ACTION -> hand
                 .filter { it.type == CardType.ACTION }
                 .map { ActionSelection(card = it) }

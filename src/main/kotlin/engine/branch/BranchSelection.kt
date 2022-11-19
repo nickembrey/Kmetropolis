@@ -55,6 +55,11 @@ data class RemodelGainSelection(val card: Card): BranchSelection {
         get() = BranchContext.REMODEL_GAIN
 }
 
+data class ThroneRoomSelection(val card: Card): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.THRONE_ROOM
+}
+
 data class DrawSelection(val cards: List<Card>): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.DRAW
