@@ -10,6 +10,7 @@ enum class BranchContext: ContextBearer {
     CHOOSE_BUY,
     CELLAR,
     CHAPEL,
+    HARBINGER,
     WORKSHOP,
     MILITIA,
     REMODEL_TRASH,

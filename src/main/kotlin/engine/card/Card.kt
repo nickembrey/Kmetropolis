@@ -22,6 +22,9 @@ enum class Card(
     CHAPEL(type = CardType.ACTION, cost = 2, effect = {
         it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.CHAPEL, selections = 4))
     }),
+    HARBINGER(type = CardType.ACTION, cost = 3, addActions = 1,addCards = 1, effect = {
+        it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.HARBINGER, selections = 1))
+    }),
     MERCHANT(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 1),
     VILLAGE(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 2),
     WORKSHOP(type = CardType.ACTION, cost = 3, effect = {

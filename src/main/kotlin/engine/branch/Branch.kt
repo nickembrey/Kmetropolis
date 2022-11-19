@@ -36,6 +36,10 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                 .plus(SpecialBranchSelection.SKIP).shuffled().toList()
             BranchContext.GAME_OVER -> gameOver
             BranchContext.CHAPEL -> hand.map { ChapelSelection(card = it) }
+            BranchContext.HARBINGER -> {
+                // TODO: check that discard is all visible
+                state.currentPlayer.knownDiscard.possibilities.map { HarbingerSelection(card = it) }
+            }
             BranchContext.WORKSHOP -> state.workshopMenu.map { WorkshopSelection(card = it) }
             BranchContext.MILITIA -> hand.map { MilitiaSelection(card = it) }
             BranchContext.REMODEL_TRASH -> hand

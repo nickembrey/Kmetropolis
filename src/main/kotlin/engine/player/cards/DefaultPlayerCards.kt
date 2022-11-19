@@ -99,7 +99,7 @@ class DefaultPlayerCards private constructor(
     override fun draw(card: Card) {
         if(knownDeck[0] != null) {
             knownDeck.remove(0)
-            for(entry in knownDeck.entries) {
+            for(entry in knownDeck.entries) { // TODO: sort
                 knownDeck.remove(entry.key)
                 knownDeck[entry.key - 1] = entry.value
             }
@@ -127,6 +127,21 @@ class DefaultPlayerCards private constructor(
     override fun gain(card: Card) {
         knownDiscard[card] += 1
         discardCount += 1
+    }
+
+    override fun topdeck(card: Card) { // TODO: does harbinger reveal the card? I think so
+        if(knownDiscard[card] > 0) {
+            knownDiscard[card] -= 1
+        } else {
+            unknownCards[card] -= 1
+        }
+        discardCount -= 1
+        for(entry in knownDeck.entries) {
+            knownDeck.remove(entry.key)
+            knownDeck[entry.key + 1] = entry.value
+        }
+        knownDeck[0] = card
+        deckCount += 1
     }
 
     override fun discard(card: Card) {

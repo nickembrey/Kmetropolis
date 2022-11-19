@@ -25,6 +25,11 @@ data class ChapelSelection(val card: Card): BranchSelection {
         get() = BranchContext.CHAPEL
 }
 
+data class HarbingerSelection(val card: Card): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.HARBINGER
+}
+
 data class WorkshopSelection(val card: Card): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.WORKSHOP

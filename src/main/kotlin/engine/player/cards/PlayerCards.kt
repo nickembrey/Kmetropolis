@@ -32,12 +32,16 @@ interface PlayerCards {
 
     fun cleanup()
     fun shuffle()
+
+    // puts the hand back into the deck (random position)
     fun redeck()
+
 
     fun draw(card: Card)
     fun play(card: Card)
     fun gain(card: Card)
     fun discard(card: Card)
+    fun topdeck(card: Card) // puts a card from the discard onto the deck
     fun trash(card: Card)
 
     fun identify(card: Card, index: Int)

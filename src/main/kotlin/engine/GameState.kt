@@ -444,6 +444,13 @@ class GameState private constructor (
                 }
 
             }
+            BranchContext.HARBINGER -> {
+                if(selection is HarbingerSelection) {
+                    currentPlayer.topdeck(selection.card)
+                } else {
+                    throw IllegalStateException()
+                }
+            }
             BranchContext.MILITIA -> {
                 if(selection is MilitiaSelection) {
                     processStateOperation(PlayerMoveCardOperation( // TODO: add some shortcuts
