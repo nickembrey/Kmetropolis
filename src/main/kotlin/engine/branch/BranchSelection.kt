@@ -45,6 +45,11 @@ data class WorkshopSelection(val card: Card): BranchSelection {
         get() = BranchContext.WORKSHOP
 }
 
+data class BureaucratSelection(val card: Card): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.BUREAUCRAT
+}
+
 data class MilitiaSelection(val card: Card): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.MILITIA

@@ -50,6 +50,9 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
             }
             BranchContext.VASSAL -> listOf(SpecialBranchSelection.SKIP, VassalSelection(card = state.currentPlayer.vassalCard!!))
             BranchContext.WORKSHOP -> state.workshopMenu.map { WorkshopSelection(card = it) }
+            BranchContext.BUREAUCRAT -> hand.filter { it.type == CardType.VICTORY }.map {
+                BureaucratSelection(card = it)
+            }.ifEmpty { skipList }
             BranchContext.MILITIA -> hand.map { MilitiaSelection(card = it) }
             BranchContext.REMODEL_TRASH -> hand
                 .map { RemodelTrashSelection(card = it) }.ifEmpty { skipList }

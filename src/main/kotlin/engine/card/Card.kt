@@ -41,11 +41,23 @@ enum class Card(
     WORKSHOP(type = CardType.ACTION, cost = 3, effect = {
         it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.WORKSHOP))
     }),
+    BUREAUCRAT(type = CardType.ACTION, cost = 4, effect = {
+        it.currentPlayer.gain(SILVER)
+        it.currentPlayer.topdeck(SILVER)
+        it.eventStack.pushAll(
+            listOf(
+                SpecialGameEvent.SWITCH_PLAYER,
+                AttackEvent(attack = DelayedGameOperation { state ->
+                    state.eventStack.push(engine.branch.Branch(context = engine.branch.BranchContext.BUREAUCRAT))
+                }),
+                SpecialGameEvent.SWITCH_PLAYER
+            ).reversed())
+    }),
     MILITIA(type = CardType.ACTION, cost = 4, addCoins = 2, effect = {
         it.eventStack.pushAll(
             listOf(
                 SpecialGameEvent.SWITCH_PLAYER,
-                engine.AttackEvent( attack = DelayedGameOperation { state ->
+                AttackEvent( attack = DelayedGameOperation { state ->
                     state.eventStack.push(
                         engine.branch.Branch(
                             engine.branch.BranchContext.MILITIA,

@@ -478,6 +478,14 @@ class GameState private constructor (
                     throw IllegalStateException()
                 }
             }
+            BranchContext.BUREAUCRAT -> {
+                if(selection is BureaucratSelection) {
+                    currentPlayer.discard(selection.card)
+                    currentPlayer.topdeck(selection.card)
+                } else {
+                    throw IllegalStateException()
+                }
+            }
             BranchContext.MILITIA -> {
                 if(selection is MilitiaSelection) {
                     processStateOperation(PlayerMoveCardOperation( // TODO: add some shortcuts

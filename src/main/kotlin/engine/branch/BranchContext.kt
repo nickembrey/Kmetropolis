@@ -14,6 +14,7 @@ enum class BranchContext: ContextBearer {
     HARBINGER,
     VASSAL,
     WORKSHOP,
+    BUREAUCRAT,
     MILITIA,
     REMODEL_TRASH,
     REMODEL_GAIN,
