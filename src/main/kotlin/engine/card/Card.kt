@@ -21,14 +21,14 @@ enum class Card(
 ): Comparable<Card> {
 
     CELLAR(type = CardType.ACTION, cost = 2, effect = {
-        it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.CELLAR, selections = 1)) // TODO: only one?
+        it.eventStack.push(Branch(BranchContext.CELLAR, selections = 1)) // TODO: only one?
     }),
     CHAPEL(type = CardType.ACTION, cost = 2, effect = {
-        it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.CHAPEL, selections = 4))
+        it.eventStack.push(Branch(BranchContext.CHAPEL, selections = 4))
     }),
     MOAT(type = CardType.ACTION, cost = 2),
     HARBINGER(type = CardType.ACTION, cost = 3, addActions = 1,addCards = 1, effect = {
-        it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.HARBINGER, selections = 1))
+        it.eventStack.push(Branch(BranchContext.HARBINGER, selections = 1))
     }),
     MERCHANT(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 1),
     VASSAL(type = CardType.ACTION, cost = 3, effect = {
@@ -36,13 +36,14 @@ enum class Card(
         it.currentPlayer.discard(card)
         if(card.type == CardType.ACTION) {
             it.currentPlayer.vassalCard = card
-            it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.VASSAL, selections = 1))
+            it.eventStack.push(Branch(BranchContext.VASSAL, selections = 1))
         }
     }),
     VILLAGE(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 2),
     WORKSHOP(type = CardType.ACTION, cost = 3, effect = {
-        it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.WORKSHOP))
+        it.eventStack.push(Branch(BranchContext.WORKSHOP))
     }),
+    WOODCUTTER(type = CardType.ACTION, cost = 3, addCoins = 2, addBuys = 1),
     BUREAUCRAT(type = CardType.ACTION, cost = 4, effect = {
         it.currentPlayer.gain(SILVER)
         it.currentPlayer.topdeck(SILVER)
@@ -50,7 +51,7 @@ enum class Card(
             listOf(
                 SpecialGameEvent.SWITCH_PLAYER,
                 AttackEvent(attack = DelayedGameOperation { state ->
-                    state.eventStack.push(engine.branch.Branch(context = engine.branch.BranchContext.BUREAUCRAT))
+                    state.eventStack.push(Branch(context = BranchContext.BUREAUCRAT))
                 }),
                 SpecialGameEvent.SWITCH_PLAYER
             ).reversed())
@@ -61,8 +62,8 @@ enum class Card(
                 SpecialGameEvent.SWITCH_PLAYER,
                 AttackEvent( attack = DelayedGameOperation { state ->
                     state.eventStack.push(
-                        engine.branch.Branch(
-                            engine.branch.BranchContext.MILITIA,
+                        Branch(
+                            BranchContext.MILITIA,
                             selections = state.currentPlayer.handCount - 3
                         )
                     )
@@ -82,15 +83,15 @@ enum class Card(
     REMODEL(type = CardType.ACTION, cost = 4, effect = {
         it.eventStack.pushAll(
             listOf(
-                engine.branch.Branch(context = engine.branch.BranchContext.REMODEL_TRASH),
-                engine.branch.Branch(engine.branch.BranchContext.REMODEL_GAIN) // TODO: make sure skips if no remodel card
+                Branch(context = BranchContext.REMODEL_TRASH),
+                Branch(BranchContext.REMODEL_GAIN) // TODO: make sure skips if no remodel card
             ).reversed()
 
         )
     }),
     SMITHY(type = CardType.ACTION, cost = 4, addCards = 3),
     THRONE_ROOM(type = CardType.ACTION, cost = 4, effect = {
-        it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.THRONE_ROOM, selections = 1))
+        it.eventStack.push(Branch(BranchContext.THRONE_ROOM, selections = 1))
     }),
     BANDIT(type = CardType.ACTION, cost = 5, effect = {
         it.eventStack.pushAll(
@@ -130,8 +131,14 @@ enum class Card(
                 SpecialGameEvent.SWITCH_PLAYER
             ).reversed())
     }),
-    WOODCUTTER(type = CardType.ACTION, cost = 3, addCoins = 2, addBuys = 1),
-
+    COUNCIL_ROOM(type = CardType.ACTION, cost = 5, addCards = 4, effect = {
+        it.eventStack.pushAll(
+            listOf(
+                engine.SpecialGameEvent.SWITCH_PLAYER,
+                Branch(context = engine.branch.BranchContext.DRAW),
+                engine.SpecialGameEvent.SWITCH_PLAYER
+            ))
+    }),
     COPPER(type = CardType.TREASURE, cost = 0, addCoins = 1),
     SILVER(type = CardType.TREASURE, cost = 3, addCoins = 2, effect = {
         it.currentPlayer.coins += it.currentPlayer.inPlay.toList()
