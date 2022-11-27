@@ -533,6 +533,25 @@ class GameState private constructor (
                     throw IllegalStateException()
                 }
             }
+            BranchContext.BANDIT -> {
+                if(selection is BanditSelection) {
+                    val first = currentPlayer.knownDeck[0]!!
+                    val second = currentPlayer.knownDeck[1]!!
+                    currentPlayer.draw(first)
+                    currentPlayer.draw(second)
+                    if(first == selection.card) {
+                        currentPlayer.trash(first)
+                        currentPlayer.discard(second)
+                    } else if(second == selection.card) {
+                        currentPlayer.trash(second)
+                        currentPlayer.discard(first)
+                    } else {
+                        throw IllegalStateException()
+                    }
+                } else {
+                    throw IllegalStateException()
+                }
+            }
             BranchContext.NONE -> {
                 when(selection) {
                     is SpecialBranchSelection -> when(selection) {

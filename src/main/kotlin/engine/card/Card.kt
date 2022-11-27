@@ -4,6 +4,8 @@ import engine.AttackEvent
 import engine.DelayedGameOperation
 import engine.GameState
 import engine.SpecialGameEvent
+import engine.branch.Branch
+import engine.branch.BranchContext
 import engine.operation.property.ModifyPropertyOperation
 import engine.operation.stack.player.PlayerCardOperation
 
@@ -89,6 +91,29 @@ enum class Card(
     SMITHY(type = CardType.ACTION, cost = 4, addCards = 3),
     THRONE_ROOM(type = CardType.ACTION, cost = 4, effect = {
         it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.THRONE_ROOM, selections = 1))
+    }),
+    BANDIT(type = CardType.ACTION, cost = 5, effect = {
+        it.eventStack.pushAll(
+            listOf(
+                SpecialGameEvent.SWITCH_PLAYER,
+                AttackEvent(attack = DelayedGameOperation { state ->
+                    if(state.currentPlayer.knownDeck[0] == null) {
+                        val card = state.currentPlayer.sample(1).single()
+                        state.currentPlayer.identify(card, 0)
+                    }
+                    if(state.currentPlayer.knownDeck[1] == null) {
+                        val card = state.currentPlayer.sample(1).single()
+                        state.currentPlayer.identify(card, 1)
+                    }
+                    state.eventStack.push(
+                        Branch(
+                            BranchContext.BANDIT
+                        )
+                    )
+                }),
+                SpecialGameEvent.SWITCH_PLAYER,
+            ).reversed())
+        it.currentPlayer.gain(GOLD)
     }),
     FESTIVAL(type = CardType.ACTION, cost = 5, addCoins = 2, addActions = 2, addBuys = 1),
     LABORATORY(type = CardType.ACTION, cost = 5, addCards = 2, addActions = 1),

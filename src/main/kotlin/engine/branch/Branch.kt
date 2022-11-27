@@ -65,6 +65,12 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                 .filter { it.type == CardType.ACTION }
                 .map { ThroneRoomSelection(card = it) }
                 .ifEmpty { skipList }
+            BranchContext.BANDIT -> {
+                listOf(state.currentPlayer.knownDeck[0]!!, state.currentPlayer.knownDeck[1]!!)
+                    .filter { it == Card.SILVER || it == Card.GOLD }
+                    .map { BanditSelection(card = it) }
+                    .ifEmpty { skipList }
+            }
             BranchContext.CHOOSE_ACTION -> hand
                 .filter { it.type == CardType.ACTION }
                 .map { ActionSelection(card = it) }
