@@ -75,6 +75,16 @@ data class BanditSelection(val card: Card): BranchSelection {
         get() = BranchContext.BANDIT
 }
 
+data class LibrarySkipSelection(val index: Int): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.LIBRARY
+}
+
+class LibraryDrawSelection: BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.LIBRARY
+}
+
 data class DrawSelection(val cards: List<Card>): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.DRAW

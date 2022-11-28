@@ -6,6 +6,7 @@ import engine.performance.util.CardCountMap
 // TODO: buys seem to be being added to deck
 class DefaultPlayerCards private constructor(
     private val board: CardCountMap,
+    override val aside: CardCountMap,
     override val unknownCards: CardCountMap,
     override val knownHand: CardCountMap,
     override val inPlay: CardCountMap,
@@ -24,6 +25,7 @@ class DefaultPlayerCards private constructor(
             initialDeck: CardCountMap
         ) = DefaultPlayerCards(
             board = board,
+            aside = CardCountMap.empty(board),
             unknownCards = initialDeck,
             knownHand = CardCountMap.empty(board),
             inPlay = CardCountMap.empty(board),
@@ -40,6 +42,7 @@ class DefaultPlayerCards private constructor(
     override fun copy(): DefaultPlayerCards =
         DefaultPlayerCards(
             board = board.copy(),
+            aside = aside.copy(),
             unknownCards = unknownCards.copy(),
             knownHand = knownHand.copy(),
             inPlay = inPlay.copy(),
@@ -168,6 +171,12 @@ class DefaultPlayerCards private constructor(
         discardCount += 1
     }
 
+    override fun discardFromAside(card: Card) {
+        knownDiscard[card] += 1
+        discardCount += 1
+        aside[card] -= 1
+    }
+
     override fun trash(card: Card) {
         trash[card] += 1
         if(knownHand[card] > 0) {
@@ -180,6 +189,19 @@ class DefaultPlayerCards private constructor(
 
     override val visibleHand: Boolean
         get() = knownHand.size == handCount
+
+    override fun setAside(index: Int) {
+        val card = knownDeck[index]!!
+        deckCount -= 1
+        aside[card] += 1
+        knownDeck.remove(index)
+        for(i in knownDeck.keys.sorted()) {
+            if(i > index) {
+                knownDeck[i-1] = knownDeck[i]!!
+                knownDeck.remove(i)
+            }
+        }
+    }
 
     override fun identify(card: Card, index: Int) {
         unknownCards[card] -= 1

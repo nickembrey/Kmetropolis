@@ -118,6 +118,9 @@ enum class Card(
     }),
     FESTIVAL(type = CardType.ACTION, cost = 5, addCoins = 2, addActions = 2, addBuys = 1),
     LABORATORY(type = CardType.ACTION, cost = 5, addCards = 2, addActions = 1),
+    LIBRARY(type = CardType.ACTION, cost = 5, effect = {
+        it.eventStack.push(Branch(context = BranchContext.LIBRARY))
+    }),
     MARKET(type = CardType.ACTION, cost = 5, addCards = 1, addActions = 1, addBuys = 1),
     WITCH(type = CardType.ACTION, cost = 5, addCards = 2, effect = {
         it.eventStack.pushAll(
@@ -134,9 +137,9 @@ enum class Card(
     COUNCIL_ROOM(type = CardType.ACTION, cost = 5, addCards = 4, effect = {
         it.eventStack.pushAll(
             listOf(
-                engine.SpecialGameEvent.SWITCH_PLAYER,
-                Branch(context = engine.branch.BranchContext.DRAW),
-                engine.SpecialGameEvent.SWITCH_PLAYER
+                SpecialGameEvent.SWITCH_PLAYER,
+                Branch(context = BranchContext.DRAW),
+                SpecialGameEvent.SWITCH_PLAYER
             ))
     }),
     COPPER(type = CardType.TREASURE, cost = 0, addCoins = 1),

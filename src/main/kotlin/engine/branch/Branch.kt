@@ -71,6 +71,23 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                     .map { BanditSelection(card = it) }
                     .ifEmpty { skipList }
             }
+            BranchContext.LIBRARY -> {
+                var i = 0
+                while(i < (7 - state.currentPlayer.handCount - 1)) {
+                    if(state.currentPlayer.knownDeck[i] == null) {
+                        val card = state.currentPlayer.sample(1).single()
+                        state.currentPlayer.identify(card, i)
+                        state.eventStack.push(Branch(context = BranchContext.LIBRARY))
+                        return listOf(
+                            LibrarySkipSelection(index = i),
+                            SpecialBranchSelection.SKIP
+                        )
+                    } else {
+                        i += 1
+                    }
+                }
+                return listOf(LibraryDrawSelection())
+            }
             BranchContext.CHOOSE_ACTION -> hand
                 .filter { it.type == CardType.ACTION }
                 .map { ActionSelection(card = it) }

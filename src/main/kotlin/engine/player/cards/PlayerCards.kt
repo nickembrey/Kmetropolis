@@ -15,6 +15,7 @@ interface PlayerCards {
     fun copy(): PlayerCards
 
     val allCards: CardCountMap
+    val aside: CardCountMap
     val unknownCards: CardCountMap // TODO: do I need this?
     val knownHand: CardCountMap
     val inPlay: CardCountMap
@@ -37,15 +38,17 @@ interface PlayerCards {
     // puts the hand back into the deck (random position)
     fun redeck()
 
-
     // TODO: one unified move method that takes a card and two locations (like before)
     fun draw(card: Card)
     fun play(card: Card) // i.e., play from hand
     fun playFromDiscard(card: Card)
     fun gain(card: Card)
     fun discard(card: Card)
+    fun discardFromAside(card: Card)
     fun topdeck(card: Card) // puts a card from the discard onto the deck
     fun trash(card: Card)
+
+    fun setAside(index: Int)
 
     fun identify(card: Card, index: Int)
 }

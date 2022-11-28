@@ -552,6 +552,18 @@ class GameState private constructor (
                     throw IllegalStateException()
                 }
             }
+            BranchContext.LIBRARY -> {
+                if(selection is LibrarySkipSelection) {
+                   currentPlayer.setAside(selection.index)
+                } else if(selection is LibraryDrawSelection) {
+                    for(card in currentPlayer.aside.toList()) {
+                        currentPlayer.discardFromAside(card)
+                    }
+                    eventStack.push(Branch(context = BranchContext.DRAW, selections = (7 - currentPlayer.handCount)))
+                } else {
+                    throw IllegalStateException()
+                }
+            }
             BranchContext.NONE -> {
                 when(selection) {
                     is SpecialBranchSelection -> when(selection) {
