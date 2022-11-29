@@ -14,7 +14,8 @@ data class Player internal constructor(
     var buys: Int,
     var coins: Int,
     var baseVp: Int,
-    var remodelCard: Card? // TODO: replace with categoricalProperties
+    var remodelCard: Card?,
+    var mineCard: Card? // TODO: replace with categoricalProperties
 ): PlayerCards by cards {
 
     // TODO: avoid getters
@@ -35,7 +36,8 @@ data class Player internal constructor(
                 buys = 0,
                 coins = 0,
                 baseVp = 3,
-                remodelCard = null
+                remodelCard = null,
+                mineCard = null
             )
         }
     }
@@ -50,7 +52,8 @@ data class Player internal constructor(
             buys = buys,
             coins = coins,
             baseVp = baseVp,
-            remodelCard = remodelCard
+            remodelCard = remodelCard,
+            mineCard = mineCard
         )
     }
 

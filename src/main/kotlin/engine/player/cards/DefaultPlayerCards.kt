@@ -145,6 +145,11 @@ class DefaultPlayerCards private constructor(
         discardCount += 1
     }
 
+    override fun gainToHand(card: Card) {
+        knownHand[card] += 1
+        handCount += 1
+    }
+
     override fun topdeck(card: Card) { // TODO: does harbinger reveal the card? I think so
         if(knownDiscard[card] > 0) {
             knownDiscard[card] -= 1

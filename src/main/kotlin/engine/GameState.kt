@@ -564,6 +564,24 @@ class GameState private constructor (
                     throw IllegalStateException()
                 }
             }
+            BranchContext.MINE_TRASH -> {
+                if(selection is MineTrashSelection) {
+                    currentPlayer.mineCard = selection.card
+                    currentPlayer.trash(currentPlayer.mineCard!!)
+                    eventStack.push(Branch(context = BranchContext.MINE_GAIN))
+                } else {
+                    throw IllegalStateException()
+                }
+            }
+            BranchContext.MINE_GAIN -> {
+                if(selection is MineGainSelection) {
+                    board[currentPlayer.mineCard!!] -= 1 // TODO:?
+                    currentPlayer.gainToHand(currentPlayer.mineCard!!)
+                    currentPlayer.mineCard = null
+                } else {
+                    throw IllegalStateException()
+                }
+            }
             BranchContext.NONE -> {
                 when(selection) {
                     is SpecialBranchSelection -> when(selection) {

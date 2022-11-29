@@ -43,6 +43,7 @@ interface PlayerCards {
     fun play(card: Card) // i.e., play from hand
     fun playFromDiscard(card: Card)
     fun gain(card: Card)
+    fun gainToHand(card: Card)
     fun discard(card: Card)
     fun discardFromAside(card: Card)
     fun topdeck(card: Card) // puts a card from the discard onto the deck

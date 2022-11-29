@@ -21,6 +21,8 @@ enum class BranchContext: ContextBearer {
     THRONE_ROOM,
     BANDIT,
     LIBRARY,
+    MINE_TRASH,
+    MINE_GAIN,
     ANY,
     NONE;
 

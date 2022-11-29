@@ -85,6 +85,16 @@ class LibraryDrawSelection: BranchSelection {
         get() = BranchContext.LIBRARY
 }
 
+data class MineTrashSelection(val card: Card): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.MINE_TRASH
+}
+
+data class MineGainSelection(val card: Card): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.MINE_GAIN
+}
+
 data class DrawSelection(val cards: List<Card>): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.DRAW

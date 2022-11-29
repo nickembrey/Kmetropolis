@@ -122,6 +122,9 @@ enum class Card(
         it.eventStack.push(Branch(context = BranchContext.LIBRARY))
     }),
     MARKET(type = CardType.ACTION, cost = 5, addCards = 1, addActions = 1, addBuys = 1),
+    MINE(type = CardType.ACTION, cost = 5, effect = {
+        it.eventStack.push(Branch(context = engine.branch.BranchContext.MINE_TRASH))
+    }),
     WITCH(type = CardType.ACTION, cost = 5, addCards = 2, effect = {
         it.eventStack.pushAll(
             listOf(

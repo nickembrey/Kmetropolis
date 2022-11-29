@@ -88,6 +88,14 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                 }
                 return listOf(LibraryDrawSelection())
             }
+            BranchContext.MINE_TRASH -> hand
+                .filter { it.type == CardType.TREASURE }
+                .map { MineTrashSelection(card = it) }
+                .ifEmpty { skipList }
+            BranchContext.MINE_GAIN -> state.board.possibilities
+                .filter { it.cost <= (state.currentPlayer.mineCard!!.cost + 3 ) }
+                .map { MineGainSelection(card = it) }
+                .ifEmpty { skipList }
             BranchContext.CHOOSE_ACTION -> hand
                 .filter { it.type == CardType.ACTION }
                 .map { ActionSelection(card = it) }
