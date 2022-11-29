@@ -582,6 +582,35 @@ class GameState private constructor (
                     throw IllegalStateException()
                 }
             }
+            BranchContext.SENTRY_TRASH -> {
+                if(selection is SentryTrashSelection) {
+                    for(pair in selection.cards) {
+                        currentPlayer.trashFromDeck(pair.second)
+                    }
+                    eventStack.push(Branch(context = BranchContext.SENTRY_DISCARD))
+                } else {
+                    throw IllegalStateException()
+                }
+            }
+            BranchContext.SENTRY_DISCARD -> {
+                if(selection is SentryDiscardSelection) {
+                    for(pair in selection.cards) {
+                        currentPlayer.discardFromDeck(pair.second)
+                    }
+                    eventStack.push(Branch(context = BranchContext.SENTRY_TOPDECK))
+                } else {
+                    throw IllegalStateException()
+                }
+            }
+            BranchContext.SENTRY_TOPDECK -> {
+                if(selection is SentryTopdeckSelection) {
+                    for((i, pair) in selection.cards.withIndex()) {
+                        currentPlayer.identify(pair.first, i)
+                    }
+                } else {
+                    throw IllegalStateException()
+                }
+            }
             BranchContext.NONE -> {
                 when(selection) {
                     is SpecialBranchSelection -> when(selection) {

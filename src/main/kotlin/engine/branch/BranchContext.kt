@@ -23,6 +23,9 @@ enum class BranchContext: ContextBearer {
     LIBRARY,
     MINE_TRASH,
     MINE_GAIN,
+    SENTRY_TRASH,
+    SENTRY_DISCARD,
+    SENTRY_TOPDECK,
     ANY,
     NONE;
 

@@ -182,6 +182,14 @@ class DefaultPlayerCards private constructor(
         aside[card] -= 1
     }
 
+    override fun discardFromDeck(index: Int) {
+        val card = knownDeck[index]!!
+        knownDiscard[card] += 1
+        knownDeck.remove(index)
+        deckCount -= 1
+        discardCount += 1
+    }
+
     override fun trash(card: Card) {
         trash[card] += 1
         if(knownHand[card] > 0) {
@@ -190,6 +198,13 @@ class DefaultPlayerCards private constructor(
             unknownCards[card] -= 1
         }
         handCount -= 1
+    }
+
+    override fun trashFromDeck(index: Int) {
+        val card = knownDeck[index]!!
+        trash[card] += 1
+        knownDeck.remove(index)
+        deckCount -= 1
     }
 
     override val visibleHand: Boolean
@@ -209,7 +224,10 @@ class DefaultPlayerCards private constructor(
     }
 
     override fun identify(card: Card, index: Int) {
-        unknownCards[card] -= 1
+        if(knownDeck[index] == null) {
+            unknownCards[card] -= 1
+        }
+
         knownDeck[index] = card
     }
 }

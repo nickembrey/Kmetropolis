@@ -95,6 +95,21 @@ data class MineGainSelection(val card: Card): BranchSelection {
         get() = BranchContext.MINE_GAIN
 }
 
+data class SentryTrashSelection(val cards: List<Pair<Card, Int>>): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.SENTRY_TRASH
+}
+
+data class SentryDiscardSelection(val cards: List<Pair<Card, Int>>): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.SENTRY_DISCARD
+}
+
+data class SentryTopdeckSelection(val cards: List<Pair<Card, Int>>): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.SENTRY_TOPDECK
+}
+
 data class DrawSelection(val cards: List<Card>): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.DRAW

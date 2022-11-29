@@ -123,7 +123,18 @@ enum class Card(
     }),
     MARKET(type = CardType.ACTION, cost = 5, addCards = 1, addActions = 1, addBuys = 1),
     MINE(type = CardType.ACTION, cost = 5, effect = {
-        it.eventStack.push(Branch(context = engine.branch.BranchContext.MINE_TRASH))
+        it.eventStack.push(Branch(context = BranchContext.MINE_TRASH))
+    }),
+    SENTRY(type = CardType.ACTION, cost = 5, addCards = 1, addActions = 1, effect = {
+        if(it.currentPlayer.knownDeck[0] == null) {
+            val card0 = it.currentPlayer.sample(1).single()
+            it.currentPlayer.identify(card0, 0)
+        }
+        if(it.currentPlayer.knownDeck[1] == null) {
+            val card1 = it.currentPlayer.sample(1).single()
+            it.currentPlayer.identify(card1, 1)
+        }
+        it.eventStack.push(Branch(context = BranchContext.SENTRY_TRASH))
     }),
     WITCH(type = CardType.ACTION, cost = 5, addCards = 2, effect = {
         it.eventStack.pushAll(

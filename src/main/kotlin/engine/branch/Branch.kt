@@ -96,6 +96,50 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                 .filter { it.cost <= (state.currentPlayer.mineCard!!.cost + 3 ) }
                 .map { MineGainSelection(card = it) }
                 .ifEmpty { skipList }
+            BranchContext.SENTRY_TRASH -> listOf( // TODO: what about the case where there aren't 2 cards on deck
+                listOf(Pair(state.currentPlayer.knownDeck[0]!!, 0), Pair(state.currentPlayer.knownDeck[1]!!, 1)),
+                listOf(Pair(state.currentPlayer.knownDeck[0]!!, 0)),
+                listOf(Pair(state.currentPlayer.knownDeck[1]!!, 1)),
+                listOf()
+            ).map { SentryTrashSelection(cards = it) }
+            BranchContext.SENTRY_DISCARD -> {
+                val cardList: MutableList<Pair<Card, Int>> = mutableListOf()
+                if(state.currentPlayer.knownDeck[0] != null) {
+                    cardList.add(Pair(state.currentPlayer.knownDeck[0]!!, 0))
+                }
+                if(state.currentPlayer.knownDeck[1] != null) {
+                    cardList.add(Pair(state.currentPlayer.knownDeck[1]!!, 1))
+                }
+                when(cardList.size) {
+                    0 -> skipList
+                    1 -> listOf(SentryDiscardSelection(cards = cardList), SpecialBranchSelection.SKIP)
+                    2 -> listOf(
+                        listOf(cardList[0]),
+                        listOf(cardList[1]),
+                        listOf(cardList[0], cardList[1]))
+                        .map { SentryDiscardSelection(cards = it) }
+                        .plus(SpecialBranchSelection.SKIP)
+                    else -> throw IllegalStateException()
+                }
+            }
+            BranchContext.SENTRY_TOPDECK -> {
+                val cardList: MutableList<Pair<Card, Int>> = mutableListOf()
+                if(state.currentPlayer.knownDeck[0] != null) {
+                    cardList.add(Pair(state.currentPlayer.knownDeck[0]!!, 0))
+                }
+                if(state.currentPlayer.knownDeck[1] != null) {
+                    cardList.add(Pair(state.currentPlayer.knownDeck[1]!!, 1))
+                }
+                when(cardList.size) {
+                    0 -> skipList
+                    1 -> listOf(SentryTopdeckSelection(cards = cardList))
+                    2 -> listOf(
+                        listOf(cardList[1], cardList[0]),
+                        listOf(cardList[0], cardList[1]))
+                        .map { SentryTopdeckSelection(cards = it) }
+                    else -> throw IllegalStateException()
+                }
+            }
             BranchContext.CHOOSE_ACTION -> hand
                 .filter { it.type == CardType.ACTION }
                 .map { ActionSelection(card = it) }

@@ -46,8 +46,10 @@ interface PlayerCards {
     fun gainToHand(card: Card)
     fun discard(card: Card)
     fun discardFromAside(card: Card)
+    fun discardFromDeck(index: Int)
     fun topdeck(card: Card) // puts a card from the discard onto the deck
     fun trash(card: Card)
+    fun trashFromDeck(index: Int)
 
     fun setAside(index: Int)
 
