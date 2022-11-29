@@ -26,6 +26,8 @@ enum class BranchContext: ContextBearer {
     SENTRY_TRASH,
     SENTRY_DISCARD,
     SENTRY_TOPDECK,
+    ARTISAN_GAIN,
+    ARTISAN_TOPDECK,
     ANY,
     NONE;
 

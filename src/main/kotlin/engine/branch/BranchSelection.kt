@@ -110,6 +110,16 @@ data class SentryTopdeckSelection(val cards: List<Pair<Card, Int>>): BranchSelec
         get() = BranchContext.SENTRY_TOPDECK
 }
 
+data class ArtisanGainSelection(val card: Card): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.ARTISAN_GAIN
+}
+
+data class ArtisanTopdeckSelection(val card: Card): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.ARTISAN_TOPDECK
+}
+
 data class DrawSelection(val cards: List<Card>): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.DRAW

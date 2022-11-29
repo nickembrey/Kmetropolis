@@ -140,6 +140,11 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                     else -> throw IllegalStateException()
                 }
             }
+            BranchContext.ARTISAN_GAIN -> state.board.possibilities
+                .filter { it.cost <= 5 }
+                .map { ArtisanGainSelection(card = it) }
+            BranchContext.ARTISAN_TOPDECK -> hand
+                .map { ArtisanTopdeckSelection(card = it) }
             BranchContext.CHOOSE_ACTION -> hand
                 .filter { it.type == CardType.ACTION }
                 .map { ActionSelection(card = it) }

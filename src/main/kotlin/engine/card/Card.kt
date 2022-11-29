@@ -156,6 +156,9 @@ enum class Card(
                 SpecialGameEvent.SWITCH_PLAYER
             ))
     }),
+    ARTISAN(type = CardType.ACTION, cost = 6, effect = {
+        it.eventStack.push(Branch(context = BranchContext.ARTISAN_GAIN))
+    }),
     COPPER(type = CardType.TREASURE, cost = 0, addCoins = 1),
     SILVER(type = CardType.TREASURE, cost = 3, addCoins = 2, effect = {
         it.currentPlayer.coins += it.currentPlayer.inPlay.toList()

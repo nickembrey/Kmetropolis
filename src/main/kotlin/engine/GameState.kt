@@ -611,6 +611,21 @@ class GameState private constructor (
                     throw IllegalStateException()
                 }
             }
+            BranchContext.ARTISAN_GAIN -> {
+                if(selection is ArtisanGainSelection) {
+                    currentPlayer.gainToHand(selection.card)
+                    eventStack.push(Branch(context = BranchContext.ARTISAN_TOPDECK))
+                } else {
+                    throw IllegalStateException()
+                }
+            }
+            BranchContext.ARTISAN_TOPDECK -> {
+                if(selection is ArtisanTopdeckSelection) {
+                    currentPlayer.topdeck(selection.card)
+                } else {
+                    throw IllegalStateException()
+                }
+            }
             BranchContext.NONE -> {
                 when(selection) {
                     is SpecialBranchSelection -> when(selection) {
