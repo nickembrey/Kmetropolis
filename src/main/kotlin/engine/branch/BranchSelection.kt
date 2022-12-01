@@ -10,7 +10,12 @@ data class AttackSelection(val block: Boolean): BranchSelection {
         get() = BranchContext.ATTACK
 }
 
-data class CellarSelection(val cards: List<Card>): BranchSelection {
+data class HiddenCellarSelection(val cardCount: Int): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.CELLAR
+}
+
+data class VisibleCellarSelection(val cards: List<Card>): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.CELLAR
 }
@@ -25,19 +30,24 @@ data class TreasureSelection(val cards: List<Card>): BranchSelection {
         get() = BranchContext.CHOOSE_TREASURE
 }
 
-data class ChapelSelection(val card: Card): BranchSelection {
+data class ChapelSelection(val cards: List<Card>): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.CHAPEL
 }
 
-data class HarbingerSelection(val card: Card): BranchSelection {
+data class HarbingerSelection(val card: Card?): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.HARBINGER
 }
 
-data class VassalSelection(val card: Card): BranchSelection {
+data class VassalDiscardSelection(val card: Card): BranchSelection {
     override val context: BranchContext
-        get() = BranchContext.VASSAL
+        get() = BranchContext.VASSAL_DISCARD
+}
+
+data class VassalPlaySelection(val card: Card): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.VASSAL_PLAY
 }
 
 data class WorkshopSelection(val card: Card): BranchSelection {
@@ -50,9 +60,24 @@ data class BureaucratSelection(val card: Card): BranchSelection {
         get() = BranchContext.BUREAUCRAT
 }
 
-data class MilitiaSelection(val card: Card): BranchSelection {
+data class HiddenMilitiaSelection(val cardCount: Int): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.MILITIA
+}
+
+data class VisibleMilitiaSelection(val cards: List<Card>): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.MILITIA
+}
+
+class HiddenPoacherSelection: BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.POACHER
+}
+
+data class VisiblePoacherSelection(val card: Card): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.POACHER
 }
 
 data class RemodelTrashSelection(val card: Card): BranchSelection {
@@ -75,14 +100,34 @@ data class BanditSelection(val card: Card): BranchSelection {
         get() = BranchContext.BANDIT
 }
 
-data class LibrarySkipSelection(val index: Int): BranchSelection {
+class HiddenLibraryIdentifySelection: BranchSelection {
     override val context: BranchContext
-        get() = BranchContext.LIBRARY
+        get() = BranchContext.LIBRARY_IDENTIFY
 }
 
-class LibraryDrawSelection: BranchSelection {
+data class VisibleLibraryIdentifySelection(val card: Card): BranchSelection {
     override val context: BranchContext
-        get() = BranchContext.LIBRARY
+        get() = BranchContext.LIBRARY_IDENTIFY
+}
+
+class HiddenLibrarySkipSelection: BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.LIBRARY_DRAW
+}
+
+class HiddenLibraryDrawSelection: BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.LIBRARY_DRAW
+}
+
+data class VisibleLibrarySkipSelection(val card: Card): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.LIBRARY_DRAW
+}
+
+data class VisibleLibraryDrawSelection(val card: Card): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.LIBRARY_DRAW
 }
 
 data class MineTrashSelection(val card: Card): BranchSelection {
@@ -93,6 +138,11 @@ data class MineTrashSelection(val card: Card): BranchSelection {
 data class MineGainSelection(val card: Card): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.MINE_GAIN
+}
+
+data class SentryIdentifySelection(val cards: List<Pair<Card, Int>>): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.SENTRY_IDENTIFY
 }
 
 data class SentryTrashSelection(val cards: List<Pair<Card, Int>>): BranchSelection {
@@ -120,7 +170,12 @@ data class ArtisanTopdeckSelection(val card: Card): BranchSelection {
         get() = BranchContext.ARTISAN_TOPDECK
 }
 
-data class DrawSelection(val cards: List<Card>): BranchSelection {
+data class VisibleDrawSelection(val cards: List<Card>): BranchSelection {
+    override val context: BranchContext
+        get() = BranchContext.DRAW
+}
+
+data class HiddenDrawSelection(val cardCount: Int): BranchSelection {
     override val context: BranchContext
         get() = BranchContext.DRAW
 }

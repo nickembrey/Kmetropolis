@@ -5,6 +5,7 @@ enum class PlayerCardOperationType(val verb: String) {
     BUY("buys"),
     GAIN("gains"),
     PLAY("plays"),
+    PLAY_WITH_THRONE("plays a second time with Throne Room"),
     PLAY_FROM_DISCARD("plays from discard"),
     TRASH("trashes");
 }

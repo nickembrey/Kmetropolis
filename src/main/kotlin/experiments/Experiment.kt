@@ -1,12 +1,18 @@
 package experiments
 
+import engine.player.PlayerNumber
+import policies.RemoteInputPolicy
+import policies.delegates.draw.InputDrawPolicy
 import policies.jansen_tollisen.SingleWitchPolicy
 import policies.heuristic.SingleWitchV3Policy
+import policies.mcts.ClientMCTSPolicy
 import policies.mcts.MCTSPolicy
 import policies.mcts.node.DefaultNodeValueFn
+import policies.mcts.rollout.GreenRolloutPolicy
 import policies.mcts.rollout.RandomPolicy
 import policies.mcts.rollout.score.DefaultRolloutScoreFn
 import policies.mcts.rollout.score.SquareDifferenceRolloutScoreFn
+import util.input.defineBoard
 
 interface Experiment {
     fun run(times: Int): ExperimentResult
@@ -72,5 +78,31 @@ interface Experiment {
             ),
             policy2 = SingleWitchPolicy()
         )
+        val CLIENT_EXPERIMENT_1K = SimpleExperiment(
+            policy1 = ClientMCTSPolicy(
+                cParameter = 0.7,
+                rollouts = 1000,
+                rolloutPolicy = RandomPolicy(),
+                rolloutScoreFn = DefaultRolloutScoreFn,
+                nodeValueFn = DefaultNodeValueFn
+            ),
+            policy2 = RemoteInputPolicy(),
+            board = defineBoard(),
+            chooseStartingPolicy = true
+        )
+
+        val BETTER_CLIENT_EXPERIMENT_10K = SimpleExperiment(
+            policy1 = ClientMCTSPolicy(
+                cParameter = 0.7,
+                rollouts = 10000,
+                rolloutPolicy = GreenRolloutPolicy(),
+                rolloutScoreFn = DefaultRolloutScoreFn,
+                nodeValueFn = DefaultNodeValueFn
+            ),
+            policy2 = RemoteInputPolicy(),
+            board = defineBoard(),
+            chooseStartingPolicy = true
+        )
+
     }
 }

@@ -2,6 +2,7 @@ package policies.mcts
 
 import engine.*
 import engine.branch.*
+import engine.card.Card
 import engine.card.CardType
 import engine.player.PlayerNumber
 import logger
@@ -26,6 +27,7 @@ class MCTSPolicy(
     private val rolloutPolicy: Policy,
     private val rolloutScoreFn: RolloutScoreFn,
     private val nodeValueFn: NodeValueFn,
+    private val drawPolicy: Policy = RandomDrawPolicy(),
     private val executor: Executor = CurrentThreadExecutor(),
 ) : Policy() {
 
@@ -45,7 +47,6 @@ class MCTSPolicy(
     private val contextMap: MutableMap<BranchContext, Int> = mutableMapOf()
     private val graphPairs: MutableList<Pair<Int, Int>> = mutableListOf()
 
-    private val drawPolicy = RandomDrawPolicy()
     private val actionPolicy = MPPAFPolicy() // TODO:
     private val treasurePolicy = PlayAllTreasuresPolicy()
 
@@ -113,14 +114,14 @@ class MCTSPolicy(
                     parent = node,
                     actionPolicy = actionPolicy,
                     treasurePolicy = treasurePolicy).single()
-                val sampleCards = (sample.selection as DrawSelection).cards.sorted()
+                val sampleCards = (sample.selection as VisibleDrawSelection).cards.sorted()
 
                 // TODO: clean up
                 var alreadySampled = false
                 var gameOver = false // TODO: hacky
                 for(child in node.children) {
                     if(child.selection != SpecialBranchSelection.GAME_OVER) {
-                        val childCards = (child.selection as DrawSelection).cards.sorted()
+                        val childCards = (child.selection as VisibleDrawSelection).cards.sorted()
                         if(childCards == sampleCards) {
                             alreadySampled = true
                             child.score += 1
@@ -151,6 +152,9 @@ class MCTSPolicy(
                     throw IllegalStateException()
                 } else { // TODO: somehow,
                     // do the action that the node describes
+                    if(node.selection is ActionSelection && node.selection.card == Card.MILITIA) {
+                        print("STOP!")
+                    }
                     simState.processBranchSelection(node.context, node.selection)
                 }
 
@@ -186,14 +190,14 @@ class MCTSPolicy(
                             parent = node,
                             actionPolicy = actionPolicy,
                             treasurePolicy = treasurePolicy).single()
-                        val sampleCards = (sample.selection as DrawSelection).cards.sorted()
+                        val sampleCards = (sample.selection as VisibleDrawSelection).cards.sorted()
 
                         // TODO: clean up
                         var alreadySampled = false
                         var gameOver = false // TODO: hacky
                         for(child in node.children) {
                             if(child.selection != SpecialBranchSelection.GAME_OVER) {
-                                val childCards = (child.selection as DrawSelection).cards.sorted()
+                                val childCards = (child.selection as VisibleDrawSelection).cards.sorted()
                                 if(childCards == sampleCards) {
                                     alreadySampled = true
                                 }

@@ -56,17 +56,27 @@ class DefaultPlayerCards private constructor(
         )
 
     override val allCards: CardCountMap
-        get() = unknownCards + knownHand + inPlay + CardCountMap.fromKnownDeck(board, knownDeck) + knownDiscard + trash
+        get() = unknownCards + knownHand + inPlay + CardCountMap.fromKnownDeck(board, knownDeck) + knownDiscard
 
     override fun sample(n: Int): List<Card> {
+
+        if(deckCount == 0) {
+            shuffle()
+        }
 
         val unknownCardsCopy = unknownCards.copy()
         val knownDiscardCopy = knownDiscard.copy()
 
-        return (0 until n).map { index ->
+        val sampleN = if(n > (deckCount + discardCount)) {
+            deckCount + discardCount
+        } else {
+            n
+        }
+
+        return (0 until sampleN).map { index ->
             if(knownDeck[index] != null) {
                 knownDeck[index]!!
-            } else if(deckCount > n || index < deckCount) {
+            } else if(deckCount > sampleN || index < deckCount) {
                 unknownCardsCopy.random().also { card ->
                     unknownCardsCopy[card] -= 1
                 }
@@ -102,10 +112,20 @@ class DefaultPlayerCards private constructor(
         knownHand.clear()
     }
 
-    override fun draw(card: Card) {
+    override fun hiddenDraw() {
+        if(deckCount == 0) {
+            shuffle()
+        }
+        if(deckCount != 0) {
+            deckCount -= 1
+            handCount += 1
+        }
+    }
+
+    override fun visibleDraw(card: Card) {
         if(knownDeck[0] != null) {
             knownDeck.remove(0)
-            for(entry in knownDeck.entries) { // TODO: sort
+            for(entry in knownDeck.entries.toList().sortedBy { it.key }) { // TODO: sort
                 knownDeck.remove(entry.key)
                 knownDeck[entry.key - 1] = entry.value
             }
@@ -130,6 +150,7 @@ class DefaultPlayerCards private constructor(
         inPlay[card] += 1
     }
 
+
     override fun playFromDiscard(card: Card) {
         if(knownDiscard[card] > 0) {
             knownDiscard[card] -= 1
@@ -137,7 +158,7 @@ class DefaultPlayerCards private constructor(
             unknownCards[card] -= 1
         }
         discardCount -= 1
-        inPlay[card] -= 1
+        inPlay[card] += 1
     }
 
     override fun gain(card: Card) {
@@ -157,7 +178,7 @@ class DefaultPlayerCards private constructor(
             unknownCards[card] -= 1
         }
         discardCount -= 1
-        for(entry in knownDeck.entries) {
+        for(entry in knownDeck.entries.toList().sortedByDescending { it.key }) {
             knownDeck.remove(entry.key)
             knownDeck[entry.key + 1] = entry.value
         }
@@ -165,7 +186,27 @@ class DefaultPlayerCards private constructor(
         deckCount += 1
     }
 
-    override fun discard(card: Card) {
+    override fun topdeckFromHand(card: Card) { // TODO: does harbinger reveal the card? I think so
+        if(knownHand[card] > 0) {
+            knownHand[card] -= 1
+        } else {
+            unknownCards[card] -= 1
+        }
+        handCount -= 1
+        for(entry in knownDeck.entries.toList().sortedByDescending { it.key }) {
+            knownDeck.remove(entry.key)
+            knownDeck[entry.key + 1] = entry.value
+        }
+        knownDeck[0] = card
+        deckCount += 1
+    }
+
+    override fun hiddenDiscard() {
+        handCount -= 1
+        discardCount += 1
+    }
+
+    override fun visibleDiscard(card: Card) {
         knownDiscard[card] += 1
         if(knownHand[card] > 0) {
             knownHand[card] -= 1
@@ -182,12 +223,26 @@ class DefaultPlayerCards private constructor(
         aside[card] -= 1
     }
 
-    override fun discardFromDeck(index: Int) {
-        val card = knownDeck[index]!!
-        knownDiscard[card] += 1
-        knownDeck.remove(index)
+    override fun hiddenDiscardFromDeck(index: Int) {
         deckCount -= 1
         discardCount += 1
+    }
+
+    override fun visibleDiscardFromDeck(index: Int): Card {
+        val card = knownDeck[index]!!
+
+        knownDeck.remove(index)
+        for(entry in knownDeck.entries.toList().sortedBy { it.key }) { // TODO: sort
+            if(entry.key > index) {
+                knownDeck.remove(entry.key)
+                knownDeck[entry.key - 1] = entry.value
+            }
+        }
+
+        knownDiscard[card] += 1
+        deckCount -= 1
+        discardCount += 1
+        return card
     }
 
     override fun trash(card: Card) {
@@ -202,8 +257,16 @@ class DefaultPlayerCards private constructor(
 
     override fun trashFromDeck(index: Int) {
         val card = knownDeck[index]!!
-        trash[card] += 1
+
         knownDeck.remove(index)
+        for(entry in knownDeck.entries.toList().sortedBy { it.key }) { // TODO: sort
+            if(entry.key > index) {
+                knownDeck.remove(entry.key)
+                knownDeck[entry.key - 1] = entry.value
+            }
+        }
+
+        trash[card] += 1
         deckCount -= 1
     }
 
@@ -224,6 +287,9 @@ class DefaultPlayerCards private constructor(
     }
 
     override fun identify(card: Card, index: Int) {
+        if(deckCount == 0) {
+            shuffle()
+        }
         if(knownDeck[index] == null) {
             unknownCards[card] -= 1
         }

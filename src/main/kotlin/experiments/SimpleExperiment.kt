@@ -4,14 +4,19 @@ import engine.GameResult
 import engine.GameState
 import engine.branch.BranchContext
 import engine.branch.BranchSelection
+import engine.performance.util.CardCountMap
+import engine.player.PlayerNumber
 import kingdoms.jansenTollisenBoard
 import logger
 import policies.Policy
 import policies.PolicyName
+import util.input.setStartingPolicy
 
 class SimpleExperiment( // TODO: should take in an experimentSettings object
     private val policy1: Policy,
-    private val policy2: Policy
+    private val policy2: Policy,
+    private val board: CardCountMap = jansenTollisenBoard,
+    private val chooseStartingPolicy: Boolean = false
 ): Experiment {
 
     override fun run(times: Int): ExperimentResult {
@@ -33,9 +38,10 @@ class SimpleExperiment( // TODO: should take in an experimentSettings object
             val gameState = GameState.new(
                 policy1 = policy1,
                 policy2 = policy2,
-                board = jansenTollisenBoard,
+                board = board,
                 maxTurns = 999,
-                log = true
+                log = true,
+                startingPolicy = if(chooseStartingPolicy) setStartingPolicy(policy1, policy2) else null
             )
             logger.initGame(gameState)
             while(!gameState.gameOver) {

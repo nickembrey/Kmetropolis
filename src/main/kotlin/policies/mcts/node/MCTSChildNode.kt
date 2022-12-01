@@ -53,7 +53,7 @@ abstract class MCTSChildNode protected constructor(
 
                     selections.map {
 
-                        if(it !is DrawSelection) { // TODO: hacky
+                        if(it !is VisibleDrawSelection) { // TODO: hacky
                             throw IllegalStateException()
                         }
 

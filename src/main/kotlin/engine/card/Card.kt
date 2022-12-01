@@ -32,12 +32,7 @@ enum class Card(
     }),
     MERCHANT(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 1),
     VASSAL(type = CardType.ACTION, cost = 3, effect = {
-        val card = it.currentPlayer.sample(1).single()
-        it.currentPlayer.discard(card)
-        if(card.type == CardType.ACTION) {
-            it.currentPlayer.vassalCard = card
-            it.eventStack.push(Branch(BranchContext.VASSAL, selections = 1))
-        }
+        it.eventStack.push(engine.branch.Branch(engine.branch.BranchContext.VASSAL_DISCARD))
     }),
     VILLAGE(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 2),
     WORKSHOP(type = CardType.ACTION, cost = 3, effect = {
@@ -64,7 +59,7 @@ enum class Card(
                     state.eventStack.push(
                         Branch(
                             BranchContext.MILITIA,
-                            selections = state.currentPlayer.handCount - 3
+                            selections = kotlin.math.max(state.currentPlayer.handCount - 3, 0)
                         )
                     )
                 }),
@@ -79,6 +74,9 @@ enum class Card(
             it.processOperation(ModifyPropertyOperation.MODIFY_COINS(3))
             it.processOperation(PlayerCardOperation.TRASH(COPPER))
         }
+    }),
+    POACHER(type = CardType.ACTION, cost = 4, addCards = 1, addActions = 1, effect = {
+        it.eventStack.push(Branch(context = BranchContext.POACHER))
     }),
     REMODEL(type = CardType.ACTION, cost = 4, effect = {
         it.eventStack.pushAll(
@@ -98,6 +96,9 @@ enum class Card(
             listOf(
                 SpecialGameEvent.SWITCH_PLAYER,
                 AttackEvent(attack = DelayedGameOperation { state ->
+
+                    // TODO: two-phase, identify and trash
+
                     if(state.currentPlayer.knownDeck[0] == null) {
                         val card = state.currentPlayer.sample(1).single()
                         state.currentPlayer.identify(card, 0)
@@ -119,22 +120,14 @@ enum class Card(
     FESTIVAL(type = CardType.ACTION, cost = 5, addCoins = 2, addActions = 2, addBuys = 1),
     LABORATORY(type = CardType.ACTION, cost = 5, addCards = 2, addActions = 1),
     LIBRARY(type = CardType.ACTION, cost = 5, effect = {
-        it.eventStack.push(Branch(context = BranchContext.LIBRARY))
+        it.eventStack.push(Branch(context = BranchContext.LIBRARY_IDENTIFY))
     }),
     MARKET(type = CardType.ACTION, cost = 5, addCards = 1, addActions = 1, addBuys = 1),
     MINE(type = CardType.ACTION, cost = 5, effect = {
         it.eventStack.push(Branch(context = BranchContext.MINE_TRASH))
     }),
     SENTRY(type = CardType.ACTION, cost = 5, addCards = 1, addActions = 1, effect = {
-        if(it.currentPlayer.knownDeck[0] == null) {
-            val card0 = it.currentPlayer.sample(1).single()
-            it.currentPlayer.identify(card0, 0)
-        }
-        if(it.currentPlayer.knownDeck[1] == null) {
-            val card1 = it.currentPlayer.sample(1).single()
-            it.currentPlayer.identify(card1, 1)
-        }
-        it.eventStack.push(Branch(context = BranchContext.SENTRY_TRASH))
+        it.eventStack.push(Branch(context = BranchContext.SENTRY_IDENTIFY))
     }),
     WITCH(type = CardType.ACTION, cost = 5, addCards = 2, effect = {
         it.eventStack.pushAll(

@@ -39,15 +39,25 @@ interface PlayerCards {
     fun redeck()
 
     // TODO: one unified move method that takes a card and two locations (like before)
-    fun draw(card: Card)
+
+    fun hiddenDraw()
+    fun visibleDraw(card: Card)
+
     fun play(card: Card) // i.e., play from hand
     fun playFromDiscard(card: Card)
+
     fun gain(card: Card)
     fun gainToHand(card: Card)
-    fun discard(card: Card)
+
+    fun hiddenDiscard()
+    fun visibleDiscard(card: Card)
+
     fun discardFromAside(card: Card)
-    fun discardFromDeck(index: Int)
+    fun hiddenDiscardFromDeck(index: Int)
+    fun visibleDiscardFromDeck(index: Int): Card
+
     fun topdeck(card: Card) // puts a card from the discard onto the deck
+    fun topdeckFromHand(card: Card)
     fun trash(card: Card)
     fun trashFromDeck(index: Int)
 

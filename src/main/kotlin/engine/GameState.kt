@@ -12,6 +12,7 @@ import engine.operation.state.game.GameSimpleOperation
 import engine.operation.property.*
 import engine.operation.stack.game.GameCompoundOperation
 import engine.operation.stack.player.PlayerCardOperation
+import engine.operation.stack.player.PlayerCardOperation.Companion.PLAY_FROM_DISCARD
 import engine.operation.stack.player.PlayerCardOperationType
 import engine.operation.state.StateOperation
 import engine.operation.state.game.GameCardOperation
@@ -56,11 +57,15 @@ class GameState private constructor (
             policy2: Policy,
             board: CardCountMap,
             maxTurns: Int,
-            log: Boolean
+            log: Boolean,
+            startingPolicy: Int? = null
         ): GameState = GameState(
-                players = listOf(policy1, policy2)
-                    .shuffled()
-                    .mapIndexed { i, policy -> Player.new(board, PlayerNumber.fromInt(i), policy) },
+                players = when(startingPolicy) {
+                    null -> listOf(policy1, policy2).shuffled()
+                    1 -> listOf(policy1, policy2)
+                    2 -> listOf(policy2, policy1)
+                    else -> throw IllegalStateException()
+                }.mapIndexed { i, policy -> Player.new(board, PlayerNumber.fromInt(i), policy) },
                 currentPlayerNumber = PlayerNumber.PLAYER_ONE,
                 board = board,
                 phase = GamePhase.NOT_STARTED,
@@ -244,11 +249,18 @@ class GameState private constructor (
                             PlayerMoveCardOperation.MOVE_CARD(operation.card, CardLocation.DECK, CardLocation.HAND)
                         )
                     }
-                    PlayerCardOperationType.PLAY, PlayerCardOperationType.PLAY_FROM_DISCARD -> {
+                    PlayerCardOperationType.PLAY, PlayerCardOperationType.PLAY_FROM_DISCARD, PlayerCardOperationType.PLAY_WITH_THRONE -> {
 
                         when(operation.card.type) {
                             CardType.ACTION, CardType.TREASURE -> {
-                                operation.card.effect(this)
+                                eventStack.pushAll(
+                                    List(operation.card.addActions) { Branch(BranchContext.CHOOSE_ACTION) }
+                                )
+                                eventStack.push(
+                                    DelayedGameOperation(operation = {
+                                        operation.card.effect(it)
+                                    })
+                                )
                                 if(operation.card.addCards > 0) {
                                     eventStack.push(
                                         Branch(BranchContext.DRAW, selections = operation.card.addCards)
@@ -260,11 +272,9 @@ class GameState private constructor (
                                 if(operation.card.addBuys > 0) {
                                     processOperation(ModifyPropertyOperation.MODIFY_BUYS(operation.card.addBuys))
                                 }
-                                eventStack.pushAll(
-                                    List(operation.card.addActions) { Branch(BranchContext.CHOOSE_ACTION) }
-                                )
                                 when(operation.type) {
                                     PlayerCardOperationType.PLAY -> currentPlayer.play(operation.card)
+                                    PlayerCardOperationType.PLAY_WITH_THRONE -> {}
                                     PlayerCardOperationType.PLAY_FROM_DISCARD -> currentPlayer.playFromDiscard(operation.card)
                                     else -> throw IllegalStateException()
                                 }
@@ -415,25 +425,44 @@ class GameState private constructor (
             }
 
             BranchContext.CELLAR -> {
-                if(selection is CellarSelection) {
+                if(selection is VisibleCellarSelection) {
                     for(card in selection.cards) {
-                        processStateOperation(PlayerMoveCardOperation( // TODO: add some shortcuts
-                            card = card,
-                            from = CardLocation.HAND,
-                            to = CardLocation.DISCARD
-                        ))
+                        currentPlayer.visibleDiscard(card)
                     }
                     eventStack.push(
                         Branch(context = BranchContext.DRAW, selections = selection.cards.size))
+                } else if(selection is HiddenCellarSelection) {
+                    for(x in 1..selection.cardCount) {
+                        currentPlayer.hiddenDiscard()
+                    }
+                    eventStack.push(
+                        Branch(context = BranchContext.DRAW, selections = selection.cardCount))
                 } else {
                     throw IllegalStateException()
                 }
             }
 
             BranchContext.DRAW -> {
-                if(selection is DrawSelection) {
-                    for(card in selection.cards) {
-                        currentPlayer.draw(card)
+                if(selection is VisibleDrawSelection) {
+                    val sortedSelection = selection.cards
+                        .sortedByDescending { currentPlayer.unknownCards[it] }
+                        .toMutableList()
+                    for(x in 1..sortedSelection.size) {
+                        val topCard = currentPlayer.knownDeck[0]
+                        if(topCard != null) {
+                            currentPlayer.visibleDraw(topCard)
+                            sortedSelection.remove(topCard)
+                            sortedSelection.sortByDescending { currentPlayer.unknownCards[it] }
+                        } else {
+                            sortedSelection.sortByDescending { currentPlayer.unknownCards[it] }
+                            val firstCard = sortedSelection.first()
+                            sortedSelection.remove(firstCard)
+                            currentPlayer.visibleDraw(firstCard)
+                        }
+                    }
+                } else if(selection is HiddenDrawSelection) {
+                    for(x in 1..selection.cardCount) {
+                        currentPlayer.hiddenDraw()
                     }
                 } else {
                     throw IllegalStateException()
@@ -464,42 +493,67 @@ class GameState private constructor (
             }
             BranchContext.HARBINGER -> {
                 if(selection is HarbingerSelection) {
-                    currentPlayer.topdeck(selection.card)
+                    if(selection.card != null) {
+                        currentPlayer.topdeck(selection.card)
+                    }
                 } else {
                     throw IllegalStateException()
                 }
             }
-            BranchContext.VASSAL -> {
-                if(selection is VassalSelection) {
-                    processOperation(
-                        PlayerCardOperation.PLAY_FROM_DISCARD(selection.card)
-                    )
+            BranchContext.VASSAL_DISCARD -> {
+                if(selection is VassalDiscardSelection) {
+                    currentPlayer.vassalCard = selection.card
+                    currentPlayer.identify(selection.card, 0)
+                    currentPlayer.visibleDiscardFromDeck(0)
+                    if(selection.card.type == CardType.ACTION) {
+                        eventStack.push(Branch(context = BranchContext.VASSAL_PLAY))
+                    }
+                } else {
+                    throw IllegalStateException()
+                }
+            }
+            BranchContext.VASSAL_PLAY -> {
+                if(selection is VassalPlaySelection) {
+                    processOperation(PLAY_FROM_DISCARD(selection.card))
+                    currentPlayer.vassalCard = null
                 } else {
                     throw IllegalStateException()
                 }
             }
             BranchContext.BUREAUCRAT -> {
                 if(selection is BureaucratSelection) {
-                    currentPlayer.discard(selection.card)
+                    currentPlayer.visibleDiscard(selection.card)
                     currentPlayer.topdeck(selection.card)
                 } else {
                     throw IllegalStateException()
                 }
             }
             BranchContext.MILITIA -> {
-                if(selection is MilitiaSelection) {
-                    processStateOperation(PlayerMoveCardOperation( // TODO: add some shortcuts
-                        card = selection.card,
-                        from = CardLocation.HAND,
-                        to = CardLocation.DISCARD
-                    ))
+                if(selection is VisibleMilitiaSelection) {
+                    for(card in selection.cards)
+                    currentPlayer.visibleDiscard(card)
+                } else if(selection is HiddenMilitiaSelection) {
+                    for(x in 1..selection.cardCount) {
+                        currentPlayer.hiddenDiscard() // TODO: audit, since not quite hidden
+                    }
+                } else {
+                    throw IllegalStateException()
+                }
+            }
+            BranchContext.POACHER -> {
+                if(selection is VisiblePoacherSelection) {
+                    currentPlayer.visibleDiscard(selection.card)
+                } else if(selection is HiddenPoacherSelection) {
+                    currentPlayer.hiddenDiscard()
                 } else {
                     throw IllegalStateException()
                 }
             }
             BranchContext.CHAPEL -> {
                 if(selection is ChapelSelection) {
-                    processStackOperation(PlayerCardOperation.TRASH(selection.card))
+                    for(card in selection.cards) {
+                        currentPlayer.trash(card)
+                    }
                 } else {
                     throw IllegalStateException()
                 }
@@ -525,7 +579,7 @@ class GameState private constructor (
                 if(selection is ThroneRoomSelection) {
                     eventStack.push(DelayedGameOperation(
                         operation = {
-                            processStackOperation(PlayerCardOperation.PLAY(selection.card))
+                            processStackOperation(PlayerCardOperation.PLAY_WITH_THRONE(selection.card))
                         }
                     ))
                     processStackOperation(PlayerCardOperation.PLAY(selection.card))
@@ -537,14 +591,14 @@ class GameState private constructor (
                 if(selection is BanditSelection) {
                     val first = currentPlayer.knownDeck[0]!!
                     val second = currentPlayer.knownDeck[1]!!
-                    currentPlayer.draw(first)
-                    currentPlayer.draw(second)
+                    currentPlayer.visibleDraw(first)
+                    currentPlayer.visibleDraw(second)
                     if(first == selection.card) {
                         currentPlayer.trash(first)
-                        currentPlayer.discard(second)
+                        currentPlayer.visibleDiscard(second)
                     } else if(second == selection.card) {
                         currentPlayer.trash(second)
-                        currentPlayer.discard(first)
+                        currentPlayer.visibleDiscard(first)
                     } else {
                         throw IllegalStateException()
                     }
@@ -552,14 +606,28 @@ class GameState private constructor (
                     throw IllegalStateException()
                 }
             }
-            BranchContext.LIBRARY -> {
-                if(selection is LibrarySkipSelection) {
-                   currentPlayer.setAside(selection.index)
-                } else if(selection is LibraryDrawSelection) {
-                    for(card in currentPlayer.aside.toList()) {
-                        currentPlayer.discardFromAside(card)
+            BranchContext.LIBRARY_IDENTIFY -> { // TODO: don't look unless there are less than seven cards in hand
+                if(selection is VisibleLibraryIdentifySelection) {
+                   currentPlayer.identify(selection.card, 0)
+                } else if(selection is HiddenLibraryIdentifySelection) {
+                    // DO NOTHING
+                } else {
+                    throw IllegalStateException()
+                }
+                eventStack.push(Branch(BranchContext.LIBRARY_DRAW))
+            }
+
+
+            BranchContext.LIBRARY_DRAW -> {
+                if(selection is VisibleLibrarySkipSelection) {
+                    currentPlayer.visibleDiscardFromDeck(0)
+                } else if(selection is HiddenLibrarySkipSelection) {
+                    currentPlayer.hiddenDiscardFromDeck(0) // TODO: don't need index?
+                } else if(selection is VisibleLibraryDrawSelection || selection is HiddenLibraryDrawSelection) {
+                    if(currentPlayer.handCount < 6) {
+                        eventStack.push(Branch(BranchContext.LIBRARY_IDENTIFY))
                     }
-                    eventStack.push(Branch(context = BranchContext.DRAW, selections = (7 - currentPlayer.handCount)))
+                    eventStack.push(Branch(BranchContext.DRAW))
                 } else {
                     throw IllegalStateException()
                 }
@@ -582,9 +650,26 @@ class GameState private constructor (
                     throw IllegalStateException()
                 }
             }
+            BranchContext.SENTRY_IDENTIFY -> {
+                if(selection is SentryIdentifySelection) {
+                    for(pair in selection.cards.sortedBy { it.second }) {
+                        if(currentPlayer.deckCount == 1 && pair.second == 1) {
+                            val topCard = currentPlayer.knownDeck[0]!!
+                            currentPlayer.setAside(0)
+                            currentPlayer.shuffle()
+                            currentPlayer.discardFromAside(topCard)
+                            currentPlayer.topdeck(topCard)
+                        }
+                        currentPlayer.identify(pair.first, pair.second)
+                    }
+                    eventStack.push(Branch(context = BranchContext.SENTRY_TRASH))
+                } else {
+                    throw IllegalStateException()
+                }
+            }
             BranchContext.SENTRY_TRASH -> {
                 if(selection is SentryTrashSelection) {
-                    for(pair in selection.cards) {
+                    for(pair in selection.cards.toList().sortedByDescending { it.second }) {
                         currentPlayer.trashFromDeck(pair.second)
                     }
                     eventStack.push(Branch(context = BranchContext.SENTRY_DISCARD))
@@ -594,8 +679,8 @@ class GameState private constructor (
             }
             BranchContext.SENTRY_DISCARD -> {
                 if(selection is SentryDiscardSelection) {
-                    for(pair in selection.cards) {
-                        currentPlayer.discardFromDeck(pair.second)
+                    for(x in 1..selection.cards.size) {
+                        currentPlayer.visibleDiscardFromDeck(0)
                     }
                     eventStack.push(Branch(context = BranchContext.SENTRY_TOPDECK))
                 } else {
@@ -621,7 +706,7 @@ class GameState private constructor (
             }
             BranchContext.ARTISAN_TOPDECK -> {
                 if(selection is ArtisanTopdeckSelection) {
-                    currentPlayer.topdeck(selection.card)
+                    currentPlayer.topdeckFromHand(selection.card)
                 } else {
                     throw IllegalStateException()
                 }
@@ -692,11 +777,13 @@ class GameState private constructor (
                         //       -- or maybe it can, since the events are handled "automatically"
                         //       -- check up on this
                         currentPlayer.cleanup()
-                        if(!currentPlayer.visibleHand) {
-                            throw IllegalStateException()
-                        }
+
                         for(card in currentPlayer.knownHand.toList()) {
-                            currentPlayer.discard(card)
+                            currentPlayer.visibleDiscard(card)
+                        }
+
+                        for(cardNumber in 1..currentPlayer.handCount) {
+                            currentPlayer.hiddenDiscard()
                         }
 
                         if(emptyPiles >= 3 || board[Card.PROVINCE] == 0 || turns >= maxTurns) {

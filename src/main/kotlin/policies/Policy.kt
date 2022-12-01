@@ -8,7 +8,7 @@ import engine.branch.BranchSelection
 
 // TODO: give policies access to the logger directly instead of having to get it from the GameState
 
-abstract class Policy {
+abstract class Policy(val hidden: Boolean = false) {
     abstract val name: PolicyName
     protected abstract fun policy(state: GameState, branch: Branch): BranchSelection
     protected abstract fun finally()

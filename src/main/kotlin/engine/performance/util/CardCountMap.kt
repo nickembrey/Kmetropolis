@@ -8,7 +8,8 @@ import engine.card.Card
 // TODO: change initialValues to Board
 class CardCountMap(
     private val board: Map<Card, Int>,
-    private val initialValues: Map<Card, Int>): CardMap<Int> {
+    private val initialValues: Map<Card, Int>
+): CardMap<Int> {
 
     companion object {
 
