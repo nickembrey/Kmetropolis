@@ -185,6 +185,6 @@ data class BuySelection(val cards: List<Card>): BranchSelection {
         get() = BranchContext.CHOOSE_BUY
 }
 
-enum class SpecialBranchSelection(override val context: BranchContext = BranchContext.NONE): BranchSelection { // TODO: make SWITCH and START_TURN GameEvents
+enum class SpecialBranchSelection(override val context: BranchContext = BranchContext.NONE): BranchSelection {
     SKIP, GAME_OVER
 }

@@ -8,7 +8,7 @@ object DefaultNodeValueFn: NodeValueFn {
     override fun invoke(node: MCTSChildNode, cParameter: Double): Double {
         return (node.score / node.completedRollouts.get()).let {
             it + // variance term
-                    (cParameter * sqrt( // TODO: review variance term
+                    (cParameter * sqrt(
                         ln(node.parent.completedRollouts.toDouble() + node.parent.currentRollouts.toDouble()) /
                                 (node.completedRollouts.toDouble() + node.currentRollouts.toDouble())
                     ))

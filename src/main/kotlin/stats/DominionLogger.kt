@@ -8,11 +8,6 @@ import experiments.ExperimentResult
 import util.SimulationTimer
 import java.io.File
 
-
-// TODO: add current commit? and state?
-
-// TODO: it would be cool if we could have a setting to make the logs look like dominion.games logs
-
 class DominionLogger(config: EngineConfig) {
 
     private val logFile: File
@@ -32,7 +27,6 @@ class DominionLogger(config: EngineConfig) {
 
     init {
 
-        // TODO: what the fuck is this
         val serializationProperty = System.getProperty("kotlinx.serialization.json.pool.size")
         if(serializationProperty == null) {
             System.setProperty("kotlinx.serialization.json.pool.size", (1024 * 1024).toString())
@@ -99,12 +93,11 @@ class DominionLogger(config: EngineConfig) {
         }
     }
 
-    fun initGame(state: GameState) { // TODO: roll this into the results
+    fun initGame(state: GameState) {
         playRecords.putIfAbsent(state.players[0].name, 0)
         playRecords.putIfAbsent(state.players[1].name, 0)
     }
 
-    // TODO: have all the intermediate logging be done from the operationHistory, not the code itself
     fun recordGame(
         state: GameState
     ) {
@@ -158,7 +151,6 @@ class DominionLogger(config: EngineConfig) {
             appendLine("")
         }
 
-        // TODO: move all of this stuff into result
         appendLine("------------------")
         appendLine("Simulation summary")
         appendLine("------------------")

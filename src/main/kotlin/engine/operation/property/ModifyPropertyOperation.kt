@@ -4,7 +4,7 @@ import engine.player.PlayerProperty
 import util.memoize
 
 data class ModifyPropertyOperation(
-    val target: StateProperty, // TODO: numeric and non numeric state properties
+    val target: StateProperty,
     val modification: Int,
 ): PropertyOperation {
     companion object {

@@ -12,7 +12,7 @@ import policies.Policy
 import policies.PolicyName
 import util.input.setStartingPolicy
 
-class SimpleExperiment( // TODO: should take in an experimentSettings object
+class SimpleExperiment(
     private val policy1: Policy,
     private val policy2: Policy,
     private val board: CardCountMap = jansenTollisenBoard,
@@ -20,8 +20,6 @@ class SimpleExperiment( // TODO: should take in an experimentSettings object
 ): Experiment {
 
     override fun run(times: Int): ExperimentResult {
-
-        // TODO: seems like a lot of this should be done for ALL experiments.. so move it up?
 
         val gameLogs: MutableList<List<Triple<PolicyName, BranchContext, BranchSelection>>> = mutableListOf()
 
@@ -45,18 +43,14 @@ class SimpleExperiment( // TODO: should take in an experimentSettings object
             )
             logger.initGame(gameState)
             while(!gameState.gameOver) {
-                gameState.processEvent(gameState.getNextEvent()) // TODO: just let us use the eventStack directly?
+                gameState.processEvent(gameState.getNextEvent())
             }
 
-            // TODO:
-//            policy1.endGame()
-//            policy2.endGame()
             logger.recordGame(gameState)
 
             gameLogs.add(gameState.branchSelectionHistory)
 
-            // TODO: KISS
-            gameResults[gameState.players[0].policy.name]!!.add(PlayerGameSummary( // TODO: !!
+            gameResults[gameState.players[0].policy.name]!!.add(PlayerGameSummary(
                 playerNumber = gameState.players[0].playerNumber,
                 deck = gameState.players[0].allCards.toList(),
                 result = when {
@@ -67,7 +61,7 @@ class SimpleExperiment( // TODO: should take in an experimentSettings object
                 },
                 vp = gameState.players[0].vp
             ))
-            gameResults[gameState.players[1].policy.name]!!.add(PlayerGameSummary( // TODO: !!
+            gameResults[gameState.players[1].policy.name]!!.add(PlayerGameSummary(
                 playerNumber = gameState.players[1].playerNumber,
                 deck = gameState.players[1].allCards.toList(),
                 result = when {
@@ -80,7 +74,7 @@ class SimpleExperiment( // TODO: should take in an experimentSettings object
             ))
         }
 
-        return ExperimentResult( // TODO: versioning for players
+        return ExperimentResult(
             settings = ExperimentSettings(
                 policy1 = policy1.name,
                 policy2 = policy2.name

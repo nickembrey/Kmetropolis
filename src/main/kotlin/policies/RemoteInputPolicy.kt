@@ -4,7 +4,7 @@ import engine.*
 import engine.branch.*
 
 
-class RemoteInputPolicy : Policy(hidden = true) { // TODO: abstract witch policy
+class RemoteInputPolicy : Policy(hidden = true) {
 
     override val name = PolicyName("remoteInputPolicy")
     override fun finally() = Unit

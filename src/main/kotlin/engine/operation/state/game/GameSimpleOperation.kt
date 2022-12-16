@@ -4,9 +4,6 @@ import engine.operation.GameOperation
 import engine.operation.HistoryOperation
 import engine.operation.state.StateOperation
 
-// TODO: put check game over somewhere
-// TODO: rethink how handling game over
-
 enum class GameSimpleOperation(val verb: String): GameOperation, StateOperation, HistoryOperation {
 
     INCREMENT_TURNS("Turn ends"), DECREMENT_TURNS("Undo turn end"),

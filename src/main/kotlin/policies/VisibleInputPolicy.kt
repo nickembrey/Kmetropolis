@@ -6,7 +6,7 @@ import policies.delegates.draw.InputDrawPolicy
 import policies.delegates.draw.InputVassalDiscardPolicy
 import policies.delegates.draw.RandomDrawPolicy
 
-class VisibleInputPolicy : Policy() { // TODO: abstract witch policy
+class VisibleInputPolicy : Policy() {
 
     override val name = PolicyName("visibleInputPolicy")
     override fun finally() = Unit
@@ -71,7 +71,7 @@ class VisibleInputPolicy : Policy() { // TODO: abstract witch policy
         try {
             val index = readln().toInt()
             if(index !in options.indices) {
-                throw IllegalStateException() // TODO: better exception
+                throw IllegalStateException()
             }
             return options[index]
         } catch(nfe: NumberFormatException) {

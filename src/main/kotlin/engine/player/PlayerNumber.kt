@@ -22,7 +22,6 @@ enum class PlayerNumber(val number: Int, val str: String): PlayerTag, GameProper
             PLAYER_TWO -> PLAYER_ONE
         }
 
-    // TODO: I think there are places where this would be useful but is not being used
     override fun getPlayer(state: GameState): Player = when(this) {
         PLAYER_ONE -> state.players[0]
         PLAYER_TWO -> state.players[1]

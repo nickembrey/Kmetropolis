@@ -5,9 +5,6 @@ import engine.branch.BranchSelection
 import engine.player.PlayerNumber
 import java.util.concurrent.atomic.AtomicInteger
 
-// TODO: reconsider how we're using wins vs score and optional PolicyPlayer
-
-// TODO: shouldn't this be called like, FinalChildNode? since there can be leaves that will later not be leaves
 class EndGameNode constructor(
     parent: MCTSTreeNode,
     selection: BranchSelection,

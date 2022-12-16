@@ -11,7 +11,6 @@ data class PlayerCardOperation(
     override val context: BranchContext
 ): StackOperation, PlayerOperation {
     companion object {
-        // TODO: check performance on lambda vs regular fn
         val DRAW: (Card) -> PlayerCardOperation = {
             PlayerCardOperation(
                 type = PlayerCardOperationType.DRAW,

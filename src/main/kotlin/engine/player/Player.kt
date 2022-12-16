@@ -5,8 +5,6 @@ import engine.performance.util.CardCountMap
 import engine.player.cards.PlayerCards
 import policies.Policy
 
-// TODO: players should be created and named from within the GameState
-
 data class Player internal constructor(
     val playerNumber: PlayerNumber,
     val policy: Policy,
@@ -15,10 +13,8 @@ data class Player internal constructor(
     var coins: Int,
     var baseVp: Int,
     var remodelCard: Card?,
-    var mineCard: Card? // TODO: replace with categoricalProperties
+    var mineCard: Card?
 ): PlayerCards by cards {
-
-    // TODO: avoid getters
 
     companion object {
         fun new(
@@ -42,7 +38,7 @@ data class Player internal constructor(
         }
     }
 
-    val name: String = policy.name.value // TODO: what about self-play?
+    val name: String = policy.name.value
 
     fun copyPlayer(newPolicy: Policy): Player {
         return Player(
@@ -57,10 +53,7 @@ data class Player internal constructor(
         )
     }
 
-    val vp // TODO: test
+    val vp
         get() = baseVp + (cards.allCards[Card.GARDENS] * kotlin.math.floor(cards.allCards.size.toDouble() / 10)).toInt()
-
-    // TODO: one way we could make this more functional is by adding the notion of an Effect type,
-    //       which playing a card would return and could be passed up to the state to be processed
 
 }

@@ -16,7 +16,7 @@ fun setStartingPolicy(policy1: Policy, policy2: Policy): Int {
     print("Selection: ")
     val chosen = readln().toInt()
     if(chosen !in 1..2) {
-        throw IllegalStateException() // TODO: better exception
+        throw IllegalStateException()
     }
     println("")
     return chosen

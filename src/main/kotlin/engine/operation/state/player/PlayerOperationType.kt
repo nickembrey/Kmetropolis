@@ -1,7 +1,5 @@
 package engine.operation.state.player
 
-// TODO: get rid of
-
 enum class PlayerOperationType(val verb: String) {
     INCREMENT_PROPERTY("adds"),
     DECREMENT_PROPERTY("subtracts"),

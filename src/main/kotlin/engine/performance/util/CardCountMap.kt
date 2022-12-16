@@ -5,7 +5,6 @@ import com.marcinmoskala.math.factorial
 import engine.CardMap
 import engine.card.Card
 
-// TODO: change initialValues to Board
 class CardCountMap(
     private val board: Map<Card, Int>,
     private val initialValues: Map<Card, Int>
@@ -78,7 +77,7 @@ class CardCountMap(
             if (c > 0) r.apply { add(i) } else r
         }
 
-    val possibilities: MutableList<Card> // TODO: make this not a getter
+    val possibilities: MutableList<Card>
         get() = board.keys.filter { backingArray[it.ordinal] > 0 }.toMutableList()
 
     val size: Int
@@ -119,7 +118,7 @@ class CardCountMap(
                 return cardsByOrdinal[index]!!
             }
         }
-        throw IllegalStateException() // TODO: clean this up
+        throw IllegalStateException()
     }
 
     private fun getProbability(ordinal: Int, minus: List<Int>): Double {

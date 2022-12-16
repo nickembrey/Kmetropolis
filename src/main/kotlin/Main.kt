@@ -14,7 +14,7 @@ val config = Toml.decodeFromString<EngineConfig>(
 val logger = DominionLogger(config)
 
 fun main() {
-    val experimentResult = Experiment.BETTER_CLIENT_EXPERIMENT_10K.run(1)
+    val experimentResult = Experiment.EASY_EXPERIMENT_1K.run(1)
     logger.logExperimentResult(
         experimentResult = experimentResult,
         logFormat = LogFormat.DEFAULT)

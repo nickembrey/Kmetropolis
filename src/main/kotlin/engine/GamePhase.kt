@@ -1,12 +1,5 @@
 package engine
 
-// TODO: just make these all sequences?
-// TODO: then the list will go onto the stack in GameState and get processed in order
-
-// TODO: these are a bit repetitious
-
-
-// TODO: make these functions or something simpler
 enum class GamePhase : GamePropertyValue {
     NOT_STARTED,
     START_GAME,

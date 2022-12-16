@@ -6,7 +6,6 @@ import engine.card.CardType
 import policies.Policy
 import policies.PolicyName
 
-// TODO: make this only handle actions and use a separate policy for treasures wherever this is being used for treasures
 class MPPAFPolicy: Policy() {
     override val name = PolicyName("MPPAFPolicy")
     override fun finally() = Unit

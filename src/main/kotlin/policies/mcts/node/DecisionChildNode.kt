@@ -5,8 +5,6 @@ import engine.branch.BranchSelection
 import engine.player.PlayerNumber
 import java.util.concurrent.atomic.AtomicInteger
 
-// TODO: reconsider how we're using wins vs score and optional PolicyPlayer
-
 // a child node that represents a game decision
 class DecisionChildNode constructor(
     parent: MCTSTreeNode,

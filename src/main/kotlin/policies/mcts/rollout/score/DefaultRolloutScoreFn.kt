@@ -18,6 +18,5 @@ object DefaultRolloutScoreFn: RolloutScoreFn {
             getScore(p2, p1)
         )
 
-        // TODO: (ownVp - opponentVp) / 100.0 or similar as weight
     }
 }

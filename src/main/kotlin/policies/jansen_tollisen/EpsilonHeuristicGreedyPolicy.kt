@@ -23,7 +23,6 @@ class EpsilonHeuristicGreedyPolicy : Policy() {
 
         val epsilon = 15
 
-        // TODO: make sure this changes
         val random = (0..100).random()
 
         return if(random < epsilon) {

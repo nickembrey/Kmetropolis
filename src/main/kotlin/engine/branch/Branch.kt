@@ -8,8 +8,7 @@ import engine.card.Card
 import engine.card.CardType
 import util.input.buildCardSelection
 
-// TODO: "selections" is a confusing name
-data class Branch(val context: BranchContext, val selections: Int = 1): GameEvent {
+data class Branch(val context: BranchContext, val options: Int = 1): GameEvent {
 
     companion object {
         val gameOver = listOf(SpecialBranchSelection.GAME_OVER)
@@ -34,24 +33,24 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                 } else {
                     listOf(AttackSelection(block = false))
                 }
-                // TODO: make sure cellar is no longer in hand when this gets activated
                 BranchContext.CELLAR -> Combinatorics.combinations(
                     hand,
                     hand.size
                 ).map { VisibleCellarSelection(it) }.toList()
-                BranchContext.DRAW -> listOf(VisibleDrawSelection(cards = state.currentPlayer.sample(selections)))
-                // TODO: make sure skiplist exists where applicable
+                BranchContext.DRAW -> listOf(VisibleDrawSelection(cards = state.currentPlayer.sample(options)))
                 BranchContext.CHOOSE_BUY -> return Combinatorics.combinationsWithRepetition(state.buyMenu, state.currentPlayer.buys)
                     .filter { it.sumOf { card -> card.cost } <= state.currentPlayer.coins }
                     .filter { state.board >= it }
                     .map { BuySelection(cards = it) }
                     .plus(SpecialBranchSelection.SKIP).shuffled().toList()
                 BranchContext.GAME_OVER -> gameOver
-                BranchContext.CHAPEL -> hand.combinations(selections).toList()
+                BranchContext.CHAPEL -> hand.combinations(options).toList()
                     .map { ChapelSelection(cards = it) }
                     .ifEmpty { skipList }
                 BranchContext.HARBINGER -> {
-                    // TODO: check that discard is all visible
+                    if(state.currentPlayer.knownDiscard.size < state.currentPlayer.discardCount) {
+                        throw IllegalStateException()
+                    }
                     state.currentPlayer.knownDiscard.possibilities
                         .map { HarbingerSelection(card = it) }
                         .plus(HarbingerSelection(card = null))
@@ -71,7 +70,7 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                 BranchContext.BUREAUCRAT -> hand.filter { it.type == CardType.VICTORY }.map {
                     BureaucratSelection(card = it)
                 }.ifEmpty { skipList }
-                BranchContext.MILITIA -> hand.combinations(selections).distinct().toList().map { VisibleMilitiaSelection(cards = it) }
+                BranchContext.MILITIA -> hand.combinations(options).distinct().toList().map { VisibleMilitiaSelection(cards = it) }
                 BranchContext.POACHER -> hand
                     .map { VisiblePoacherSelection(card = it) }
                 BranchContext.REMODEL_TRASH -> hand
@@ -127,7 +126,7 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                     }
                     return listOf(SentryIdentifySelection(cards = cards.withIndex().map { (i, card) -> Pair(card, i)}))
                 }
-                BranchContext.SENTRY_TRASH -> listOf( // TODO: what about the case where there aren't 2 cards on deck
+                BranchContext.SENTRY_TRASH -> listOf(
                     listOf(Pair(state.currentPlayer.knownDeck[0]!!, 0), Pair(state.currentPlayer.knownDeck[1]!!, 1)),
                     listOf(Pair(state.currentPlayer.knownDeck[0]!!, 0)),
                     listOf(Pair(state.currentPlayer.knownDeck[1]!!, 1)),
@@ -194,20 +193,20 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
 
             println("Player: ${state.currentPlayer.playerNumber} (${state.currentPlayer.name})")
             println("Context: $context")
-            println("Selections: $selections")
+            println("Selections: $options")
             println("")
 
             return when(context) {
                 BranchContext.ATTACK -> listOf(AttackSelection(block = true), AttackSelection(block = false))
                 BranchContext.GAME_OVER -> gameOver
-                BranchContext.DRAW -> listOf(HiddenDrawSelection(cardCount = selections))
+                BranchContext.DRAW -> listOf(HiddenDrawSelection(cardCount = options))
                 BranchContext.CHOOSE_ACTION -> state.board.possibilities
                     .filter { it.type == CardType.ACTION }
                     .map { ActionSelection(card = it) }
                     .plus(SpecialBranchSelection.SKIP)
                 BranchContext.CHOOSE_TREASURE -> listOf(TreasureSelection(cards = buildCardSelection(state, this)))
                 BranchContext.CHOOSE_BUY -> listOf(BuySelection(cards = buildCardSelection(state, this)))
-                BranchContext.CELLAR -> listOf(HiddenCellarSelection(cardCount = selections))
+                BranchContext.CELLAR -> listOf(HiddenCellarSelection(cardCount = options))
                 BranchContext.CHAPEL -> listOf(ChapelSelection(cards = buildCardSelection(state, this)))
                 BranchContext.HARBINGER -> state.board.possibilities
                     .map { HarbingerSelection(card = it) }
@@ -229,7 +228,7 @@ data class Branch(val context: BranchContext, val selections: Int = 1): GameEven
                 BranchContext.BUREAUCRAT -> state.board.possibilities
                     .map { BureaucratSelection(card = it) }
                     .plus(SpecialBranchSelection.SKIP)
-                BranchContext.MILITIA -> listOf(HiddenMilitiaSelection(cardCount = selections))
+                BranchContext.MILITIA -> listOf(HiddenMilitiaSelection(cardCount = options))
                 BranchContext.POACHER -> listOf(HiddenPoacherSelection())
                 BranchContext.REMODEL_TRASH -> state.board.possibilities
                     .map { RemodelTrashSelection(card = it) }

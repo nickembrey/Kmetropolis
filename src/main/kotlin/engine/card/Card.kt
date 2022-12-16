@@ -21,14 +21,14 @@ enum class Card(
 ): Comparable<Card> {
 
     CELLAR(type = CardType.ACTION, cost = 2, effect = {
-        it.eventStack.push(Branch(BranchContext.CELLAR, selections = 1)) // TODO: only one?
+        it.eventStack.push(Branch(BranchContext.CELLAR, options = 1)) // TODO: only one?
     }),
     CHAPEL(type = CardType.ACTION, cost = 2, effect = {
-        it.eventStack.push(Branch(BranchContext.CHAPEL, selections = 4))
+        it.eventStack.push(Branch(BranchContext.CHAPEL, options = 4))
     }),
     MOAT(type = CardType.ACTION, cost = 2),
     HARBINGER(type = CardType.ACTION, cost = 3, addActions = 1,addCards = 1, effect = {
-        it.eventStack.push(Branch(BranchContext.HARBINGER, selections = 1))
+        it.eventStack.push(Branch(BranchContext.HARBINGER, options = 1))
     }),
     MERCHANT(type = CardType.ACTION, cost = 3, addCards = 1, addActions = 1),
     VASSAL(type = CardType.ACTION, cost = 3, effect = {
@@ -59,7 +59,7 @@ enum class Card(
                     state.eventStack.push(
                         Branch(
                             BranchContext.MILITIA,
-                            selections = kotlin.math.max(state.currentPlayer.handCount - 3, 0)
+                            options = kotlin.math.max(state.currentPlayer.handCount - 3, 0)
                         )
                     )
                 }),
@@ -89,7 +89,7 @@ enum class Card(
     }),
     SMITHY(type = CardType.ACTION, cost = 4, addCards = 3),
     THRONE_ROOM(type = CardType.ACTION, cost = 4, effect = {
-        it.eventStack.push(Branch(BranchContext.THRONE_ROOM, selections = 1))
+        it.eventStack.push(Branch(BranchContext.THRONE_ROOM, options = 1))
     }),
     BANDIT(type = CardType.ACTION, cost = 5, effect = {
         it.eventStack.pushAll(

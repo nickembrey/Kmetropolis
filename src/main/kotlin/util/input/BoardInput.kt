@@ -42,7 +42,7 @@ fun defineBoard(): CardCountMap {
         print("Selection: ")
         val chosen = readln().toInt()
         if(chosen !in possibleCards.indices) {
-            throw IllegalStateException() // TODO: better exception
+            throw IllegalStateException()
         }
         chosenCards.add(possibleCards[chosen])
         println("")

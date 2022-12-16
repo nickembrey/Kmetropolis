@@ -1,6 +1,7 @@
 package experiments
 
 import engine.player.PlayerNumber
+import kingdoms.jansenTollisenBoard
 import policies.RemoteInputPolicy
 import policies.delegates.draw.InputDrawPolicy
 import policies.jansen_tollisen.SingleWitchPolicy
@@ -76,33 +77,34 @@ interface Experiment {
                 rolloutScoreFn = DefaultRolloutScoreFn,
                 nodeValueFn = DefaultNodeValueFn
             ),
-            policy2 = SingleWitchPolicy()
+            policy2 = SingleWitchPolicy(),
+            board = jansenTollisenBoard
         )
-        val CLIENT_EXPERIMENT_1K = SimpleExperiment(
-            policy1 = ClientMCTSPolicy(
-                cParameter = 0.7,
-                rollouts = 1000,
-                rolloutPolicy = RandomPolicy(),
-                rolloutScoreFn = DefaultRolloutScoreFn,
-                nodeValueFn = DefaultNodeValueFn
-            ),
-            policy2 = RemoteInputPolicy(),
-            board = defineBoard(),
-            chooseStartingPolicy = true
-        )
+//        val CLIENT_EXPERIMENT_1K = SimpleExperiment(
+//            policy1 = ClientMCTSPolicy(
+//                cParameter = 0.7,
+//                rollouts = 1000,
+//                rolloutPolicy = RandomPolicy(),
+//                rolloutScoreFn = DefaultRolloutScoreFn,
+//                nodeValueFn = DefaultNodeValueFn
+//            ),
+//            policy2 = RemoteInputPolicy(),
+//            board = defineBoard(),
+//            chooseStartingPolicy = true
+//        )
 
-        val BETTER_CLIENT_EXPERIMENT_10K = SimpleExperiment(
-            policy1 = ClientMCTSPolicy(
-                cParameter = 0.7,
-                rollouts = 10000,
-                rolloutPolicy = GreenRolloutPolicy(),
-                rolloutScoreFn = DefaultRolloutScoreFn,
-                nodeValueFn = DefaultNodeValueFn
-            ),
-            policy2 = RemoteInputPolicy(),
-            board = defineBoard(),
-            chooseStartingPolicy = true
-        )
+//        val BETTER_CLIENT_EXPERIMENT_10K = SimpleExperiment(
+//            policy1 = ClientMCTSPolicy(
+//                cParameter = 0.7,
+//                rollouts = 10000,
+//                rolloutPolicy = GreenRolloutPolicy(),
+//                rolloutScoreFn = DefaultRolloutScoreFn,
+//                nodeValueFn = DefaultNodeValueFn
+//            ),
+//            policy2 = RemoteInputPolicy(),
+//            board = defineBoard(),
+//            chooseStartingPolicy = true
+//        )
 
     }
 }

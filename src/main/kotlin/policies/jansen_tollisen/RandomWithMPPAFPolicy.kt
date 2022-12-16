@@ -16,13 +16,12 @@ class RandomWithMPPAFPolicy : Policy() {
 
         val options = branch.getOptions(state)
 
-        // must play plus actions first (MPPAF) // TODO: when
+        // must play plus actions first (MPPAF)
         if(branch.context == BranchContext.CHOOSE_ACTION) {
             val actionsCards = options.filterIsInstance<Card>()
             if(actionsCards.isNotEmpty()) {
                 val addActionsCard = actionsCards.firstOrNull { it.addActions > 0 }
                 return addActionsCard?.let { ActionSelection(card = it) } ?: ActionSelection(card = actionsCards.first())
-                // TODO: if we don't have plus actions cards, we should put it thru the policy
             }
         } else if(branch.context == BranchContext.CHOOSE_TREASURE) {
             return options.firstOrNull { it is TreasureSelection } ?: SpecialBranchSelection.SKIP

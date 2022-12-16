@@ -15,16 +15,6 @@ class JansenTollisenBoardProvinicial80Policy : Policy() {
 
     override val name = PolicyName("jansenTollisenBoardProv80Policy")
 
-    // TODO:
-//    override fun endGame() {
-//        buyMenu = mutableListOf(
-//            Card.WITCH to 2,
-//            Card.GOLD to 99,
-//            Card.SILVER to 6,
-//            Card.GARDENS to 8,
-//            Card.SILVER to 99
-//        )
-//    }
     override fun finally() = Unit
 
     val duchyCondition: (GameState) -> Boolean = { it.board[Card.PROVINCE] <= 4 }

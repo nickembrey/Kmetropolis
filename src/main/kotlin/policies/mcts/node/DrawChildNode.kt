@@ -4,11 +4,8 @@ import engine.branch.BranchContext
 import engine.branch.BranchSelection
 import engine.player.PlayerNumber
 import java.util.concurrent.atomic.AtomicInteger
-
-// TODO: dosn't need history or event stack
-
 // a child node that represents a draw selection
-class DrawChildNode constructor( // TODO: somehow make this only available in MCTSChildNode?
+class DrawChildNode constructor(
     parent: MCTSTreeNode,
     selection: BranchSelection,
     playerNumber: PlayerNumber,

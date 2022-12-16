@@ -8,7 +8,7 @@ import policies.PolicyName
 import policies.delegates.draw.RandomDrawPolicy
 import policies.mcts.rollout.RandomPolicy
 
-class SingleWitchPolicy : Policy() { // TODO: abstract witch policy
+class SingleWitchPolicy : Policy() {
 
     private val randomDrawPolicy = RandomDrawPolicy()
 

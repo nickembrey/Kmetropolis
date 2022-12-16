@@ -8,8 +8,6 @@ import engine.operation.state.StateOperation
 import engine.player.PlayerProperty
 import util.memoize
 import util.memoizeEnum
-
-// TODO: better name?
 class SetFromPropertyOperation<T>(
     val target: StateProperty,
     val from: T,

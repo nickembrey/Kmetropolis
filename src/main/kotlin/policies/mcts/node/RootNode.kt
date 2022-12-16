@@ -17,7 +17,6 @@ class RootNode private constructor(
 
     override var score: Double = 0.0
 
-    // TODO: why can't this be a passed in parameter???
     override var children: MutableList<MCTSChildNode> = mutableListOf()
 
     override val depth: Int = 0

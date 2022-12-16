@@ -39,7 +39,7 @@ class GameState private constructor (
     val players: List<Player>, // needs to be in order // TODO: replace with two args
     val board: CardCountMap,
     var currentPlayerNumber: PlayerNumber,
-    var phase: GamePhase,
+    var phase: GamePhase, // TODO: remove
     var eventStack: EventStack,
     var turns: Int,
     val maxTurns: Int,
@@ -263,7 +263,7 @@ class GameState private constructor (
                                 )
                                 if(operation.card.addCards > 0) {
                                     eventStack.push(
-                                        Branch(BranchContext.DRAW, selections = operation.card.addCards)
+                                        Branch(BranchContext.DRAW, options = operation.card.addCards)
                                     )
                                 }
                                 if(operation.card.addCoins > 0) {
@@ -430,13 +430,13 @@ class GameState private constructor (
                         currentPlayer.visibleDiscard(card)
                     }
                     eventStack.push(
-                        Branch(context = BranchContext.DRAW, selections = selection.cards.size))
+                        Branch(context = BranchContext.DRAW, options = selection.cards.size))
                 } else if(selection is HiddenCellarSelection) {
                     for(x in 1..selection.cardCount) {
                         currentPlayer.hiddenDiscard()
                     }
                     eventStack.push(
-                        Branch(context = BranchContext.DRAW, selections = selection.cardCount))
+                        Branch(context = BranchContext.DRAW, options = selection.cardCount))
                 } else {
                     throw IllegalStateException()
                 }
@@ -732,9 +732,9 @@ class GameState private constructor (
                 currentPlayer.shuffle()
             }
 
-            if(event.context == BranchContext.DRAW && event.selections > 1 && !log) { // TODO: hacky
+            if(event.context == BranchContext.DRAW && event.options > 1 && !log) { // TODO: hacky
                 eventStack.pushAll( // TODO: hacky
-                    List(event.selections) { Branch(BranchContext.DRAW) }
+                    List(event.options) { Branch(BranchContext.DRAW) }
                 )
                 return processEvent(eventStack.pop())
             }
@@ -748,9 +748,9 @@ class GameState private constructor (
                     SpecialGameEvent.START_GAME -> {
                         eventStack.pushAll(
                             listOf(
-                                Branch(context = BranchContext.DRAW, selections = 5),
+                                Branch(context = BranchContext.DRAW, options = 5),
                                 SpecialGameEvent.SWITCH_PLAYER,
-                                Branch(context = BranchContext.DRAW, selections = 5),
+                                Branch(context = BranchContext.DRAW, options = 5),
                                 SpecialGameEvent.SWITCH_PLAYER,
                                 SpecialGameEvent.START_TURN
                             ).reversed()
@@ -792,7 +792,7 @@ class GameState private constructor (
                             processOperation(GameSimpleOperation.INCREMENT_TURNS)
                             eventStack.push(SpecialGameEvent.START_TURN)
                             eventStack.push(SpecialGameEvent.SWITCH_PLAYER)
-                            eventStack.push(Branch(context = BranchContext.DRAW, selections = 5))
+                            eventStack.push(Branch(context = BranchContext.DRAW, options = 5))
                         }
                     }
                     SpecialGameEvent.SWITCH_PLAYER -> currentPlayerNumber = otherPlayer.playerNumber

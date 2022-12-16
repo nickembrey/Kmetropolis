@@ -12,7 +12,7 @@ fun buildCardSelection(
     val options = state.board.possibilities
     println("Player: ${state.currentPlayer.playerNumber} (${state.currentPlayer.name})")
     println("Context: ${branch.context}")
-    println("Selections: ${branch.selections}")
+    println("Selections: ${branch.options}")
     println("Current selection: $cardList")
     println("")
     println("Options: ")

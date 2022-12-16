@@ -41,7 +41,7 @@ class ClientMCTSPolicy(
         } else {
             println("Player: ${state.currentPlayer.playerNumber} (${state.currentPlayer.name})")
             println("Context: ${branch.context}")
-            println("Selections: ${branch.selections}")
+            println("Selections: ${branch.options}")
             println("")
             println("Recommended selection: $selection")
             println("")

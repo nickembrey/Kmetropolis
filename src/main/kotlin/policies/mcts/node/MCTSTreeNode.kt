@@ -17,12 +17,6 @@ interface MCTSTreeNode {
     val depth: Int
     val turns: Int
 
-    // TODO: make it optional to have concurrency, we can use cheaper types if not
-
-    // TODO: these can be vals, no?
-    // TODO: rename, currentRollouts and completedRollouts
-
-    // TODO: why is currentRollouts negative at decision time?
     var currentRollouts: AtomicInteger // number of rollouts in process by threads
     var completedRollouts: AtomicInteger // number of rollouts completed
 }

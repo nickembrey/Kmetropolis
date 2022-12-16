@@ -19,8 +19,6 @@ import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executor
 
-// TODO: shouldn't even have access to the opponent's data, just a view
-
 class MCTSPolicy(
     private val cParameter: Double,
     private val rollouts: Int,
@@ -31,7 +29,6 @@ class MCTSPolicy(
     private val executor: Executor = CurrentThreadExecutor(),
 ) : Policy() {
 
-    // TODO: add additional parameters
     override val name = PolicyName(
         "MCTSPolicy ($cParameter, $rollouts, ${rolloutPolicy.name}, ${rolloutScoreFn.name})"
     )
@@ -40,14 +37,12 @@ class MCTSPolicy(
         PLAYER_ONE_SCORE, PLAYER_TWO_SCORE, COMPLETED, IN_PROCESS;
     }
 
-    // TODO: wrap these statistics up, or maybe use the logger
-    // TODO: shouldn't these be concurrency safe?
     private var maxDepth: Int = 0
     private var maxTurns: Int = 0
     private val contextMap: MutableMap<BranchContext, Int> = mutableMapOf()
     private val graphPairs: MutableList<Pair<Int, Int>> = mutableListOf()
 
-    private val actionPolicy = MPPAFPolicy() // TODO:
+    private val actionPolicy = MPPAFPolicy()
     private val treasurePolicy = PlayAllTreasuresPolicy()
 
     private val rolloutResults: Queue<RolloutResult> = ConcurrentLinkedQueue()
@@ -84,7 +79,7 @@ class MCTSPolicy(
             .let { node.children[it] })
 
 
-    // TODO: rather than saving memory by do-undoing, keep a master copy and just reset to its values?
+
     private fun rollout(rolloutState: GameState): Pair<Double, Double> {
 //        print("starting a rollout")
         while (!rolloutState.gameOver) {
@@ -98,7 +93,7 @@ class MCTSPolicy(
         simState: GameState,
         node: MCTSTreeNode
     ) {
-        // TODO: non-recursive?
+
         if(node is MCTSChildNode) {
             if(node.depth > maxDepth) maxDepth = node.depth
             if(node.turns > maxTurns) maxTurns = node.turns
@@ -116,9 +111,8 @@ class MCTSPolicy(
                     treasurePolicy = treasurePolicy).single()
                 val sampleCards = (sample.selection as VisibleDrawSelection).cards.sorted()
 
-                // TODO: clean up
                 var alreadySampled = false
-                var gameOver = false // TODO: hacky
+                var gameOver = false
                 for(child in node.children) {
                     if(child.selection != SpecialBranchSelection.GAME_OVER) {
                         val childCards = (child.selection as VisibleDrawSelection).cards.sorted()
@@ -140,26 +134,17 @@ class MCTSPolicy(
             }
             is EndGameNode -> {
                 backpropagate(node, BackpropProperty.IN_PROCESS)
-                // TODO: make sure that the selection is always the game over selection for this
                 rolloutResults.add(
                     RolloutResult(node, rolloutScoreFn(simState))
                 )
             }
             is MCTSChildNode -> {
-                // TODO: coins is sometimes negative
                 val branch = simState.getNextBranch()
                 if(branch.context != node.context || simState.currentPlayerNumber != node.playerNumber) {
                     throw IllegalStateException()
-                } else { // TODO: somehow,
-                    // do the action that the node describes
-                    if(node.selection is ActionSelection && node.selection.card == Card.MILITIA) {
-                        print("STOP!")
-                    }
+                } else {
                     simState.processBranchSelection(node.context, node.selection)
                 }
-
-                // TODO: if we're doing, say, a buy, and then drawing, the draw is going to be the same
-                //       regardless of the buy.
 
                 val completedRollouts = node.completedRollouts.get()
                 if(completedRollouts == 0) {
@@ -173,7 +158,7 @@ class MCTSPolicy(
                             treasurePolicy = treasurePolicy))
                     for(child in node.children) {
                         graphPairs.add(Pair(node.id, child.id))
-                    } // TODO: hacky
+                    }
                     backpropagate(node, BackpropProperty.IN_PROCESS)
 
                     rolloutResults.add(
@@ -192,9 +177,8 @@ class MCTSPolicy(
                             treasurePolicy = treasurePolicy).single()
                         val sampleCards = (sample.selection as VisibleDrawSelection).cards.sorted()
 
-                        // TODO: clean up
                         var alreadySampled = false
-                        var gameOver = false // TODO: hacky
+                        var gameOver = false
                         for(child in node.children) {
                             if(child.selection != SpecialBranchSelection.GAME_OVER) {
                                 val childCards = (child.selection as VisibleDrawSelection).cards.sorted()
@@ -220,7 +204,7 @@ class MCTSPolicy(
                                 treasurePolicy = treasurePolicy))
                         for(child in node.children) {
                             graphPairs.add(Pair(node.id, child.id))
-                        } // TODO: hacky
+                        }
                     }
 
                     simState.eventStack.push(nextBranch)
@@ -240,7 +224,7 @@ class MCTSPolicy(
 
         val shuffledState = state.copy(
             newPolicies = listOf(rolloutPolicy, rolloutPolicy),
-            newMaxTurns = 999, // TODO: think about this
+            newMaxTurns = 999,
             newLog = false,
             keepHistory = false,
         )
@@ -254,10 +238,10 @@ class MCTSPolicy(
 
         for(child in root!!.children) {
             graphPairs.add(Pair(root!!.id, child.id))
-        } // TODO: hacky
+        }
 
         var queued = 0
-        var processed = 0 // TODO: replace with simulations at root?
+        var processed = 0
 
         while(processed < rollouts) {
             while(rolloutResults.isNotEmpty()) {
@@ -286,7 +270,6 @@ class MCTSPolicy(
 
         val opponentDraw = root!!.children.maxBy { it.completedRollouts.get() }
 
-        // TODO: simplify
         val selection = opponentDraw.children.maxBy { it.completedRollouts.get() }.selection
 
         return selection
@@ -318,7 +301,7 @@ class MCTSPolicy(
     }
 
     override fun finally() {
-        // TODO: clear anything that can no longer be reached
+
     }
 
 }

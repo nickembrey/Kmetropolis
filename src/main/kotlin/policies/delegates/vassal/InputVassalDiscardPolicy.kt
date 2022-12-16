@@ -27,7 +27,7 @@ class InputVassalDiscardPolicy: Policy() {
             try {
                 val index = readln().toInt()
                 if(index !in options.indices) {
-                    throw IllegalStateException() // TODO: better exception
+                    throw IllegalStateException()
                 }
                 return options[index]
             } catch(nfe: NumberFormatException) {

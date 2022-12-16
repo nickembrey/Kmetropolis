@@ -4,8 +4,6 @@ import engine.operation.HistoryOperation
 import engine.operation.PlayerOperation
 import engine.operation.state.StateOperation
 
-//  // TODO: shuffle needs to trigger a move of each individual card
-
 enum class PlayerSimpleOperation(val verb: String): StateOperation, PlayerOperation, HistoryOperation {
     INCREMENT_BUYS("adds a buy"), DECREMENT_BUYS("removes a buy"),
     INCREMENT_COINS("adds a coin"), DECREMENT_COINS("removes a coin"),

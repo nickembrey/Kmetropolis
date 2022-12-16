@@ -16,7 +16,7 @@ interface PlayerCards {
 
     val allCards: CardCountMap
     val aside: CardCountMap
-    val unknownCards: CardCountMap // TODO: do I need this?
+    val unknownCards: CardCountMap
     val knownHand: CardCountMap
     val inPlay: CardCountMap
     val knownDeck: MutableMap<Int, Card>
@@ -37,9 +37,6 @@ interface PlayerCards {
 
     // puts the hand back into the deck (random position)
     fun redeck()
-
-    // TODO: one unified move method that takes a card and two locations (like before)
-
     fun hiddenDraw()
     fun visibleDraw(card: Card)
 

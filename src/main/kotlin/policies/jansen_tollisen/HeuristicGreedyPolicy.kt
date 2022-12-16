@@ -31,7 +31,6 @@ class HeuristicGreedyPolicy : Policy() {
                 return options.firstOrNull { it is TreasureSelection } ?: SpecialBranchSelection.SKIP
             }
             BranchContext.CHOOSE_BUY -> {
-                // TODO: weird corner case where all coppers and all curses are gone?
                 val buySelections = options
                     .filterIsInstance<BuySelection>()
                     .filter { !it.cards.contains(Card.CURSE) }

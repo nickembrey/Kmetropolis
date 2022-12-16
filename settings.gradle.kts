@@ -1,3 +1,3 @@
 
-rootProject.name = "KDominion"
+rootProject.name = "KMetropolis"
 
